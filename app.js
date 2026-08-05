@@ -1940,6 +1940,10 @@ function renderNewGameCourses(preferredCourseId = state.courseId) {
     : courses[0].id;
 }
 
+function flipBombIconHtml() {
+  return `<span class="flip-bomb-icon" role="img" aria-label="${escapeHtml(t('Bomb'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="14" r="6"/><path d="M14 9l3-3m-1-2 1 2 2-1m-1 3 2 1"/></svg></span>`;
+}
+
 function recentGameCourses() {
   const ids = [state.courseId, ...savedRounds.map(round => round.courseId)].filter(Boolean);
   const seen = new Set();
@@ -2883,6 +2887,24 @@ function updateScorePad() {
   });
 }
 
+function drawFlipBombIcon(ctx, centerX, centerY, size = 18) {
+  ctx.save();
+  ctx.fillStyle = '#b57b12';
+  ctx.strokeStyle = '#b57b12';
+  ctx.lineWidth = Math.max(1.5, size * 0.1);
+  ctx.beginPath();
+  ctx.arc(centerX - size * 0.08, centerY + size * 0.08, size * 0.34, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(centerX + size * 0.12, centerY - size * 0.2);
+  ctx.lineTo(centerX + size * 0.34, centerY - size * 0.42);
+  ctx.moveTo(centerX + size * 0.33, centerY - size * 0.54);
+  ctx.lineTo(centerX + size * 0.4, centerY - size * 0.39);
+  ctx.lineTo(centerX + size * 0.55, centerY - size * 0.47);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function scrollNextScoreTargetUp(previousScoreIndex, nextScoreIndex) {
   if (!Number.isInteger(previousScoreIndex) || !Number.isInteger(nextScoreIndex)) return;
   window.setTimeout(() => {
@@ -2890,8 +2912,12 @@ function scrollNextScoreTargetUp(previousScoreIndex, nextScoreIndex) {
     const nextRow = els.playPlayerRows?.querySelector(`[data-score-index="${nextScoreIndex}"]`);
     if (!previousRow || !nextRow) return;
     const rowStep = nextRow.getBoundingClientRect().top - previousRow.getBoundingClientRect().top;
-    if (rowStep > 0) window.scrollBy({ top: rowStep, behavior: 'smooth' });
-  }, 30);
+    const scroller = document.scrollingElement || document.documentElement;
+    if (rowStep > 0) scroller.scrollTop = Math.min(
+      scroller.scrollHeight - scroller.clientHeight,
+      scroller.scrollTop + rowStep
+    );
+  }, 80);
 }
 
 function autoLandlordMultiplierForHole(holeIndex) {
@@ -3046,6 +3072,7 @@ async function commitDisplayedScorePadValueAndAdvance() {
 function openScorePad(holeIndex, scoreIndex) {
   if (!isEditing || !els.scorePad) return;
   activeScoreTarget = { holeIndex, scoreIndex };
+  document.body.classList.add('score-pad-open');
   els.scorePad.hidden = false;
   updateScorePad();
 }
@@ -3053,6 +3080,7 @@ function openScorePad(holeIndex, scoreIndex) {
 function closeScorePad() {
   if (!els.scorePad) return;
   els.scorePad.hidden = true;
+  document.body.classList.remove('score-pad-open');
   activeScoreTarget = null;
 }
 
@@ -4133,8 +4161,8 @@ function renderScoreStrip() {
   els.teamBTotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Team B')));
   els.teamAPlayers.textContent = `${state.players[0]} + ${state.players[1]}`;
   els.teamBPlayers.textContent = `${state.players[2]} + ${state.players[3]}`;
-  els.teamATotal.textContent = total.a;
-  els.teamBTotal.textContent = total.b;
+  els.teamATotal.textContent = signedPoints(total.a);
+  els.teamBTotal.textContent = signedPoints(total.b);
   applySignedClass(els.teamATotal, total.a);
   applySignedClass(els.teamBTotal, total.b);
   els.holesComplete.textContent = `${total.complete}/18`;
@@ -4145,8 +4173,8 @@ function renderScoreStrip() {
       ? `${total.playersGross[index]}/${total.playersNet[index]}`
       : total.playersGross[index];
   });
-  els.tableTeamATotal.textContent = total.a;
-  els.tableTeamBTotal.textContent = total.b;
+  els.tableTeamATotal.textContent = signedPoints(total.a);
+  els.tableTeamBTotal.textContent = signedPoints(total.b);
   applySignedClass(els.tableTeamATotal, total.a);
   applySignedClass(els.tableTeamBTotal, total.b);
 }
@@ -4307,10 +4335,10 @@ function renderHoles() {
     if (result) {
       const aPointCell = row.children[6];
       const bPointCell = row.children[10];
-      row.children[5].textContent = `${result.aNumber.value}${result.aNumber.flipped ? '*' : ''}`;
-      row.children[9].textContent = `${result.bNumber.value}${result.bNumber.flipped ? '*' : ''}`;
-      aPointCell.textContent = result.delta;
-      bPointCell.textContent = -result.delta;
+      row.children[5].innerHTML = `${result.aNumber.value}${result.aNumber.flipped ? flipBombIconHtml() : ''}`;
+      row.children[9].innerHTML = `${result.bNumber.value}${result.bNumber.flipped ? flipBombIconHtml() : ''}`;
+      aPointCell.textContent = signedPoints(result.delta);
+      bPointCell.textContent = signedPoints(-result.delta);
       applySignedClass(aPointCell, result.delta);
       applySignedClass(bPointCell, -result.delta);
     } else {
@@ -4331,7 +4359,7 @@ function renderHoles() {
       }, { players: [0, 0, 0, 0], a: 0, b: 0 });
       const subtotal = document.createElement('tr');
       subtotal.className = 'nine-hole-subtotal';
-      subtotal.innerHTML = `<th>${document.documentElement.lang.startsWith('zh') ? '小计' : 'Subtotal'}</th><th>${course.pars.slice(0, 9).reduce((sum, par) => sum + par, 0)}</th><th>—</th><th>${front.players[0]}</th><th>${front.players[1]}</th><th></th><th class="${front.a > 0 ? 'point-positive' : (front.a < 0 ? 'point-negative' : '')}">${front.a}</th><th>${front.players[2]}</th><th>${front.players[3]}</th><th></th><th class="${front.b > 0 ? 'point-positive' : (front.b < 0 ? 'point-negative' : '')}">${front.b}</th>`;
+      subtotal.innerHTML = `<th>${document.documentElement.lang.startsWith('zh') ? '小计' : 'Subtotal'}</th><th>${course.pars.slice(0, 9).reduce((sum, par) => sum + par, 0)}</th><th>—</th><th>${front.players[0]}</th><th>${front.players[1]}</th><th></th><th class="${front.a > 0 ? 'point-positive' : (front.a < 0 ? 'point-negative' : '')}">${signedPoints(front.a)}</th><th>${front.players[2]}</th><th>${front.players[3]}</th><th></th><th class="${front.b > 0 ? 'point-positive' : (front.b < 0 ? 'point-negative' : '')}">${signedPoints(front.b)}</th>`;
       els.scoreRows.append(subtotal);
     }
   });
@@ -5093,6 +5121,8 @@ async function createScorecardAsset(round) {
     let bNumber = '';
     let aPoints = '';
     let bPoints = '';
+    let flipA = false;
+    let flipB = false;
     if (complete) {
       const par = Number(normalized.pars[holeIndex] || 4);
       const indexValue = Number(normalized.indexes[holeIndex] || holeIndex + 1);
@@ -5100,8 +5130,8 @@ async function createScorecardAsset(round) {
       const activeValues = normalized.scoreMode === 'net' ? netValues : gross;
       const aUnderPar = Math.min(gross[0], gross[1]) < par;
       const bUnderPar = Math.min(gross[2], gross[3]) < par;
-      const flipA = normalized.underParFlip && bUnderPar && !aUnderPar;
-      const flipB = normalized.underParFlip && aUnderPar && !bUnderPar;
+      flipA = normalized.underParFlip && bUnderPar && !aUnderPar;
+      flipB = normalized.underParFlip && aUnderPar && !bUnderPar;
       aNumber = teamNumber([activeValues[0], activeValues[1]], par, flipA).value;
       bNumber = teamNumber([activeValues[2], activeValues[3]], par, flipB).value;
       aPoints = bNumber - aNumber;
@@ -5142,13 +5172,16 @@ async function createScorecardAsset(round) {
       }
       const isPointsColumn = columnIndex === 6 || columnIndex === 10;
       const pointValue = Number(value);
-      drawScorecardText(ctx, value, x + columns[columnIndex] / 2, y + rowHeight / 2, {
+      const displayValue = isPointsColumn ? signedPoints(value) : value;
+      const isFlippedPair = (columnIndex === 5 && flipA) || (columnIndex === 9 && flipB);
+      drawScorecardText(ctx, displayValue, x + columns[columnIndex] / 2 - (isFlippedPair ? 7 : 0), y + rowHeight / 2, {
         color: isPointsColumn && pointValue > 0 ? '#118747' : (isPointsColumn && pointValue < 0 ? '#b3453f' : '#17221f'),
         font: columnIndex === 0
           ? 'bold 22px Arial Narrow, Arial'
           : (columnIndex < 3 ? '18px Arial Narrow, Arial' : 'bold 24px Arial'),
         maxWidth: columns[columnIndex] - 4
       });
+      if (isFlippedPair) drawFlipBombIcon(ctx, x + columns[columnIndex] / 2 + 20, y + rowHeight / 2, 18);
       x += columns[columnIndex];
     });
   }
@@ -5195,7 +5228,7 @@ async function createScorecardAsset(round) {
     } else {
       const isPointsColumn = columnIndex === 6 || columnIndex === 10;
       const pointValue = Number(value);
-      drawScorecardText(ctx, value, x + columns[columnIndex] / 2, totalsY + totalRowHeight / 2, {
+      drawScorecardText(ctx, isPointsColumn ? signedPoints(value) : value, x + columns[columnIndex] / 2, totalsY + totalRowHeight / 2, {
         color: isPointsColumn && pointValue > 0 ? '#9ff0c8' : (isPointsColumn && pointValue < 0 ? '#ffc1bd' : '#ffffff'),
         font: columnIndex === 0
           ? 'bold 17px Arial, Microsoft YaHei, sans-serif'
@@ -5679,7 +5712,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.7.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.8.')
     );
   });
 
@@ -6236,12 +6269,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=189', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=190', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v189';
+    const reloadKey = 'jfk.simpleGolfSwReload.v190';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

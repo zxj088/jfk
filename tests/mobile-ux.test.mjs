@@ -14,7 +14,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=189/);
+  assert.match(html, /mobile-ux\.css\?v=190/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -52,9 +52,21 @@ test('history teams, floating delete menu, and score pad states remain readable'
 test('score entry scrolls up exactly one player row when advancing', () => {
   assert.match(app, /function scrollNextScoreTargetUp\(previousScoreIndex, nextScoreIndex\)/);
   assert.match(app, /rowStep = nextRow\.getBoundingClientRect\(\)\.top - previousRow\.getBoundingClientRect\(\)\.top/);
-  assert.match(app, /window\.scrollBy\(\{ top: rowStep, behavior: 'smooth' \}\)/);
+  assert.match(app, /scroller\.scrollTop \+ rowStep/);
   assert.match(app, /updateScorePad\(\);\s*scrollNextScoreTargetUp\(previousScoreIndex, nextScoreIndex\);/);
+  assert.match(app, /document\.body\.classList\.add\('score-pad-open'\)/);
+  assert.match(mobileCss, /body\.score-pad-open \.app-shell\s*\{[\s\S]*padding-bottom:\s*calc\(430px/);
   assert.match(app, /data-score-index/);
   assert.match(mobileCss, /\.play-score-button\.under-par\s*\{[\s\S]*color:\s*#fff[\s\S]*background:\s*#c43b3b/);
   assert.match(mobileCss, /\.play-score-button small\s*\{[\s\S]*white-space:\s*nowrap/);
+});
+
+test('Vegas winners use signed points and flipped pairs use a bomb icon', () => {
+  assert.match(app, /aPointCell\.textContent = signedPoints\(result\.delta\)/);
+  assert.match(app, /bPointCell\.textContent = signedPoints\(-result\.delta\)/);
+  assert.match(app, /result\.aNumber\.flipped \? flipBombIconHtml\(\)/);
+  assert.match(app, /function flipBombIconHtml\(\)/);
+  assert.match(app, /function drawFlipBombIcon\(ctx, centerX, centerY, size = 18\)/);
+  assert.match(app, /if \(isFlippedPair\) drawFlipBombIcon/);
+  assert.match(mobileCss, /\.flip-bomb-icon\s*\{/);
 });

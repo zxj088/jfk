@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.8 - Signed wins, bomb flip marker, reliable score scroll
+
+Date: 2026-08-05
+
+Tag: `v6.1.8`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=190`
+
+What is new in this version:
+
+- Positive Las Vegas hole, subtotal, and total points use an explicit plus prefix.
+- Flipped Las Vegas pair numbers use a bomb icon instead of an asterisk on both the page and shared PNG.
+- Opening the score pad reserves enough document scroll space; advancing writes directly to the real document scroller by one measured player-row step.
+- PWA asset query version is `v190`.
+
 ### v6.1.7 - Visible one-row score advance
 
 Date: 2026-08-05

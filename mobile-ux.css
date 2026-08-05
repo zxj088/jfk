@@ -121,6 +121,29 @@
   white-space: nowrap;
 }
 
+body.score-pad-open .app-shell {
+  padding-bottom: calc(430px + env(safe-area-inset-bottom));
+}
+
+.flip-bomb-icon {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  margin-left: 2px;
+  vertical-align: -3px;
+  color: #b57b12;
+}
+
+.flip-bomb-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .score-quick button[data-score-offset="-2"].active,
 .score-quick button[data-score-offset="-1"].active {
   border-color: #b92f32;
