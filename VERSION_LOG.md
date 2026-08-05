@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.3 - Shared games with isolated preferences
+
+Date: 2026-08-05
+
+Tag: `v6.1.3`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=185`
+
+What is new in this version:
+
+- Old and new interfaces share the `default` Supabase room, so cloud games, scores, history, and courses appear in both.
+- Local preferences, language, page state, cached state, PWA identity, and device/edit identity remain namespaced under `jfk.`.
+- Switching the scoring interface may require the edit code because each site keeps an independent device identity.
+- PWA asset query version is `v185`.
+
 ### v6.1.2 - Dedicated JFK app identity
 
 Date: 2026-08-05
