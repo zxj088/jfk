@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.2 - Dedicated JFK app identity
+
+Date: 2026-08-05
+
+Tag: `v6.1.2`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=184`
+
+What is new in this version:
+
+- The new site uses a dedicated midnight-blue `JFK GOLF` icon with a green fairway and gold flag.
+- Page branding and 192px, 512px, and scalable PWA icons no longer reuse the old site’s shield artwork.
+- Local and cloud isolation from v6.1.1 remains in force.
+- PWA asset query version is `v184`.
+
 ### v6.1.1 - Complete old/new site isolation
 
 Date: 2026-08-05

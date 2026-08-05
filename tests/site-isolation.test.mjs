@@ -21,7 +21,7 @@ test('jfk uses an independent browser storage namespace', () => {
     'jfk.vegasGolfPendingRound.v1',
     'jfk.simpleGolfWelcomeSeen.v1',
     'jfk.simpleGolfScoreDetail.v1',
-    'jfk.simpleGolfSwReload.v183'
+    'jfk.simpleGolfSwReload.v184'
   ];
   requiredKeys.forEach(key => assert.match(app, new RegExp(key.replaceAll('.', '\\.'))));
   assert.match(i18n, /jfk\.vegasGolfLanguage\.v1/);
@@ -30,4 +30,10 @@ test('jfk uses an independent browser storage namespace', () => {
 test('jfk uses an independent cloud room and PWA identity', () => {
   assert.match(config, /syncKey: 'jfk-v1'/);
   assert.equal(JSON.parse(manifest).id, '/jfk/');
+});
+
+test('jfk uses dedicated app icons', () => {
+  const parsed = JSON.parse(manifest);
+  assert.ok(parsed.icons.every(icon => icon.src.includes('jfk-icon')));
+  assert.match(app, /jfk\.simpleGolfSwReload\.v184/);
 });
