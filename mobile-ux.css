@@ -27,15 +27,42 @@
   display: none;
 }
 
+.playing-game-row,
+.history-game-row {
+  min-height: 119px;
+  padding: 8px 12px;
+  border-left-width: 5px;
+}
+
+.playing-game-row .game-open,
+.history-game-row .game-open {
+  align-items: center;
+  min-height: 46px;
+}
+
+.playing-game-row .game-copy,
+.history-game-row .game-copy {
+  gap: 3px;
+}
+
+.playing-game-row .game-top-line,
 .history-game-row .game-top-line {
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
 }
 
 .history-game-row .small-actions { justify-self: end; }
-.history-game-row .game-main { font-size: 15px; white-space: normal; }
-.history-game-row .game-meta { font-size: 13px; white-space: normal; }
-.history-game-row .game-score { font-size: 13px; }
+.playing-game-row .game-main,
+.history-game-row .game-main { font-size: 13px; white-space: normal; }
+.playing-game-row .game-meta,
+.history-game-row .game-meta { font-size: 12px; white-space: normal; }
+.playing-game-row .game-score,
+.history-game-row .game-score { font-size: 12px; }
+
+.history-game-row .history-status-icon {
+  background: #14745d;
+  box-shadow: 0 0 0 4px rgba(20, 116, 93, 0.14);
+}
 
 .history-row,
 .history-row .game-open,

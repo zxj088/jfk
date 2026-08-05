@@ -14,7 +14,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=191/);
+  assert.match(html, /mobile-ux\.css\?v=192/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -47,6 +47,9 @@ test('history teams, direct delete action, and score pad states remain readable'
   assert.match(app, /row\.querySelector\('\.small-actions'\)\.append\(deleteButton\)/);
   assert.doesNotMatch(app, /menuTrigger\.setAttribute\('aria-expanded'/);
   assert.match(mobileCss, /\.game-row \.small-actions > button,[\s\S]*width:\s*64px[\s\S]*min-height:\s*44px/);
+  assert.match(app, /classList\.toggle\('history-status-icon', status === 'history'\)/);
+  assert.match(mobileCss, /\.playing-game-row,[\s\S]*\.history-game-row\s*\{[\s\S]*min-height:\s*119px[\s\S]*padding:\s*8px 12px[\s\S]*border-left-width:\s*5px/);
+  assert.match(mobileCss, /\.playing-game-row \.game-main,[\s\S]*\.history-game-row \.game-main\s*\{\s*font-size:\s*13px/);
   assert.match(mobileCss, /\.score-pad-value\.gross-under-par\s*\{[\s\S]*color:\s*#fff[\s\S]*background:\s*#c43b3b/);
   assert.match(mobileCss, /\.score-quick button\[data-score-clear\][\s\S]*color:\s*#a52626/);
 });

@@ -4,6 +4,22 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.10 - Unified home game cards
+
+Date: 2026-08-06
+
+Tag: `v6.1.10`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=192`
+
+What is new in this version:
+
+- Active and completed home game cards share the same padding, border width, title size, metadata size, team-result layout, status-icon slot, and action-button dimensions.
+- Completed cards retain a calm green completed marker and Delete action; active cards retain their live marker and Modify action.
+- PWA asset query version is `v192`.
+
 ### v6.1.9 - Score pad anchored below first player
 
 Date: 2026-08-05

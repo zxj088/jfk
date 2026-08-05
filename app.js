@@ -5413,7 +5413,8 @@ function renderGameList(container, rounds, emptyText, status) {
         </span>
       </div>
     `;
-    row.querySelector('.playing-icon').hidden = status !== 'playing';
+    row.querySelector('.playing-icon').hidden = false;
+    row.querySelector('.playing-icon').classList.toggle('history-status-icon', status === 'history');
     row.querySelector('.game-main').textContent = round.courseName || t('Course');
     row.querySelector('.game-meta').textContent = `${roundListDate(round)} · ${round.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${roundModeLine(round)}`;
     row.querySelector('.game-score').innerHTML = roundScoreSummaryHtml(round);
@@ -5717,7 +5718,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.9.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.10.')
     );
   });
 
@@ -6274,12 +6275,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=191', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=192', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v191';
+    const reloadKey = 'jfk.simpleGolfSwReload.v192';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
