@@ -1527,22 +1527,22 @@ textarea {
   grid-template-columns: minmax(0, 1fr) minmax(104px, 42%);
 }
 
-#playingList .game-row:nth-child(4n + 1) {
+#playingList .game-row.live-color-0 {
   border-left-color: #14745d;
   background: linear-gradient(90deg, #edf7f3 0, #fff 32%);
 }
 
-#playingList .game-row:nth-child(4n + 2) {
+#playingList .game-row.live-color-1 {
   border-left-color: #b18428;
   background: linear-gradient(90deg, #fbf5e8 0, #fff 32%);
 }
 
-#playingList .game-row:nth-child(4n + 3) {
+#playingList .game-row.live-color-2 {
   border-left-color: #477a9f;
   background: linear-gradient(90deg, #eef5fa 0, #fff 32%);
 }
 
-#playingList .game-row:nth-child(4n) {
+#playingList .game-row.live-color-3 {
   border-left-color: #79658d;
   background: linear-gradient(90deg, #f4f0f7 0, #fff 32%);
 }
@@ -4538,8 +4538,8 @@ main {
 
 .header-language-button {
   display: grid;
-  width: 38px;
-  min-height: 38px;
+  width: 44px;
+  min-height: 44px;
   padding: 0;
   place-items: center;
   align-self: center;
@@ -4556,6 +4556,74 @@ main {
 .header-language-button:focus-visible {
   border-color: #8ab8a8;
   background: #edf7f2;
+}
+
+/* v6.0 senior-friendly refinements. Keep controls readable without widening mobile layouts. */
+.field-help {
+  display: block;
+  margin-top: 6px;
+  color: #52655f;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.option-help {
+  margin: -4px 2px 4px;
+}
+
+.scorecard button.score small {
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.tab span:not(.tab-icon) {
+  font-size: 13px;
+}
+
+.history-game-row {
+  padding: 11px 12px;
+}
+
+.history-game-row .game-open {
+  align-items: start;
+  min-height: 52px;
+}
+
+.history-game-row .game-top-line {
+  align-items: start;
+}
+
+.history-game-row .game-main {
+  overflow: visible;
+  font-size: 15px;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.history-game-row .game-score {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.game-row .small-actions .history-delete-button {
+  width: auto;
+  min-width: 56px;
+  min-height: 36px;
+  border-color: #d8c5c2;
+  color: #8a4a44;
+  background: #fff;
+}
+
+@media (max-width: 620px) {
+  .history-game-row .game-top-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .history-game-row .small-actions {
+    justify-self: start;
+  }
 }
 
 .top-menu-button span {
@@ -4950,7 +5018,7 @@ main {
 }
 
 .tab span:not(.tab-icon) {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 

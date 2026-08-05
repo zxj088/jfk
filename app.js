@@ -12,6 +12,7 @@ const CLOUD_ROUND_LIMIT = 1000;
 const EDIT_LOCK_TTL_MS = 12000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
 const WELCOME_MIN_DURATION_MS = 1000;
+const WELCOME_SEEN_KEY = 'simpleGolfWelcomeSeen.v1';
 const ROLE_ICON_PATHS = {
   landlord: './assets/roles/landlord-golfer.png',
   peasant: './assets/roles/farmer-golfer.png'
@@ -19,6 +20,8 @@ const ROLE_ICON_PATHS = {
 const welcomeStartedAt = performance.now();
 let welcomeReadyToEnter = false;
 let pendingWelcomeAction = '';
+let activeOverlay = null;
+let overlayReturnFocus = null;
 
 function roleIconHtml(isLandlord, className = '') {
   const role = isLandlord ? 'landlord' : 'peasant';
@@ -3945,7 +3948,9 @@ function renderHeaderStatus() {
   const game = currentGame();
   let label = t('No sign-in · Ready to play');
   let status = 'ready';
-  if (game && gameStatus(game) !== 'playing') {
+  if (currentView === 'start') {
+    label = t('No sign-in · Ready to play');
+  } else if (game && gameStatus(game) !== 'playing') {
     label = t('Game complete · Locked');
     status = 'complete';
   } else if (game && isEditing) {
@@ -3957,6 +3962,59 @@ function renderHeaderStatus() {
   }
   if (els.headerStatusText) els.headerStatusText.textContent = label;
   if (els.headerStatus) els.headerStatus.dataset.status = status;
+}
+
+function stableGameColorIndex(id) {
+  return Array.from(String(id || '')).reduce((hash, character) => ((hash * 31) + character.charCodeAt(0)) >>> 0, 0) % 4;
+}
+
+function visibleFocusableElements(container) {
+  return Array.from(container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(element => !element.disabled && !element.hidden && element.getClientRects().length);
+}
+
+function syncOverlayAccessibility() {
+  const nextOverlay = Array.from(document.querySelectorAll('.course-modal, .score-pad'))
+    .find(element => !element.hidden) || null;
+  const appShell = document.querySelector('.app-shell');
+  if (nextOverlay && !activeOverlay) overlayReturnFocus = document.activeElement;
+  if (appShell) {
+    appShell.inert = Boolean(nextOverlay);
+    if (nextOverlay) appShell.setAttribute('aria-hidden', 'true');
+    else appShell.removeAttribute('aria-hidden');
+  }
+  if (nextOverlay) {
+    nextOverlay.setAttribute('role', 'dialog');
+    nextOverlay.setAttribute('aria-modal', 'true');
+    if (nextOverlay !== activeOverlay) {
+      window.setTimeout(() => visibleFocusableElements(nextOverlay)[0]?.focus(), 0);
+    }
+  } else if (activeOverlay && overlayReturnFocus instanceof HTMLElement) {
+    window.setTimeout(() => overlayReturnFocus?.focus(), 0);
+    overlayReturnFocus = null;
+  }
+  activeOverlay = nextOverlay;
+}
+
+function setupOverlayAccessibility() {
+  const overlays = document.querySelectorAll('.course-modal, .score-pad');
+  const observer = new MutationObserver(syncOverlayAccessibility);
+  overlays.forEach(overlay => observer.observe(overlay, { attributes: true, attributeFilter: ['hidden'] }));
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Tab' || !activeOverlay) return;
+    const focusable = visibleFocusableElements(activeOverlay);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+  syncOverlayAccessibility();
 }
 
 async function showRulesDialog() {
@@ -5233,6 +5291,7 @@ function renderGameList(container, rounds, emptyText, status) {
     row.classList.toggle('playing-game-row', status === 'playing');
     row.classList.toggle('history-game-row', status === 'history');
     row.classList.toggle('active-game', round.id === activeGameId);
+    if (status === 'playing') row.classList.add(`live-color-${stableGameColorIndex(round.id)}`);
     row.innerHTML = `
       <div class="game-open" role="button" tabindex="0">
         <span class="playing-icon" aria-hidden="true"></span>
@@ -5281,7 +5340,7 @@ function renderGameList(container, rounds, emptyText, status) {
     if (status === 'history') {
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
-      deleteButton.className = 'danger';
+      deleteButton.className = 'danger history-delete-button';
       deleteButton.textContent = t('Delete');
       deleteButton.addEventListener('click', event => {
         event.stopPropagation();
@@ -5388,6 +5447,7 @@ function switchView(name) {
     els.syncBar.hidden = true;
   }
   if (currentView === 'play') renderPlayEntry();
+  renderHeaderStatus();
   renderScoringDeviceBar();
   saveState();
 }
@@ -5422,6 +5482,7 @@ function enterFromWelcome(action = 'home') {
     return;
   }
   if (!els.welcomeScreen || els.welcomeScreen.classList.contains('leaving')) return;
+  localStorage.setItem(WELCOME_SEEN_KEY, '1');
   els.welcomeScreen.classList.add('leaving');
   window.setTimeout(() => {
     els.welcomeScreen.hidden = true;
@@ -5529,7 +5590,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 5.1.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.0.')
     );
   });
 
@@ -5985,6 +6046,11 @@ function addListeners() {
 
 async function init() {
   const cloudReady = hasSupabaseConfig();
+  const hasSeenWelcome = localStorage.getItem(WELCOME_SEEN_KEY) === '1';
+  if (hasSeenWelcome && els.welcomeScreen) {
+    els.welcomeScreen.hidden = true;
+    welcomeReadyToEnter = true;
+  }
   customCourses = loadJson(COURSE_KEY, []);
   deletedRoundKeys = loadJson(DELETE_KEY, []);
   deletedCourseIds = loadJson(COURSE_DELETE_KEY, []);
@@ -6024,13 +6090,14 @@ async function init() {
   }
   renderCourseParInputs();
   addListeners();
+  setupOverlayAccessibility();
   render();
   switchView(currentView);
   try {
     await syncFromCloud(false);
     if (pendingSyncRound) await flushPendingRoundSync();
   } finally {
-    if (els.welcomeScreen) {
+    if (els.welcomeScreen && !hasSeenWelcome) {
       const remainingWelcomeTime = Math.max(0, WELCOME_MIN_DURATION_MS - (performance.now() - welcomeStartedAt));
       if (remainingWelcomeTime) {
         await new Promise(resolve => window.setTimeout(resolve, remainingWelcomeTime));
@@ -6080,12 +6147,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=180', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=181', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'simpleGolfSwReload.v180';
+    const reloadKey = 'simpleGolfSwReload.v181';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

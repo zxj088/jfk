@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.0.0 - Senior-friendly interface refresh
+
+Date: 2026-08-05
+
+Tag: `v6.0.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=181`
+
+What is new in this version:
+
+- Published as an independent site so the v5.1.3 `golf-score-vegas` site remains unchanged.
+- Returning users skip the welcome screen, while the home header always shows the ready state.
+- Setup explanations, minimum touch sizes, scorecard captions, navigation labels, and history cards are easier to read.
+- Modal background isolation, focus trapping, and focus restoration improve keyboard and screen-reader use.
+- Live-game accent colors remain stable when list order changes.
+- PWA identity is scoped to `/jfk/` and asset query version is `v181`.
+
 ### v5.1.3 - Compact player setup and live-game colors
 
 Date: 2026-08-05

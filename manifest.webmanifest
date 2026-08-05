@@ -1,8 +1,8 @@
 {
   "name": "Simple Golf Scorecard",
   "short_name": "Golf Scorecard",
-  "id": "/golf-score-vegas/",
-  "start_url": "./?source=pwa&v=180",
+  "id": "/jfk/",
+  "start_url": "./?source=pwa&v=181",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f4ef",
