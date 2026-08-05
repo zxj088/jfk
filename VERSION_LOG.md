@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.4 - Mobile scoring interaction polish
+
+Date: 2026-08-05
+
+Tag: `v6.1.4`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=186`
+
+What is new in this version:
+
+- The three recent courses share one compact mobile row, while setup explanations use on-demand help popovers.
+- History card actions float beside the menu trigger and Las Vegas team results align in stable Team A / Team B rows.
+- Scorecard dividers are lighter; under-par and Clear score-pad states have clearer red semantics.
+- Advancing the score pad automatically scrolls the newly selected player into view.
+- PWA asset query version is `v186`.
+
 ### v6.1.3 - Shared games with isolated preferences
 
 Date: 2026-08-05

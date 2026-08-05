@@ -8,16 +8,16 @@
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#1f6f5b">
   <title>Simple Golf Scorecard</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=185">
-  <link rel="stylesheet" href="./styles.css?v=185">
-  <link rel="stylesheet" href="./mobile-ux.css?v=185">
+  <link rel="manifest" href="./manifest.webmanifest?v=186">
+  <link rel="stylesheet" href="./styles.css?v=186">
+  <link rel="stylesheet" href="./mobile-ux.css?v=186">
 </head>
 <body>
   <div class="welcome-screen" id="welcomeScreen" role="status" aria-live="polite">
     <div class="welcome-shade"></div>
     <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
     <div class="welcome-copy">
-      <strong class="welcome-version">v6.1.3</strong>
+      <strong class="welcome-version">v6.1.4</strong>
       <p>Welcome to use the Simple Golf Scorecard</p>
       <p lang="zh-CN">欢迎使用简单高尔夫记分卡</p>
       <div class="welcome-actions" aria-label="Choose what to do" data-bilingual>
@@ -463,27 +463,39 @@
             <option value="4">4 players</option>
           </select>
         </label>
-        <label>
-          Scoring Mode
+        <div class="field-control">
+          <div class="field-label-row">
+          <label for="newGameScoreMode">Scoring Mode</label>
+          <details class="hint-popover">
+            <summary aria-label="About scoring mode" title="About scoring mode">?</summary>
+            <p>Gross uses actual strokes. Net subtracts handicap strokes.</p>
+          </details>
+          </div>
           <select id="newGameScoreMode">
             <option value="gross">Gross</option>
             <option value="net" selected>Net</option>
           </select>
-          <small class="field-help">Gross uses actual strokes. Net subtracts handicap strokes.</small>
-        </label>
-        <label class="toggle-row">
-          <span>Under Par Flip</span>
-          <input id="newGameBirdieFlip" type="checkbox" checked>
-        </label>
-        <p class="field-help option-help">When a player is under par, the losing team’s number may be reversed and the point difference can increase.</p>
-        <label class="landlord-setup" hidden>
-          Wolf selection
+        </div>
+        <div class="toggle-row option-with-hint">
+          <label for="newGameBirdieFlip"><span>Under Par Flip</span><input id="newGameBirdieFlip" type="checkbox" checked></label>
+          <details class="hint-popover">
+            <summary aria-label="About under par flip" title="About under par flip">?</summary>
+            <p>When a player is under par, the losing team’s number may be reversed and the point difference can increase.</p>
+          </details>
+        </div>
+        <div class="field-control landlord-setup" hidden>
+          <div class="field-label-row">
+          <label for="newLandlordMode">Wolf selection</label>
+          <details class="hint-popover">
+            <summary aria-label="About Wolf selection" title="About Wolf selection">?</summary>
+            <p>Result Rotation automatically chooses the next Wolf from each hole’s result. Fixed Wolf keeps the same player.</p>
+          </details>
+          </div>
           <select id="newLandlordMode">
             <option value="rotating">Rotating Wolf</option>
             <option value="fixed">Fixed Wolf</option>
           </select>
-          <small class="field-help">Result Rotation automatically chooses the next Wolf from each hole’s result. Fixed Wolf keeps the same player.</small>
-        </label>
+        </div>
         <div class="field-control landlord-setup" hidden>
           <div class="field-label-row">
             <label for="newLandlordMaxPoints">Maximum points per hole</label>
@@ -493,7 +505,6 @@
             </details>
           </div>
           <input id="newLandlordMaxPoints" type="number" min="1" max="20" inputmode="numeric" value="10">
-          <small class="field-help">Limits each Pack player’s win or loss on one hole; recorded strokes are never changed.</small>
         </div>
         <div class="toggle-row option-with-hint landlord-setup" hidden>
           <label for="newLandlordTieWins">
@@ -511,11 +522,16 @@
       <section class="game-wizard-step" data-game-step="4" hidden>
         <h3>4. Review and confirm</h3>
         <div class="game-review" id="gameReview"></div>
-        <label>
-          Edit code
+        <div class="field-control">
+          <div class="field-label-row">
+          <label for="newGameCode">Edit code</label>
+          <details class="hint-popover">
+            <summary aria-label="About edit code" title="About edit code">?</summary>
+            <p>Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round. Tell it to the other scorekeepers in your group.</p>
+          </details>
+          </div>
           <input id="newGameCode" type="text" inputmode="numeric" pattern="[0-9]{2}" maxlength="2" placeholder="00" required>
-          <small class="field-help">Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round. Tell it to the other scorekeepers in your group.</small>
-        </label>
+        </div>
       </section>
 
       <div class="action-row game-wizard-actions">
@@ -624,10 +640,10 @@
     </form>
   </div>
 
-  <script src="./sync-logic.js?v=185" defer></script>
-  <script src="./round-access.js?v=185" defer></script>
-  <script src="./i18n.js?v=185" defer></script>
-  <script src="./supabase-config.js?v=185"></script>
-  <script src="./app.js?v=185" defer></script>
+  <script src="./sync-logic.js?v=186" defer></script>
+  <script src="./round-access.js?v=186" defer></script>
+  <script src="./i18n.js?v=186" defer></script>
+  <script src="./supabase-config.js?v=186"></script>
+  <script src="./app.js?v=186" defer></script>
 </body>
 </html>

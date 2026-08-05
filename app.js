@@ -2539,7 +2539,7 @@ function updateGameTypeFields() {
   });
   els.newPlayerB2.required = playerCount === 4;
   els.newHandicapB2.required = playerCount === 4;
-  els.newGameBirdieFlip.closest('label').hidden = isLandlord;
+  els.newGameBirdieFlip.closest('.option-with-hint').hidden = isLandlord;
   const fixedMode = isLandlord && els.newLandlordMode?.value === 'fixed';
   document.querySelector('.fixed-landlord-player')?.toggleAttribute('hidden', !fixedMode);
   renderFixedLandlordPlayers();
@@ -2869,10 +2869,26 @@ function updateScorePad() {
   els.scorePadHole.textContent = t('Hole {hole} - Par {par}', { hole: holeIndex + 1, par });
   els.scorePadPlayer.textContent = scoreTargetLabel(activeScoreTarget);
   els.scorePadInput.textContent = value || String(par);
+  const tone = grossScoreTone(value, par);
+  els.scorePadInput.classList.toggle('gross-under-par', tone === 'gross-under-par');
+  els.scorePadInput.classList.toggle('gross-one-over', tone === 'gross-one-over');
+  els.scorePadInput.classList.toggle('gross-two-over', tone === 'gross-two-over');
   document.querySelectorAll('.score-quick button').forEach(button => {
+    if (button.hasAttribute('data-score-clear')) {
+      button.classList.toggle('active', !value);
+      return;
+    }
     const quickScore = String(par + Number(button.dataset.scoreOffset || 0));
-    button.classList.toggle('active', (value || String(par)) === quickScore);
+    button.classList.toggle('active', Boolean(value) && value === quickScore);
   });
+}
+
+function scrollScoreTargetIntoView() {
+  if (!activeScoreTarget) return;
+  window.setTimeout(() => {
+    const row = els.playPlayerRows?.querySelector(`[data-score-index="${activeScoreTarget?.scoreIndex}"]`);
+    row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 30);
 }
 
 function autoLandlordMultiplierForHole(holeIndex) {
@@ -2977,6 +2993,7 @@ function advanceScoreTargetOrClose({ allowNextHole = false } = {}) {
     scoreIndex: displayOrder[currentPosition + 1]
   };
   updateScorePad();
+  scrollScoreTargetIntoView();
 }
 
 async function commitScorePadValueAndAdvance(value) {
@@ -3213,6 +3230,7 @@ function renderPlayEntry() {
     const grossValue = scores[scoreIndex] || '';
     const netValue = holeValues.net[scoreIndex];
     const row = document.createElement('div');
+    row.dataset.scoreIndex = String(scoreIndex);
     row.className = state.gameType === 'landlord'
       ? `play-player-row landlord-player ${scoreIndex === displayedLandlordIndex ? 'is-landlord' : 'is-peasant'}`
       : `play-player-row ${scoreIndex < 2 ? 'team-a' : 'team-b'}`;
@@ -4573,10 +4591,10 @@ function escapeHtml(value) {
   })[char]);
 }
 
-function teamScoreChip(player1, player2, score) {
+function teamScoreChip(teamLabel, player1, player2, score) {
   const outcomeClass = score === 0 ? '' : (score > 0 ? ' winner' : ' loser');
   const winnerIcon = score > 0 ? '<span class="winner-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Zm0 2H5v1a4 4 0 0 0 4 4m7-5h3v1a4 4 0 0 1-4 4M12 12v5m-4 3h8"/></svg></span>' : '';
-  return `<span class="history-result${outcomeClass}">${winnerIcon}<span>${escapeHtml(player1)} + ${escapeHtml(player2)}</span><strong>${signedPoints(score)}</strong></span>`;
+  return `<span class="history-result${outcomeClass}">${winnerIcon}<small class="history-team-label">${escapeHtml(teamLabel)}</small><span>${escapeHtml(player1)} + ${escapeHtml(player2)}</span><strong>${signedPoints(score)}</strong></span>`;
 }
 
 function roundScoreSummaryHtml(round) {
@@ -4592,7 +4610,7 @@ function roundScoreSummaryHtml(round) {
   const [a1 = 'Player 1', a2 = 'Player 2', b1 = 'Player 3', b2 = 'Player 4'] = players;
   const mode = round?.scoreMode === 'net' ? 'net' : 'gross';
   const score = scoreRoundTotalsForMode(round, mode);
-  return `<span class="score-mode-line">${teamScoreChip(a1, a2, score.a)}${teamScoreChip(b1, b2, score.b)}</span>`;
+  return `<span class="score-mode-line">${teamScoreChip(t('Team A'), a1, a2, score.a)}${teamScoreChip(t('Team B'), b1, b2, score.b)}</span>`;
 }
 
 function scorecardPlayerTotals(round) {
@@ -5656,7 +5674,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.3.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.4.')
     );
   });
 
@@ -6213,12 +6231,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=185', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=186', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v185';
+    const reloadKey = 'jfk.simpleGolfSwReload.v186';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

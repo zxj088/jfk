@@ -37,6 +37,82 @@
 .history-game-row .game-meta { font-size: 13px; white-space: normal; }
 .history-game-row .game-score { font-size: 13px; }
 
+.history-row,
+.history-row .game-open,
+.history-row .game-copy,
+.history-row .game-top-line,
+.history-row .small-actions {
+  overflow: visible;
+}
+
+.history-game-row .score-mode-line {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.history-result {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "icon label score"
+    "icon names score";
+  align-items: center;
+  column-gap: 6px;
+}
+
+.history-result .winner-icon { grid-area: icon; }
+.history-result .history-team-label {
+  grid-area: label;
+  color: #667770;
+  font-size: 11px;
+  font-weight: 800;
+}
+.history-result > span:not(.winner-icon) {
+  grid-area: names;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.history-result > strong { grid-area: score; }
+
+.card-more-menu[open] .history-delete-button {
+  top: 2px;
+  right: 48px;
+  z-index: 20;
+  min-width: 72px;
+  min-height: 40px;
+  color: #9b302b;
+  background: #fff;
+}
+
+.scorecard th:nth-child(3),
+.scorecard td:nth-child(3),
+.landlord-table-wrap th:nth-child(3),
+.landlord-table-wrap td:nth-child(3) {
+  border-right-width: 1px;
+  border-right-color: #bfd1cb;
+}
+
+.score-pad-value.gross-under-par {
+  border-color: #b92f32;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  background: #c43b3b;
+}
+
+.score-quick button[data-score-offset="-2"].active,
+.score-quick button[data-score-offset="-1"].active {
+  border-color: #b92f32;
+  color: #fff;
+  background: #c43b3b;
+}
+
+.score-quick button[data-score-clear],
+.score-quick button[data-score-clear].active {
+  border-color: #d49b97;
+  color: #a52626;
+  -webkit-text-fill-color: #a52626;
+  background: #fff2f1;
+}
+
 .header-language-button {
   width: 44px;
   min-height: 44px;
@@ -46,6 +122,11 @@
 .field-help { font-size: 13px; line-height: 1.4; }
 
 @media (max-width: 430px) {
-  .recent-course-choices { grid-template-columns: 1fr; }
-  .history-game-row .score-mode-line { grid-template-columns: 1fr; }
+  .recent-course-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .recent-course-choices button {
+    min-height: 48px;
+    padding: 6px 4px;
+    font-size: 12px;
+    line-height: 1.2;
+  }
 }
