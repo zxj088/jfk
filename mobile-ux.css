@@ -45,9 +45,19 @@
   overflow: visible;
 }
 
-.history-game-row .score-mode-line {
+.history-game-row .score-mode-line,
+.playing-game-row .score-mode-line {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.playing-game-row .history-result {
+  min-width: 0;
+}
+
+.playing-game-row .history-result > span:not(.winner-icon) {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .history-result {

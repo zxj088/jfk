@@ -4,6 +4,22 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.5 - Stable live team layout
+
+Date: 2026-08-05
+
+Tag: `v6.1.5`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=187`
+
+What is new in this version:
+
+- The active Las Vegas game card uses two equal team columns instead of the legacy three-column score grid.
+- Team labels, player names, and points remain readable without vertical character wrapping on narrow phones.
+- PWA asset query version is `v187`.
+
 ### v6.1.4 - Mobile scoring interaction polish
 
 Date: 2026-08-05

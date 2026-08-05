@@ -14,7 +14,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=186/);
+  assert.match(html, /mobile-ux\.css\?v=187/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -35,6 +35,8 @@ test('live game colors are stable and history actions are secondary', () => {
   assert.match(app, /live-color-\$\{stableGameColorIndex\(round\.id\)\}/);
   assert.doesNotMatch(css, /#playingList \.game-row:nth-child/);
   assert.match(app, /card-more-menu/);
+  assert.match(mobileCss, /\.playing-game-row \.score-mode-line\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(mobileCss, /\.playing-game-row \.history-result > span:not\(\.winner-icon\)[\s\S]*word-break:\s*normal/);
   assert.doesNotMatch(html + app, /🎉|🌐/);
 });
 
