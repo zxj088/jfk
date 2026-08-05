@@ -14,7 +14,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=188/);
+  assert.match(html, /mobile-ux\.css\?v=189/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -49,10 +49,11 @@ test('history teams, floating delete menu, and score pad states remain readable'
   assert.match(mobileCss, /\.score-quick button\[data-score-clear\][\s\S]*color:\s*#a52626/);
 });
 
-test('score entry scrolls the completed player row into view before advancing', () => {
-  assert.match(app, /function scrollScoreTargetIntoView\(scoreIndex = activeScoreTarget\?\.scoreIndex\)/);
-  assert.match(app, /updateScorePad\(\);\s*scrollScoreTargetIntoView\(scoreIndex\);/);
-  assert.match(app, /scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/);
+test('score entry scrolls up exactly one player row when advancing', () => {
+  assert.match(app, /function scrollNextScoreTargetUp\(previousScoreIndex, nextScoreIndex\)/);
+  assert.match(app, /rowStep = nextRow\.getBoundingClientRect\(\)\.top - previousRow\.getBoundingClientRect\(\)\.top/);
+  assert.match(app, /window\.scrollBy\(\{ top: rowStep, behavior: 'smooth' \}\)/);
+  assert.match(app, /updateScorePad\(\);\s*scrollNextScoreTargetUp\(previousScoreIndex, nextScoreIndex\);/);
   assert.match(app, /data-score-index/);
   assert.match(mobileCss, /\.play-score-button\.under-par\s*\{[\s\S]*color:\s*#fff[\s\S]*background:\s*#c43b3b/);
   assert.match(mobileCss, /\.play-score-button small\s*\{[\s\S]*white-space:\s*nowrap/);

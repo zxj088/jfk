@@ -2883,11 +2883,14 @@ function updateScorePad() {
   });
 }
 
-function scrollScoreTargetIntoView(scoreIndex = activeScoreTarget?.scoreIndex) {
-  if (!Number.isInteger(scoreIndex)) return;
+function scrollNextScoreTargetUp(previousScoreIndex, nextScoreIndex) {
+  if (!Number.isInteger(previousScoreIndex) || !Number.isInteger(nextScoreIndex)) return;
   window.setTimeout(() => {
-    const row = els.playPlayerRows?.querySelector(`[data-score-index="${scoreIndex}"]`);
-    row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const previousRow = els.playPlayerRows?.querySelector(`[data-score-index="${previousScoreIndex}"]`);
+    const nextRow = els.playPlayerRows?.querySelector(`[data-score-index="${nextScoreIndex}"]`);
+    if (!previousRow || !nextRow) return;
+    const rowStep = nextRow.getBoundingClientRect().top - previousRow.getBoundingClientRect().top;
+    if (rowStep > 0) window.scrollBy({ top: rowStep, behavior: 'smooth' });
   }, 30);
 }
 
@@ -2954,7 +2957,6 @@ function commitScorePadValue(value) {
   renderPlayEntry();
   renderLandlordLeaderboard();
   updateScorePad();
-  scrollScoreTargetIntoView(scoreIndex);
 }
 
 function clearScorePadValue() {
@@ -2989,11 +2991,14 @@ function advanceScoreTargetOrClose({ allowNextHole = false } = {}) {
     closeScorePad();
     return;
   }
+  const previousScoreIndex = activeScoreTarget.scoreIndex;
+  const nextScoreIndex = displayOrder[currentPosition + 1];
   activeScoreTarget = {
     ...activeScoreTarget,
-    scoreIndex: displayOrder[currentPosition + 1]
+    scoreIndex: nextScoreIndex
   };
   updateScorePad();
+  scrollNextScoreTargetUp(previousScoreIndex, nextScoreIndex);
 }
 
 async function commitScorePadValueAndAdvance(value) {
@@ -5674,7 +5679,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.6.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.7.')
     );
   });
 
@@ -6231,12 +6236,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=188', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=189', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v188';
+    const reloadKey = 'jfk.simpleGolfSwReload.v189';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

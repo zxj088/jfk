@@ -4,6 +4,22 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.7 - Visible one-row score advance
+
+Date: 2026-08-05
+
+Tag: `v6.1.7`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=189`
+
+What is new in this version:
+
+- After a score is entered and the pad advances, the page scrolls upward by the measured distance between the current and next player rows.
+- The active player therefore moves up exactly one visible score row instead of scrolling an already visible completed row.
+- PWA asset query version is `v189`.
+
 ### v6.1.6 - Score entry focus and marker polish
 
 Date: 2026-08-05
