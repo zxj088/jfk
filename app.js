@@ -1,19 +1,19 @@
 const t = window.VEGAS_I18N.t;
-const STORAGE_KEY = 'vegasGolfState.v1';
-const HISTORY_KEY = 'vegasGolfHistory.v1';
-const COURSE_KEY = 'vegasGolfCourses.v1';
-const CLIENT_KEY = 'vegasGolfClientId.v1';
-const SCORING_PLAYER_KEY = 'vegasGolfScoringPlayer.v1';
-const DELETE_KEY = 'vegasGolfDeletedRounds.v1';
-const COURSE_DELETE_KEY = 'vegasGolfDeletedCourses.v1';
-const PENDING_SYNC_KEY = 'vegasGolfPendingRound.v1';
+const STORAGE_KEY = 'jfk.vegasGolfState.v1';
+const HISTORY_KEY = 'jfk.vegasGolfHistory.v1';
+const COURSE_KEY = 'jfk.vegasGolfCourses.v1';
+const CLIENT_KEY = 'jfk.vegasGolfClientId.v1';
+const SCORING_PLAYER_KEY = 'jfk.vegasGolfScoringPlayer.v1';
+const DELETE_KEY = 'jfk.vegasGolfDeletedRounds.v1';
+const COURSE_DELETE_KEY = 'jfk.vegasGolfDeletedCourses.v1';
+const PENDING_SYNC_KEY = 'jfk.vegasGolfPendingRound.v1';
 const GAME_LIMIT = 200;
 const CLOUD_ROUND_LIMIT = 1000;
 const EDIT_LOCK_TTL_MS = 12000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
 const WELCOME_MIN_DURATION_MS = 1000;
-const WELCOME_SEEN_KEY = 'simpleGolfWelcomeSeen.v1';
-const SCORE_DETAIL_KEY = 'simpleGolfScoreDetail.v1';
+const WELCOME_SEEN_KEY = 'jfk.simpleGolfWelcomeSeen.v1';
+const SCORE_DETAIL_KEY = 'jfk.simpleGolfScoreDetail.v1';
 const ROLE_ICON_PATHS = {
   landlord: './assets/roles/landlord-golfer.png',
   peasant: './assets/roles/farmer-golfer.png'
@@ -5656,7 +5656,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.1.')
     );
   });
 
@@ -6213,12 +6213,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=182', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=183', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'simpleGolfSwReload.v182';
+    const reloadKey = 'jfk.simpleGolfSwReload.v183';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

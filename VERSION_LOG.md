@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.1 - Complete old/new site isolation
+
+Date: 2026-08-05
+
+Tag: `v6.1.1`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=183`
+
+What is new in this version:
+
+- Every browser storage key is namespaced under `jfk.` so the old path cannot read changes made by the new site.
+- Device identity, scoring identity, edit ownership, language, welcome state, and PWA reload state are independent.
+- Cloud rounds and courses use the separate Supabase room `jfk-v1` instead of the old site’s `default` room.
+- PWA asset query version is `v183`.
+
 ### v6.1.0 - Complete mobile senior UX pass
 
 Date: 2026-08-05
