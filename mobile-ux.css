@@ -83,12 +83,14 @@
 }
 .history-result > strong { grid-area: score; }
 
-.card-more-menu[open] .history-delete-button {
-  top: 2px;
-  right: 48px;
-  z-index: 20;
-  min-width: 72px;
-  min-height: 40px;
+.game-row .small-actions > button,
+.history-game-row .small-actions .history-delete-button {
+  width: 64px;
+  min-width: 64px;
+  min-height: 44px;
+}
+
+.history-game-row .small-actions .history-delete-button {
   color: #9b302b;
   background: #fff;
 }
@@ -123,6 +125,11 @@
 
 body.score-pad-open .app-shell {
   padding-bottom: calc(430px + env(safe-area-inset-bottom));
+}
+
+.score-pad {
+  align-items: start;
+  padding-top: min(var(--score-pad-top, 360px), calc(100dvh - 300px));
 }
 
 .flip-bomb-icon {

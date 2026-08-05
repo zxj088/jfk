@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.9 - Score pad anchored below first player
+
+Date: 2026-08-05
+
+Tag: `v6.1.9`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=191`
+
+What is new in this version:
+
+- The score pad opens directly below the first visible player row instead of at the bottom of a tall phone screen.
+- The pad stays fixed while subsequent player rows move upward into the same scoring position.
+- The top position is measured from the rendered first player card and capped for shorter screens.
+- Completed-game cards show a direct top-right Delete button matching the active-game Modify action.
+- PWA asset query version is `v191`.
+
 ### v6.1.8 - Signed wins, bomb flip marker, reliable score scroll
 
 Date: 2026-08-05

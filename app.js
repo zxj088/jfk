@@ -3069,10 +3069,19 @@ async function commitDisplayedScorePadValueAndAdvance() {
   await commitScorePadValueAndAdvance(value);
 }
 
+function positionScorePadBelowFirstPlayer() {
+  if (!els.scorePad) return;
+  const firstPlayerRow = els.playPlayerRows?.querySelector('[data-score-index]');
+  const firstPlayerBottom = firstPlayerRow?.getBoundingClientRect().bottom;
+  if (!Number.isFinite(firstPlayerBottom)) return;
+  els.scorePad.style.setProperty('--score-pad-top', `${Math.round(firstPlayerBottom + 8)}px`);
+}
+
 function openScorePad(holeIndex, scoreIndex) {
   if (!isEditing || !els.scorePad) return;
   activeScoreTarget = { holeIndex, scoreIndex };
   document.body.classList.add('score-pad-open');
+  positionScorePadBelowFirstPlayer();
   els.scorePad.hidden = false;
   updateScorePad();
 }
@@ -3080,6 +3089,7 @@ function openScorePad(holeIndex, scoreIndex) {
 function closeScorePad() {
   if (!els.scorePad) return;
   els.scorePad.hidden = true;
+  els.scorePad.style.removeProperty('--score-pad-top');
   document.body.classList.remove('score-pad-open');
   activeScoreTarget = null;
 }
@@ -5438,9 +5448,6 @@ function renderGameList(container, rounds, emptyText, status) {
       row.querySelector('.small-actions').append(editInfoButton);
     }
     if (status === 'history') {
-      const menu = document.createElement('details');
-      menu.className = 'card-more-menu';
-      menu.innerHTML = `<summary aria-label="${t('More actions')}">•••</summary>`;
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
       deleteButton.className = 'danger history-delete-button';
@@ -5449,9 +5456,7 @@ function renderGameList(container, rounds, emptyText, status) {
         event.stopPropagation();
         deleteHistoryGame(round);
       });
-      menu.append(deleteButton);
-      menu.addEventListener('click', event => event.stopPropagation());
-      row.querySelector('.small-actions').append(menu);
+      row.querySelector('.small-actions').append(deleteButton);
     }
     container.append(row);
   });
@@ -5712,7 +5717,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.8.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.9.')
     );
   });
 
@@ -6269,12 +6274,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=190', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=191', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v190';
+    const reloadKey = 'jfk.simpleGolfSwReload.v191';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
