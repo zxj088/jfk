@@ -8,15 +8,16 @@
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#1f6f5b">
   <title>Simple Golf Scorecard</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=181">
-  <link rel="stylesheet" href="./styles.css?v=181">
+  <link rel="manifest" href="./manifest.webmanifest?v=182">
+  <link rel="stylesheet" href="./styles.css?v=182">
+  <link rel="stylesheet" href="./mobile-ux.css?v=182">
 </head>
 <body>
   <div class="welcome-screen" id="welcomeScreen" role="status" aria-live="polite">
     <div class="welcome-shade"></div>
-    <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true">🌐</span></button>
+    <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
     <div class="welcome-copy">
-      <strong class="welcome-version">v6.0</strong>
+      <strong class="welcome-version">v6.1</strong>
       <p>Welcome to use the Simple Golf Scorecard</p>
       <p lang="zh-CN">欢迎使用简单高尔夫记分卡</p>
       <div class="welcome-actions" aria-label="Choose what to do" data-bilingual>
@@ -47,7 +48,7 @@
         <h1 id="appTitle">Simple Golf Scorecard</h1>
         <p class="header-status" id="headerStatus"><span class="header-status-check" aria-hidden="true">✓</span><span id="headerStatusText">No sign-in · Ready to play</span></p>
       </div>
-      <button id="languageButton" class="header-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true">🌐</span></button>
+      <button id="languageButton" class="header-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
       <button class="top-menu-button" id="topMenuButton" type="button" aria-label="Open menu" title="Open menu" aria-expanded="false" aria-controls="topActions"><span></span><span></span><span></span></button>
       <div class="top-actions" id="topActions">
         <button id="shareCurrentScorecard" type="button" hidden>Share scorecard</button>
@@ -104,13 +105,13 @@
           </div>
 
           <div class="play-hole-strip">
-            <button id="playHolePrev" type="button" aria-label="Previous hole">‹</button>
+            <button id="playHolePrev" type="button" aria-label="Previous hole"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
             <div id="playHoleSwipe">
               <span id="playHolePar">Par 4</span>
               <strong id="playHoleNumber">Hole 1</strong>
               <span id="playHoleIndex">Index 1</span>
             </div>
-            <button id="playHoleNext" type="button" aria-label="Next hole">›</button>
+            <button id="playHoleNext" type="button" aria-label="Next hole"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
           </div>
 
           <section class="landlord-actions" id="landlordActions" hidden>
@@ -125,6 +126,7 @@
                 <button type="button" data-multiplier="4">Manual x4</button>
                 <span class="automatic-bomb" id="landlordAutomaticBomb">Bomb --</span>
               </div>
+              <small class="field-help">Special-score multipliers are automatic. Manual x2 or x4 adds your chosen multiplier for this hole.</small>
             </div>
             <div class="landlord-hole-result" id="landlordHoleResult"></div>
           </section>
@@ -134,6 +136,10 @@
       </section>
 
       <section class="view" id="leaderboardView">
+        <div class="score-display-toolbar">
+          <span>Score display</span>
+          <button id="scoreDetailToggle" type="button" aria-pressed="false">Show full score</button>
+        </div>
         <div class="leaderboard-tools">
           <div class="control-panel">
             <label class="course-control" aria-label="Course">
@@ -164,12 +170,12 @@
                 <th>Index</th>
                 <th class="team-a-cell"><input id="playerA1" type="text" autocomplete="off" aria-label="Team A player 1"></th>
                 <th class="team-a-cell"><input id="playerA2" type="text" autocomplete="off" aria-label="Team A player 2"></th>
-                <th class="team-a-cell calc-head">A#</th>
-                <th class="team-a-cell calc-head">A+/-</th>
+                <th class="team-a-cell calc-head" title="Team A combined number">A Pair</th>
+                <th class="team-a-cell calc-head" title="Team A hole points">A Points</th>
                 <th class="team-b-cell"><input id="playerB1" type="text" autocomplete="off" aria-label="Team B player 1"></th>
                 <th class="team-b-cell"><input id="playerB2" type="text" autocomplete="off" aria-label="Team B player 2"></th>
-                <th class="team-b-cell calc-head">B#</th>
-                <th class="team-b-cell calc-head">B+/-</th>
+                <th class="team-b-cell calc-head" title="Team B combined number">B Pair</th>
+                <th class="team-b-cell calc-head" title="Team B hole points">B Points</th>
               </tr>
             </thead>
             <tbody id="scoreRows"></tbody>
@@ -280,7 +286,7 @@
           <p class="eyebrow" id="courseModalEyebrow">New Course</p>
           <h2>Add Course</h2>
         </div>
-        <button class="icon-button" id="cancelCourse" type="button" aria-label="Close add course" title="Close">x</button>
+        <button class="icon-button" id="cancelCourse" type="button" aria-label="Close add course" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
 
       <label>
@@ -334,7 +340,7 @@
           <p class="eyebrow">Course Search</p>
           <h2>Search Course</h2>
         </div>
-        <button class="icon-button" id="cancelCourseSearch" type="button" aria-label="Close course search" title="Close">x</button>
+        <button class="icon-button" id="cancelCourseSearch" type="button" aria-label="Close course search" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
 
       <div class="search-tabs" aria-label="Course search source">
@@ -376,13 +382,18 @@
           <p class="eyebrow">Game Setup</p>
           <h2>New Game</h2>
         </div>
-        <button class="icon-button" id="cancelGame" type="button" aria-label="Close new game" title="Close">x</button>
+        <button class="icon-button" id="cancelGame" type="button" aria-label="Close new game" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
 
       <div class="game-wizard-progress" id="gameWizardProgress" aria-label="Game setup progress"></div>
 
       <section class="game-wizard-step" data-game-step="1">
         <h3>1. Select course</h3>
+        <div class="recent-course-block" id="recentCourseBlock" hidden>
+          <strong>Recent courses</strong>
+          <div class="recent-course-choices" id="recentCourseChoices"></div>
+          <span class="field-help">Choose a recent course, or use the filters below for another course.</span>
+        </div>
         <div class="game-options game-location-options">
         <label>
           Country
@@ -471,6 +482,7 @@
             <option value="rotating">Rotating Wolf</option>
             <option value="fixed">Fixed Wolf</option>
           </select>
+          <small class="field-help">Result Rotation automatically chooses the next Wolf from each hole’s result. Fixed Wolf keeps the same player.</small>
         </label>
         <div class="field-control landlord-setup" hidden>
           <div class="field-label-row">
@@ -481,6 +493,7 @@
             </details>
           </div>
           <input id="newLandlordMaxPoints" type="number" min="1" max="20" inputmode="numeric" value="10">
+          <small class="field-help">Limits each Pack player’s win or loss on one hole; recorded strokes are never changed.</small>
         </div>
         <div class="toggle-row option-with-hint landlord-setup" hidden>
           <label for="newLandlordTieWins">
@@ -501,7 +514,7 @@
         <label>
           Edit code
           <input id="newGameCode" type="text" inputmode="numeric" pattern="[0-9]{2}" maxlength="2" placeholder="00" required>
-          <small class="field-help">Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round.</small>
+          <small class="field-help">Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round. Tell it to the other scorekeepers in your group.</small>
         </label>
       </section>
 
@@ -521,7 +534,7 @@
           <p class="eyebrow" id="scorePadHole">Hole 1 - Par 4</p>
           <h2 id="scorePadPlayer">Player</h2>
         </div>
-        <button class="icon-button" id="scorePadClose" type="button" aria-label="Close score entry" title="Close">x</button>
+        <button class="icon-button" id="scorePadClose" type="button" aria-label="Close score entry" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
 
       <div class="score-stepper" aria-label="Score entry">
@@ -611,10 +624,10 @@
     </form>
   </div>
 
-  <script src="./sync-logic.js?v=181" defer></script>
-  <script src="./round-access.js?v=181" defer></script>
-  <script src="./i18n.js?v=181" defer></script>
-  <script src="./supabase-config.js?v=181"></script>
-  <script src="./app.js?v=181" defer></script>
+  <script src="./sync-logic.js?v=182" defer></script>
+  <script src="./round-access.js?v=182" defer></script>
+  <script src="./i18n.js?v=182" defer></script>
+  <script src="./supabase-config.js?v=182"></script>
+  <script src="./app.js?v=182" defer></script>
 </body>
 </html>

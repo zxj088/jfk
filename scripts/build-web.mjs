@@ -6,6 +6,7 @@ const outDir = join(root, 'www');
 const files = [
   'index.html',
   'styles.css',
+  'mobile-ux.css',
   'sync-logic.js',
   'round-access.js',
   'i18n.js',

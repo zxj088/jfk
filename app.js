@@ -13,6 +13,7 @@ const EDIT_LOCK_TTL_MS = 12000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
 const WELCOME_MIN_DURATION_MS = 1000;
 const WELCOME_SEEN_KEY = 'simpleGolfWelcomeSeen.v1';
+const SCORE_DETAIL_KEY = 'simpleGolfScoreDetail.v1';
 const ROLE_ICON_PATHS = {
   landlord: './assets/roles/landlord-golfer.png',
   peasant: './assets/roles/farmer-golfer.png'
@@ -22,6 +23,7 @@ let welcomeReadyToEnter = false;
 let pendingWelcomeAction = '';
 let activeOverlay = null;
 let overlayReturnFocus = null;
+let scoreDetailMode = localStorage.getItem(SCORE_DETAIL_KEY) === 'full' ? 'full' : 'compact';
 
 function roleIconHtml(isLandlord, className = '') {
   const role = isLandlord ? 'landlord' : 'peasant';
@@ -522,6 +524,7 @@ const els = {
   courseSelect: document.querySelector('#courseSelect'),
   birdieFlip: document.querySelector('#birdieFlip'),
   scoreMode: document.querySelector('#scoreMode'),
+  scoreDetailToggle: document.querySelector('#scoreDetailToggle'),
   players: [
     document.querySelector('#playerA1'),
     document.querySelector('#playerA2'),
@@ -600,6 +603,8 @@ const els = {
   newGameCountry: document.querySelector('#newGameCountry'),
   newGameRegion: document.querySelector('#newGameRegion'),
   newGameCourse: document.querySelector('#newGameCourse'),
+  recentCourseBlock: document.querySelector('#recentCourseBlock'),
+  recentCourseChoices: document.querySelector('#recentCourseChoices'),
   newGameCode: document.querySelector('#newGameCode'),
   newGameTeeTime: document.querySelector('#newGameTeeTime'),
   newGameBirdieFlip: document.querySelector('#newGameBirdieFlip'),
@@ -1935,6 +1940,21 @@ function renderNewGameCourses(preferredCourseId = state.courseId) {
     : courses[0].id;
 }
 
+function recentGameCourses() {
+  const ids = [state.courseId, ...savedRounds.map(round => round.courseId)].filter(Boolean);
+  const seen = new Set();
+  return ids.map(id => allCourses().find(course => course.id === id))
+    .filter(course => course && !seen.has(course.id) && seen.add(course.id))
+    .slice(0, 3);
+}
+
+function renderRecentCourseChoices() {
+  const courses = recentGameCourses();
+  if (!els.recentCourseBlock || !els.recentCourseChoices) return;
+  els.recentCourseBlock.hidden = !courses.length;
+  els.recentCourseChoices.innerHTML = courses.map(course => `<button type="button" data-recent-course="${escapeHtml(course.id)}">${escapeHtml(course.name)}</button>`).join('');
+}
+
 function renderCourseSearchCountries() {
   const countryOptions = [`<option value="">${t('All countries')}</option>`]
     .concat(COURSE_SEARCH_AREAS.map(area => `<option value="${area.country}">${area.country}</option>`));
@@ -2682,10 +2702,14 @@ function fillHistoricalPlayerHandicap(playerInput, handicapInput) {
 }
 
 function openGameModal() {
+  overlayReturnFocus = document.activeElement;
   els.gameForm.reset();
   editingGameInfoId = '';
-  setNewGameArea(DEFAULT_COURSE_COUNTRY, DEFAULT_COURSE_REGION);
+  const preferredCourse = allCourses().find(course => course.id === state.courseId);
+  const preferredArea = preferredCourse ? areaForCourse(preferredCourse) : { country: DEFAULT_COURSE_COUNTRY, region: DEFAULT_COURSE_REGION };
+  setNewGameArea(preferredArea.country, preferredArea.region);
   renderNewGameCourses(state.courseId);
+  renderRecentCourseChoices();
   els.newGameBirdieFlip.checked = true;
   els.newGameScoreMode.value = 'net';
   els.newGameType.value = 'vegas';
@@ -2710,6 +2734,7 @@ function openGameModal() {
   updateGameTypeFields();
   showGameWizardStep(1);
   els.gameModal.hidden = false;
+  els.gameForm.dataset.dirty = 'false';
   els.newGameCountry.focus();
 }
 
@@ -2721,6 +2746,7 @@ function openEditGameInfoModal(round) {
   const area = areaForCourse(course);
   setNewGameArea(area.country, area.region);
   renderNewGameCourses(normalized.courseId);
+  renderRecentCourseChoices();
   els.newGameBirdieFlip.checked = normalized.underParFlip;
   els.newGameScoreMode.value = normalized.scoreMode;
   els.newGameType.value = normalized.gameType;
@@ -2746,6 +2772,7 @@ function openEditGameInfoModal(round) {
   els.newFixedLandlordPlayer.value = String(normalized.landlord.fixedLandlordIndex);
   showGameWizardStep(1);
   els.gameModal.hidden = false;
+  els.gameForm.dataset.dirty = 'false';
   els.newGameCountry.focus();
 }
 
@@ -3977,7 +4004,7 @@ function syncOverlayAccessibility() {
   const nextOverlay = Array.from(document.querySelectorAll('.course-modal, .score-pad'))
     .find(element => !element.hidden) || null;
   const appShell = document.querySelector('.app-shell');
-  if (nextOverlay && !activeOverlay) overlayReturnFocus = document.activeElement;
+  if (nextOverlay && !activeOverlay && !overlayReturnFocus) overlayReturnFocus = document.activeElement;
   if (appShell) {
     appShell.inert = Boolean(nextOverlay);
     if (nextOverlay) appShell.setAttribute('aria-hidden', 'true');
@@ -3989,8 +4016,9 @@ function syncOverlayAccessibility() {
     if (nextOverlay !== activeOverlay) {
       window.setTimeout(() => visibleFocusableElements(nextOverlay)[0]?.focus(), 0);
     }
-  } else if (activeOverlay && overlayReturnFocus instanceof HTMLElement) {
-    window.setTimeout(() => overlayReturnFocus?.focus(), 0);
+  } else if (activeOverlay) {
+    const returnTarget = activeOverlay === els.gameModal ? els.newGame : overlayReturnFocus;
+    window.setTimeout(() => returnTarget?.focus(), 0);
     overlayReturnFocus = null;
   }
   activeOverlay = nextOverlay;
@@ -4001,6 +4029,18 @@ function setupOverlayAccessibility() {
   const observer = new MutationObserver(syncOverlayAccessibility);
   overlays.forEach(overlay => observer.observe(overlay, { attributes: true, attributeFilter: ['hidden'] }));
   document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && activeOverlay) {
+      if (activeOverlay === els.gameModal && els.gameForm.dataset.dirty === 'true') return;
+      event.preventDefault();
+      if (activeOverlay === els.gameModal) closeGameModal();
+      else if (activeOverlay === els.courseModal) closeCourseModal();
+      else if (activeOverlay === els.courseSearchModal) closeCourseSearchModal();
+      else if (activeOverlay === els.scorePad) closeScorePad();
+      else if (activeOverlay === els.shareCardModal) closeShareCard();
+      else if (activeOverlay === els.historyRangeModal) cancelHistoryRangeModal();
+      else if (activeOverlay === els.appDialog) closeAppDialog(null);
+      return;
+    }
     if (event.key !== 'Tab' || !activeOverlay) return;
     const focusable = visibleFocusableElements(activeOverlay);
     if (!focusable.length) return;
@@ -4088,6 +4128,18 @@ function renderScoreStrip() {
   applySignedClass(els.tableTeamBTotal, total.b);
 }
 
+function renderScoreDetailMode() {
+  const isFull = scoreDetailMode === 'full';
+  document.querySelector('#leaderboardView .scorecard')?.classList.toggle('full-score-detail', isFull);
+  document.querySelector('#leaderboardView .scorecard')?.classList.toggle('compact-score-detail', !isFull);
+  els.landlordLeaderboard?.classList.toggle('full-score-detail', isFull);
+  els.landlordLeaderboard?.classList.toggle('compact-score-detail', !isFull);
+  if (els.scoreDetailToggle) {
+    els.scoreDetailToggle.textContent = t(isFull ? 'Show simple score' : 'Show full score');
+    els.scoreDetailToggle.setAttribute('aria-pressed', String(isFull));
+  }
+}
+
 function renderLandlordLeaderboard() {
   const active = state.gameType === 'landlord';
   const vegasScorecard = document.querySelector('#leaderboardView .scorecard');
@@ -4098,6 +4150,7 @@ function renderLandlordLeaderboard() {
   document.querySelector('.leaderboard-tools').hidden = true;
   els.landlordLeaderboard.hidden = !active;
   if (!active) {
+    renderScoreDetailMode();
     return;
   }
   for (let holeIndex = 0; holeIndex < 18; holeIndex += 1) {
@@ -4177,6 +4230,7 @@ function renderLandlordLeaderboard() {
         <tfoot><tr><th>${escapeHtml(t('Total'))}</th><th>${course.pars.reduce((sum, par) => sum + par, 0)}</th><th>—</th><th>—</th>${totalCells}</tr></tfoot>
       </table>
     </div>`;
+  renderScoreDetailMode();
 }
 
 function renderHoles() {
@@ -4521,8 +4575,8 @@ function escapeHtml(value) {
 
 function teamScoreChip(player1, player2, score) {
   const outcomeClass = score === 0 ? '' : (score > 0 ? ' winner' : ' loser');
-  const winnerIcon = score > 0 ? '<span class="winner-icon" aria-hidden="true">🎉</span>' : '';
-  return `<span class="team-result${outcomeClass}">${winnerIcon}${escapeHtml(player1)}+${escapeHtml(player2)} ${score}</span>`;
+  const winnerIcon = score > 0 ? '<span class="winner-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h8v4a4 4 0 0 1-8 0V4Zm0 2H5v1a4 4 0 0 0 4 4m7-5h3v1a4 4 0 0 1-4 4M12 12v5m-4 3h8"/></svg></span>' : '';
+  return `<span class="history-result${outcomeClass}">${winnerIcon}<span>${escapeHtml(player1)} + ${escapeHtml(player2)}</span><strong>${signedPoints(score)}</strong></span>`;
 }
 
 function roundScoreSummaryHtml(round) {
@@ -4530,27 +4584,15 @@ function roundScoreSummaryHtml(round) {
   if (round.gameType === 'landlord') {
     const total = landlordTotals(normalizeRound(round));
     return `<span class="landlord-score-line player-count-${players.length}">
-      <span class="landlord-mode-row"><span class="mode-chip">${escapeHtml(t('Fight the Landlord'))} · ${escapeHtml(roundModeLine(round))}</span></span>
       <span class="landlord-player-row">
-        ${players.map((player, index) => `<span class="team-result${total.points[index] > 0 ? ' winner' : (total.points[index] < 0 ? ' loser' : '')}">${escapeHtml(player)} ${signedPoints(total.points[index])}</span>`).join('')}
+        ${players.map((player, index) => `<span class="history-result${total.points[index] > 0 ? ' winner' : (total.points[index] < 0 ? ' loser' : '')}"><span>${escapeHtml(player)}</span><strong>${signedPoints(total.points[index])}</strong></span>`).join('')}
       </span>
     </span>`;
   }
   const [a1 = 'Player 1', a2 = 'Player 2', b1 = 'Player 3', b2 = 'Player 4'] = players;
-  const modes = [
-    { id: 'gross', label: t('Gross') },
-    { id: 'net', label: t('Net') }
-  ];
-  return `
-    ${modes.map(mode => {
-      const score = scoreRoundTotalsForMode(round, mode.id);
-      return `<span class="score-mode-line">
-        <span class="mode-chip">${escapeHtml(mode.label)}</span>
-        ${teamScoreChip(a1, a2, score.a)}
-        ${teamScoreChip(b1, b2, score.b)}
-      </span>`;
-    }).join('')}
-  `.trim();
+  const mode = round?.scoreMode === 'net' ? 'net' : 'gross';
+  const score = scoreRoundTotalsForMode(round, mode);
+  return `<span class="score-mode-line">${teamScoreChip(a1, a2, score.a)}${teamScoreChip(b1, b2, score.b)}</span>`;
 }
 
 function scorecardPlayerTotals(round) {
@@ -4707,7 +4749,7 @@ function drawRoundResultChip(ctx, x, y, width, text, score) {
   roundedRectPath(ctx, x, y, width, 58, 29);
   ctx.fill();
   ctx.stroke();
-  drawScorecardText(ctx, `${isWinner ? '🎉 ' : ''}${text} ${score}`, x + width / 2, y + 29, {
+  drawScorecardText(ctx, `${isWinner ? '◆ ' : ''}${text} ${score}`, x + width / 2, y + 29, {
     color: isWinner ? '#118747' : (isLoser ? '#b3453f' : '#17221f'),
     font: 'bold 23px Arial, Microsoft YaHei, sans-serif',
     maxWidth: width - 24
@@ -4977,7 +5019,7 @@ async function createScorecardAsset(round) {
   const rowHeight = 78;
   const tableWidth = 910;
   const columns = [30, 32, 32, 121, 121, 80, 78, 121, 121, 88, 86];
-  const labels = [t('Hole'), t('Par'), t('Index'), players[0], players[1], 'A#', 'A+/-', players[2], players[3], 'B#', 'B+/-'];
+  const labels = [t('Hole'), t('Par'), t('Index'), players[0], players[1], t('A Pair'), t('A Points'), players[2], players[3], t('B Pair'), t('B Points')];
 
   ctx.fillStyle = '#f6f7f4';
   ctx.fillRect(0, 0, logicalWidth, logicalHeight);
@@ -5300,12 +5342,14 @@ function renderGameList(container, rounds, emptyText, status) {
             <span class="game-line game-main"></span>
             <span class="small-actions"></span>
           </span>
+          <span class="game-line game-meta"></span>
           <span class="game-line game-score"></span>
         </span>
       </div>
     `;
     row.querySelector('.playing-icon').hidden = status !== 'playing';
-    row.querySelector('.game-main').textContent = `${round.courseName || t('Course')} | ${roundListDate(round)}`;
+    row.querySelector('.game-main').textContent = round.courseName || t('Course');
+    row.querySelector('.game-meta').textContent = `${roundListDate(round)} · ${round.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${roundModeLine(round)}`;
     row.querySelector('.game-score').innerHTML = roundScoreSummaryHtml(round);
     const destination = window.SIMPLE_GOLF_ROUND_ACCESS.openDestination(round, status, clientId);
     const destinationText = status === 'history'
@@ -5338,6 +5382,9 @@ function renderGameList(container, rounds, emptyText, status) {
       row.querySelector('.small-actions').append(editInfoButton);
     }
     if (status === 'history') {
+      const menu = document.createElement('details');
+      menu.className = 'card-more-menu';
+      menu.innerHTML = `<summary aria-label="${t('More actions')}">•••</summary>`;
       const deleteButton = document.createElement('button');
       deleteButton.type = 'button';
       deleteButton.className = 'danger history-delete-button';
@@ -5346,7 +5393,9 @@ function renderGameList(container, rounds, emptyText, status) {
         event.stopPropagation();
         deleteHistoryGame(round);
       });
-      row.querySelector('.small-actions').append(deleteButton);
+      menu.append(deleteButton);
+      menu.addEventListener('click', event => event.stopPropagation());
+      row.querySelector('.small-actions').append(menu);
     }
     container.append(row);
   });
@@ -5499,6 +5548,23 @@ function addListeners() {
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => switchView(tab.dataset.view));
   });
+  els.scoreDetailToggle?.addEventListener('click', () => {
+    scoreDetailMode = scoreDetailMode === 'full' ? 'compact' : 'full';
+    localStorage.setItem(SCORE_DETAIL_KEY, scoreDetailMode);
+    renderScoreDetailMode();
+  });
+  els.recentCourseChoices?.addEventListener('click', event => {
+    const button = event.target.closest('[data-recent-course]');
+    if (!button) return;
+    const course = allCourses().find(item => item.id === button.dataset.recentCourse);
+    if (!course) return;
+    const area = areaForCourse(course);
+    setNewGameArea(area.country, area.region);
+    renderNewGameCourses(course.id);
+    els.gameForm.dataset.dirty = 'true';
+  });
+  els.gameForm.addEventListener('input', () => { els.gameForm.dataset.dirty = 'true'; });
+  els.gameForm.addEventListener('change', () => { els.gameForm.dataset.dirty = 'true'; });
   els.takeOverScoring?.addEventListener('click', takeOverScoring);
   els.previousHistoryGame?.addEventListener('click', () => showAdjacentHistoryGame(-1));
   els.nextHistoryGame?.addEventListener('click', () => showAdjacentHistoryGame(1));
@@ -5590,7 +5656,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.0.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.')
     );
   });
 
@@ -6147,12 +6213,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=181', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=182', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'simpleGolfSwReload.v181';
+    const reloadKey = 'simpleGolfSwReload.v182';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

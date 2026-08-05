@@ -1,0 +1,51 @@
+/* Final mobile UX contract. Loaded after the legacy stylesheet. */
+.scorecard button.score small,
+.landlord-table-wrap td small,
+.landlord-table-wrap th small {
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.scorecard thead th,
+.landlord-table-wrap thead th {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.scorecard button.score {
+  min-height: 48px;
+  font-size: 17px;
+}
+
+.scorecard.compact-score-detail th:nth-child(6),
+.scorecard.compact-score-detail td:nth-child(6),
+.scorecard.compact-score-detail th:nth-child(10),
+.scorecard.compact-score-detail td:nth-child(10),
+.scorecard.compact-score-detail button.score small,
+.landlord-leaderboard.compact-score-detail td small:not(.landlord-cell-marker),
+.landlord-leaderboard.compact-score-detail .landlord-count-total {
+  display: none;
+}
+
+.history-game-row .game-top-line {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.history-game-row .small-actions { justify-self: end; }
+.history-game-row .game-main { font-size: 15px; white-space: normal; }
+.history-game-row .game-meta { font-size: 13px; white-space: normal; }
+.history-game-row .game-score { font-size: 13px; }
+
+.header-language-button {
+  width: 44px;
+  min-height: 44px;
+}
+
+.tab span:not(.tab-icon) { font-size: 13px; }
+.field-help { font-size: 13px; line-height: 1.4; }
+
+@media (max-width: 430px) {
+  .recent-course-choices { grid-template-columns: 1fr; }
+  .history-game-row .score-mode-line { grid-template-columns: 1fr; }
+}

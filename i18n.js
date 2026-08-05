@@ -19,6 +19,7 @@
     'About Simple Golf Scorecard': '关于简单高尔夫记分卡',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 5.1.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛战况、查看历史记分卡，以及多设备云端同步。版本 5.1。',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.0.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛战况、查看历史记分卡，以及多设备云端同步。版本 6.0。',
+    'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛战况、查看历史记分卡，以及多设备云端同步。版本 6.1。',
     'Add to phone desktop': '添加到手机桌面',
     'Do you want to add this app to your phone desktop?': '是否要把这个应用添加到手机桌面？',
     'Use your browser menu and choose Add to Home Screen.': '请使用浏览器菜单，选择“添加到主屏幕”。',
@@ -54,6 +55,15 @@
     'Scoring Mode': '计分模式',
     'Gross': '总杆',
     'Net': '净杆',
+    'Score display': '成绩显示',
+    'Show full score': '显示完整成绩',
+    'Show simple score': '显示简洁成绩',
+    'A Pair': 'A组合',
+    'A Points': 'A输赢',
+    'B Pair': 'B组合',
+    'B Points': 'B输赢',
+    'Recent courses': '最近球场',
+    'Choose a recent course, or use the filters below for another course.': '可直接选择最近球场，或使用下方筛选选择其他球场。',
     'Under Par Flip': '低于标准杆翻转',
     'Birdie flip': '低于标准杆翻转',
     'Add Course': '添加球场',
@@ -142,6 +152,11 @@
     'Gross uses actual strokes. Net subtracts handicap strokes.': '总杆按实际杆数计分；净杆会扣除差点杆。',
     'When a player is under par, the losing team’s number may be reversed and the point difference can increase.': '球员打出低于标准杆时，落后队的数字可能翻转，分差会增大。',
     'Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round.': '请记住这两位密码；接管记分、修改比赛或结束比赛时都需要使用。',
+    'Remember this 2-digit code. It is required to take over scoring, edit the game, or finish the round. Tell it to the other scorekeepers in your group.': '请记住这两位密码；接管记分、修改比赛或结束比赛时都需要使用，并请告诉同组的其他记分员。',
+    'Result Rotation automatically chooses the next Wolf from each hole’s result. Fixed Wolf keeps the same player.': '输赢轮换会根据每洞结果自动选择下一洞地主；固定地主始终由同一位球员担任。',
+    'Limits each Pack player’s win or loss on one hole; recorded strokes are never changed.': '只限制每位农民单洞的输赢分数，不会改变已记录的杆数。',
+    'Special-score multipliers are automatic. Manual x2 or x4 adds your chosen multiplier for this hole.': '特殊杆倍率会自动计算；手动 x2 或 x4 会为本洞叠加所选倍率。',
+    'More actions': '更多操作',
     'Game setup progress': '比赛设置进度',
     '{count} players': '{count}人',
     'Cap {cap}': '单洞封顶{cap}分',
@@ -431,7 +446,7 @@
     });
     document.querySelectorAll('#languageButton, #welcomeLanguageButton').forEach(button => {
       const target = language === 'en' ? t('Switch to Chinese') : t('Switch to English');
-      button.innerHTML = '<span aria-hidden="true">🌐</span>';
+      button.innerHTML = '<span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span>';
       button.setAttribute('aria-label', target);
       button.title = target;
     });

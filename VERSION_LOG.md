@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.0 - Complete mobile senior UX pass
+
+Date: 2026-08-05
+
+Tag: `v6.1.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=182`
+
+What is new in this version:
+
+- Simple score display is the default; full score details remain available with one 44px control.
+- Net captions, table headers, supporting text, navigation, and key controls are larger on phones.
+- Recent courses reduce setup work and the last course area is remembered.
+- History cards use a three-line hierarchy, one final scoring mode, fewer pills, consistent vector icons, and a secondary actions menu.
+- Setup terms have plain-language inline explanations and dirty forms are protected from accidental Escape dismissal.
+- PWA asset query version is `v182`.
+
 ### v6.0.0 - Senior-friendly interface refresh
 
 Date: 2026-08-05

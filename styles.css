@@ -1529,22 +1529,22 @@ textarea {
 
 #playingList .game-row.live-color-0 {
   border-left-color: #14745d;
-  background: linear-gradient(90deg, #edf7f3 0, #fff 32%);
+  background: linear-gradient(90deg, #edf7f3 0, #fff 12%);
 }
 
 #playingList .game-row.live-color-1 {
   border-left-color: #b18428;
-  background: linear-gradient(90deg, #fbf5e8 0, #fff 32%);
+  background: linear-gradient(90deg, #fbf5e8 0, #fff 12%);
 }
 
 #playingList .game-row.live-color-2 {
   border-left-color: #477a9f;
-  background: linear-gradient(90deg, #eef5fa 0, #fff 32%);
+  background: linear-gradient(90deg, #eef5fa 0, #fff 12%);
 }
 
 #playingList .game-row.live-color-3 {
   border-left-color: #79658d;
-  background: linear-gradient(90deg, #f4f0f7 0, #fff 32%);
+  background: linear-gradient(90deg, #f4f0f7 0, #fff 12%);
 }
 
 .action-row,
@@ -3917,6 +3917,186 @@ button,
   .score-strip:not(.landlord-mode) .vegas-score-pairs .team-total .team-players {
     font-size: 13px;
   }
+}
+
+/* v6.1 mobile-first readability and visual consistency. */
+.score-display-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border: 1px solid #dfe7e3;
+  border-radius: 10px;
+  background: #fff;
+  color: #42564f;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.header-language-button svg,
+.welcome-language-button svg,
+.icon-button svg,
+.play-hole-strip button svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.score-display-toolbar button {
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.scorecard button.score {
+  min-height: 48px;
+  font-size: 17px;
+}
+
+.scorecard button.score small,
+.landlord-table-wrap td small,
+.landlord-table-wrap th small {
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+.scorecard thead th,
+.landlord-table-wrap thead th {
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.compact-score-detail button.score small,
+.landlord-leaderboard.compact-score-detail td small:not(.landlord-cell-marker),
+.landlord-leaderboard.compact-score-detail .landlord-count-total {
+  display: none;
+}
+
+.scorecard.compact-score-detail th:nth-child(6),
+.scorecard.compact-score-detail td:nth-child(6),
+.scorecard.compact-score-detail th:nth-child(10),
+.scorecard.compact-score-detail td:nth-child(10) {
+  display: none;
+}
+
+.recent-course-block {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #dce7e2;
+  border-radius: 12px;
+  background: #f7fbf9;
+}
+
+.recent-course-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.recent-course-choices button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px;
+  overflow-wrap: anywhere;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.history-game-row .game-copy { gap: 6px; }
+.history-game-row .game-meta {
+  overflow: visible;
+  color: #64756f;
+  font-size: 13px;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.history-game-row .score-mode-line {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.history-result {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 32px;
+  color: #5d6c67;
+  font-size: 13px;
+}
+
+.history-result strong { font-size: 15px; }
+.landlord-player-row .history-result { grid-template-columns: minmax(0, 1fr) auto; }
+.history-result.winner strong { color: var(--green-strong); }
+.history-result.loser strong { color: var(--red); }
+.winner-icon svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #b47a19;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.card-more-menu { position: relative; }
+.card-more-menu summary {
+  display: grid;
+  width: 44px;
+  min-height: 44px;
+  place-items: center;
+  border-radius: 8px;
+  color: #586963;
+  cursor: pointer;
+  list-style: none;
+}
+.card-more-menu summary::-webkit-details-marker { display: none; }
+.card-more-menu[open] button {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  z-index: 4;
+  width: auto;
+  min-width: 84px;
+  min-height: 44px;
+  box-shadow: 0 8px 20px rgba(20, 38, 31, .16);
+}
+
+.game-row.landlord-game-row:not(.active-game) {
+  background: #fff;
+}
+
+.home-game-section p,
+.section-heading p,
+.scoring-device-bar span,
+.sync-bar,
+.field-help { font-size: 13px; }
+
+button.primary,
+.home-action strong,
+.game-wizard-actions button { font-size: 16px; }
+
+@media (max-width: 430px) {
+  .recent-course-choices { grid-template-columns: 1fr; }
+  .history-game-row .score-mode-line { grid-template-columns: 1fr; }
+  .history-game-row .game-top-line { grid-template-columns: minmax(0, 1fr) auto; }
+  .history-game-row .small-actions { justify-self: end; }
+  .score-display-toolbar { position: sticky; top: 86px; z-index: 8; }
 }
 
 /* Final visual alignment: calm off-white canvas, compact masthead and inverse active nav. */
