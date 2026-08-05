@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.6 - Score entry focus and marker polish
+
+Date: 2026-08-05
+
+Tag: `v6.1.6`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=188`
+
+What is new in this version:
+
+- Entering a score scrolls the background play view to the player row that was just scored before the pad advances.
+- Under-par play buttons use a solid red background with white text.
+- The Net label and its value stay on one line inside the score button.
+- PWA asset query version is `v188`.
+
 ### v6.1.5 - Stable live team layout
 
 Date: 2026-08-05

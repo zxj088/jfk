@@ -2883,10 +2883,10 @@ function updateScorePad() {
   });
 }
 
-function scrollScoreTargetIntoView() {
-  if (!activeScoreTarget) return;
+function scrollScoreTargetIntoView(scoreIndex = activeScoreTarget?.scoreIndex) {
+  if (!Number.isInteger(scoreIndex)) return;
   window.setTimeout(() => {
-    const row = els.playPlayerRows?.querySelector(`[data-score-index="${activeScoreTarget?.scoreIndex}"]`);
+    const row = els.playPlayerRows?.querySelector(`[data-score-index="${scoreIndex}"]`);
     row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 30);
 }
@@ -2954,6 +2954,7 @@ function commitScorePadValue(value) {
   renderPlayEntry();
   renderLandlordLeaderboard();
   updateScorePad();
+  scrollScoreTargetIntoView(scoreIndex);
 }
 
 function clearScorePadValue() {
@@ -2993,7 +2994,6 @@ function advanceScoreTargetOrClose({ allowNextHole = false } = {}) {
     scoreIndex: displayOrder[currentPosition + 1]
   };
   updateScorePad();
-  scrollScoreTargetIntoView();
 }
 
 async function commitScorePadValueAndAdvance(value) {
@@ -5674,7 +5674,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.5.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.6.')
     );
   });
 
@@ -6231,12 +6231,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=187', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=188', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v187';
+    const reloadKey = 'jfk.simpleGolfSwReload.v188';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

@@ -108,6 +108,19 @@
   background: #c43b3b;
 }
 
+.play-score-button.under-par {
+  border-color: #b92f32;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  background: #c43b3b;
+  box-shadow: 0 0 0 4px rgba(195, 63, 56, 0.12);
+}
+
+.play-score-button small {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .score-quick button[data-score-offset="-2"].active,
 .score-quick button[data-score-offset="-1"].active {
   border-color: #b92f32;

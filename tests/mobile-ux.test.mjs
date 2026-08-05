@@ -14,7 +14,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=187/);
+  assert.match(html, /mobile-ux\.css\?v=188/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -49,8 +49,11 @@ test('history teams, floating delete menu, and score pad states remain readable'
   assert.match(mobileCss, /\.score-quick button\[data-score-clear\][\s\S]*color:\s*#a52626/);
 });
 
-test('score pad advances and scrolls the selected player into view', () => {
-  assert.match(app, /function scrollScoreTargetIntoView\(\)/);
+test('score entry scrolls the completed player row into view before advancing', () => {
+  assert.match(app, /function scrollScoreTargetIntoView\(scoreIndex = activeScoreTarget\?\.scoreIndex\)/);
+  assert.match(app, /updateScorePad\(\);\s*scrollScoreTargetIntoView\(scoreIndex\);/);
   assert.match(app, /scrollIntoView\(\{ behavior: 'smooth', block: 'center' \}\)/);
   assert.match(app, /data-score-index/);
+  assert.match(mobileCss, /\.play-score-button\.under-par\s*\{[\s\S]*color:\s*#fff[\s\S]*background:\s*#c43b3b/);
+  assert.match(mobileCss, /\.play-score-button small\s*\{[\s\S]*white-space:\s*nowrap/);
 });
