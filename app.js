@@ -9,10 +9,12 @@ const COURSE_DELETE_KEY = 'jfk.vegasGolfDeletedCourses.v1';
 const PENDING_SYNC_KEY = 'jfk.vegasGolfPendingRound.v1';
 const GAME_LIMIT = 200;
 const CLOUD_ROUND_LIMIT = 1000;
-const EDIT_LOCK_TTL_MS = 12000;
+const EDIT_LOCK_TTL_MS = 30000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
-const ACTIVE_ROUND_POLL_MS = 5000;
-const ROUND_INDEX_POLL_MS = 30000;
+const REFRESH_TIMER_TICK_MS = 5000;
+const EDIT_LOCK_REFRESH_MS = 10000;
+const LIVE_ROUND_POLL_MS = 15000;
+const ROUND_INDEX_POLL_MS = 300000;
 const WELCOME_MIN_DURATION_MS = 1000;
 const WELCOME_SEEN_KEY = 'jfk.simpleGolfWelcomeSeen.v1';
 const SCORE_DETAIL_KEY = 'jfk.simpleGolfScoreDetail.v1';
@@ -28,6 +30,8 @@ let overlayReturnFocus = null;
 let scoreDetailMode = localStorage.getItem(SCORE_DETAIL_KEY) === 'full' ? 'full' : 'compact';
 let cloudRefreshPromise = null;
 let lastRoundIndexSyncAt = 0;
+let lastEditLockSyncAt = 0;
+let lastLiveRoundSyncAt = 0;
 let cloudRefreshEnabled = false;
 
 function roleIconHtml(isLandlord, className = '') {
@@ -2040,7 +2044,10 @@ async function refreshCloudForCurrentView(force = false) {
   cloudRefreshPromise = (async () => {
     let changed = false;
     if (isEditing) {
-      await ensureEditLockStillMine();
+      if (force || Date.now() - lastEditLockSyncAt >= EDIT_LOCK_REFRESH_MS) {
+        lastEditLockSyncAt = Date.now();
+        await ensureEditLockStillMine();
+      }
       return;
     }
     const activeRound = currentGame();
@@ -2048,10 +2055,13 @@ async function refreshCloudForCurrentView(force = false) {
       && activeRound
       && gameStatus(activeRound) === 'playing';
     if (watchingLiveRound) {
-      changed = await refreshCurrentCloudRound();
+      if (force || Date.now() - lastLiveRoundSyncAt >= LIVE_ROUND_POLL_MS) {
+        lastLiveRoundSyncAt = Date.now();
+        changed = await refreshCurrentCloudRound();
+      }
     } else if (currentView === 'start' && (force || Date.now() - lastRoundIndexSyncAt >= ROUND_INDEX_POLL_MS)) {
-      changed = await refreshChangedCloudRounds();
       lastRoundIndexSyncAt = Date.now();
+      changed = await refreshChangedCloudRounds();
     }
     setSyncState({
       ready: true,
@@ -4676,7 +4686,7 @@ function renderHistoryCourseFilter(historyRounds) {
 
 function filteredHistoryRounds(historyRounds) {
   renderHistoryCourseFilter(historyRounds);
-  const timeValue = els.historyTimeFilter?.value || 'all';
+  const timeValue = els.historyTimeFilter?.value || 'last-7-days';
   const courseValue = els.historyCourseFilter?.value || 'all';
   const gameTypeValue = els.historyGameTypeFilter?.value || 'all';
   return historyRounds.filter(round => {
@@ -5850,7 +5860,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.12.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.13.')
     );
   });
 
@@ -6372,7 +6382,7 @@ async function init() {
   }
   window.setInterval(() => {
     refreshCloudForCurrentView();
-  }, ACTIVE_ROUND_POLL_MS);
+  }, REFRESH_TIMER_TICK_MS);
   window.addEventListener('focus', () => {
     refreshCloudForCurrentView(true);
   });
@@ -6399,12 +6409,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=194', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=195', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v194';
+    const reloadKey = 'jfk.simpleGolfSwReload.v195';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

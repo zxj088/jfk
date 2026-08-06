@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.13 - Golf-paced cloud refresh
+
+Date: 2026-08-06
+
+Tag: `v6.1.13`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=195`
+
+What is new in this version:
+
+- Score changes still upload promptly, while edit-lock renewal moves to 10 seconds with a 30-second lease for better weak-signal tolerance.
+- Live viewers refresh every 15 seconds, the home round index refreshes every five minutes, and background pages remain paused.
+- Returning to the foreground or recovering network connectivity still triggers an immediate contextual refresh.
+- History defaults to the most recent seven days, and universal edit code `59` remains supported and protected by a regression test.
+- PWA asset query version is `v195`.
+
 ### v6.1.12 - Compact landlord scoring controls
 
 Date: 2026-08-06
