@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.15 - Recent summaries and on-demand scorecards
+
+Date: 2026-08-07
+
+Tag: `v6.1.15`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=197`
+
+What is new in this version:
+
+- Startup sync downloads summaries for the most recent seven days, all playing games, and deletion markers instead of the full archive.
+- A complete round is downloaded only when the user opens its scorecard, resumes scoring, or watches the game.
+- Wider history date filters load matching summaries on demand without eagerly downloading every hole score.
+- Existing full local rounds remain available when their cloud version is unchanged.
+- Legacy landlord summaries without stored per-player points show a scorecard prompt and completed-hole count instead of incorrect zero scores.
+- PWA asset query version is `v197`.
+
 ### v6.1.14 - Guided iPhone installation
 
 Date: 2026-08-06

@@ -3,7 +3,7 @@ import test from 'node:test';
 
 await import('../sync-logic.js');
 
-const { mergeRoundSnapshots } = globalThis.SIMPLE_GOLF_SYNC;
+const { mergeRoundSnapshots, mergeRoundSummaries } = globalThis.SIMPLE_GOLF_SYNC;
 
 test('remote snapshot replaces the same local round', () => {
   const result = mergeRoundSnapshots(
@@ -38,4 +38,19 @@ test('rounds are newest first and respect the configured limit', () => {
     { limit: 2 }
   );
   assert.deepEqual(result.map(round => round.id), ['new', 'middle']);
+});
+
+test('an unchanged summary keeps the existing full local round', () => {
+  const full = { id: 'round-1', savedAt: 10, scores: [[4]], totals: { cloudVersion: 3 } };
+  const summary = { id: 'round-1', savedAt: 10, summaryOnly: true, totals: { cloudVersion: 3 } };
+  const result = mergeRoundSummaries([full], [summary]);
+  assert.equal(result[0], full);
+});
+
+test('a newer summary replaces stale full data and requires an on-demand load', () => {
+  const full = { id: 'round-1', savedAt: 10, scores: [[4]], totals: { cloudVersion: 3 } };
+  const summary = { id: 'round-1', savedAt: 10, summaryOnly: true, totals: { cloudVersion: 4 } };
+  const result = mergeRoundSummaries([full], [summary]);
+  assert.equal(result[0], summary);
+  assert.equal(result[0].summaryOnly, true);
 });

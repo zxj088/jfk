@@ -16,7 +16,7 @@ test('installed apps are recognized and Apple PWA metadata is present', () => {
   assert.match(app, /display-mode: standalone/);
   assert.match(app, /navigator\.standalone === true/);
   assert.match(html, /name="apple-mobile-web-app-capable" content="yes"/);
-  assert.match(html, /rel="apple-touch-icon"[^>]+jfk-icon-192\.png\?v=196/);
+  assert.match(html, /rel="apple-touch-icon"[^>]+jfk-icon-192\.png\?v=197/);
 });
 
 test('Android keeps the native install prompt path', () => {

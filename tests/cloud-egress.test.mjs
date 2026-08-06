@@ -22,10 +22,25 @@ test('view-specific refreshes respect golf-paced intervals', () => {
   assert.match(app, /}, REFRESH_TIMER_TICK_MS\);/);
 });
 
-test('idle refresh uses a lightweight index and only fetches changed rounds', () => {
-  assert.match(app, /select=id,saved_at,totals,version/);
-  assert.match(app, /changedIds\.map\(fetchCloudRoundById\)/);
+test('startup and idle refresh use recent summaries without eager full-round downloads', () => {
+  assert.match(app, /const STARTUP_HISTORY_DAYS = 7;/);
+  assert.match(app, /select=id,saved_at,name,course_id,course_name,players,totals,version/);
+  assert.match(app, /fetchCloudRoundSummaries\(\{ fromMs: startupCutoff, includePlaying: true \}\)/);
+  assert.match(app, /mergeRoundSummaries\(savedRounds, cloudRoundResult\.summaries\)/);
+  assert.doesNotMatch(app, /changedIds\.map\(fetchCloudRoundById\)/);
   assert.match(app, /watchingLiveRound[\s\S]*refreshCurrentCloudRound\(\)/);
+});
+
+test('full rounds load only when a summary is opened or resumed for scoring', () => {
+  assert.match(app, /async function ensureRoundFullyLoaded\(roundId\)/);
+  assert.match(app, /if \(!current\?\.summaryOnly\) return current \|\| null;/);
+  assert.match(app, /async function loadGameOnDemand/);
+  assert.match(app, /await loadGameOnDemand\(round\.id/);
+});
+
+test('legacy landlord summaries do not show invented zero scores', () => {
+  assert.match(app, /round\.summaryOnly && !Array\.isArray\(round\.totals\?\.landlordPoints\)/);
+  assert.match(app, /escapeHtml\(t\('View scorecard'\)\)/);
 });
 
 test('full cloud sync remains limited to startup and explicit data operations', () => {

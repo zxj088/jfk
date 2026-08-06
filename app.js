@@ -9,6 +9,7 @@ const COURSE_DELETE_KEY = 'jfk.vegasGolfDeletedCourses.v1';
 const PENDING_SYNC_KEY = 'jfk.vegasGolfPendingRound.v1';
 const GAME_LIMIT = 200;
 const CLOUD_ROUND_LIMIT = 1000;
+const STARTUP_HISTORY_DAYS = 7;
 const EDIT_LOCK_TTL_MS = 30000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
 const REFRESH_TIMER_TICK_MS = 5000;
@@ -1035,6 +1036,7 @@ function normalizeRound(round) {
     birdieFlip: underParFlip,
     landlord,
     scores: normalizeScores(round.scores),
+    summaryOnly: Boolean(round.summaryOnly),
     totals: {
       a: Number(baseTotals.a || 0),
       b: Number(baseTotals.b || 0),
@@ -1042,6 +1044,7 @@ function normalizeRound(round) {
       players: Array.isArray(baseTotals.players) ? baseTotals.players : [0, 0, 0, 0],
       playersGross: Array.isArray(baseTotals.playersGross) ? baseTotals.playersGross : null,
       playersNet: Array.isArray(baseTotals.playersNet) ? baseTotals.playersNet : null,
+      landlordPoints: Array.isArray(baseTotals.landlordPoints) ? baseTotals.landlordPoints : null,
       playerMeta,
       status: baseTotals.status === 'playing' ? 'playing' : 'history',
       editCode: String(baseTotals.editCode || ''),
@@ -1404,14 +1407,13 @@ function renderScoringDeviceBar() {
   els.takeOverScoring.hidden = finished || isEditing;
 }
 
-function showAdjacentHistoryGame(direction = 1) {
+async function showAdjacentHistoryGame(direction = 1) {
   const completedRounds = savedRounds.filter(round => gameStatus(round) !== 'playing');
   if (completedRounds.length < 2) return;
   const currentIndex = completedRounds.findIndex(round => round.id === activeGameId);
   const nextIndex = currentIndex + direction;
   if (currentIndex < 0 || nextIndex < 0 || nextIndex >= completedRounds.length) return;
-  loadGame(completedRounds[nextIndex].id, false, false);
-  switchView('leaderboard');
+  if (await loadGameOnDemand(completedRounds[nextIndex].id, false, false)) switchView('leaderboard');
 }
 
 async function fetchCloudCourses() {
@@ -1424,6 +1426,58 @@ async function fetchCloudCourses() {
     .filter(row => !isCourseDeleteMarkerRow(row))
     .map(cloudRowToCourse)
     .filter(course => course.pars.length === 18 && !isCourseDeleted(course));
+}
+
+function cloudSummaryRowToRound(row) {
+  if (Object.prototype.hasOwnProperty.call(row || {}, 'version')) cloudVersionSupported = true;
+  return normalizeRound({
+    id: cloudRowLocalId(row),
+    savedAt: Number(row.saved_at),
+    name: row.name,
+    courseId: row.course_id,
+    courseName: row.course_name,
+    players: row.players,
+    totals: {
+      ...(row.totals || {}),
+      cloudVersion: Math.max(0, Number(row.version || row.totals?.cloudVersion || 0))
+    },
+    summaryOnly: true
+  });
+}
+
+async function fetchCloudRoundSummaries({ fromMs = 0, toMs = 0, includePlaying = false } = {}) {
+  const select = 'select=id,saved_at,name,course_id,course_name,players,totals,version';
+  const filters = [
+    `sync_key=eq.${encodeURIComponent(supabaseConfig().syncKey)}`,
+    'order=saved_at.desc',
+    `limit=${CLOUD_ROUND_LIMIT}`
+  ];
+  if (fromMs && includePlaying) {
+    filters.push(`or=(saved_at.gte.${Math.floor(fromMs)},totals->>status.eq.playing,totals->>deleted.eq.true)`);
+  } else {
+    if (fromMs) filters.push(`saved_at=gte.${Math.floor(fromMs)}`);
+    if (toMs) filters.push(`saved_at=lte.${Math.floor(toMs)}`);
+  }
+  let rows;
+  try {
+    rows = await supabaseRequest('vegas_rounds', [select, ...filters].join('&'));
+  } catch (error) {
+    if (!/version|column/i.test(String(error?.message || ''))) throw error;
+    cloudVersionSupported = false;
+    rows = await supabaseRequest('vegas_rounds', [select.replace(',version', ''), ...filters].join('&'));
+  }
+  if (rows.length && cloudVersionSupported === null) {
+    cloudVersionSupported = Object.prototype.hasOwnProperty.call(rows[0], 'version');
+  }
+  const deleteMarkers = rows.filter(isDeleteMarkerRow).map(rowDeleteInfo);
+  deleteMarkers.forEach(info => {
+    if (info.id || info.savedAt || info.name) markRoundDeleted(info);
+  });
+  const summaries = rows
+    .filter(row => !isDeleteMarkerRow(row))
+    .filter(row => !deleteMarkers.some(deleted => rowMatchesDeleteInfo(row, deleted)))
+    .map(cloudSummaryRowToRound);
+  return { summaries, deleteMarkers };
 }
 
 async function fetchCloudRounds() {
@@ -1478,6 +1532,40 @@ async function fetchCloudRoundById(roundId) {
   const query = `select=*&id=eq.${encodeURIComponent(cloudId('round', roundId))}&limit=1`;
   const rows = await supabaseRequest('vegas_rounds', query);
   return rows.length ? cloudRowToRound(rows[0]) : null;
+}
+
+async function ensureRoundFullyLoaded(roundId) {
+  const current = savedRounds.find(round => round.id === roundId);
+  if (!current?.summaryOnly) return current || null;
+  const fullRound = await fetchCloudRoundById(roundId);
+  if (!fullRound || isRoundDeleted(fullRound)) return null;
+  return replaceRound(fullRound);
+}
+
+async function loadGameOnDemand(gameId, editable = false, goToPlay = true, preferredHoleIndex = null) {
+  const existing = savedRounds.find(round => round.id === gameId);
+  if (!existing) return false;
+  if (existing.summaryOnly) {
+    setSyncState({ ready: true, busy: true, title: t('Sending and loading scorecard data.') });
+    try {
+      const fullRound = await ensureRoundFullyLoaded(gameId);
+      if (!fullRound) throw new Error(t('Cloud sync Not ok'));
+      setSyncState({
+        ready: true,
+        busy: false,
+        ok: true,
+        label: t('Cloud sync ok'),
+        title: `Supabase room: ${supabaseConfig().syncKey}`,
+        lastSyncedAt: Date.now()
+      });
+    } catch (error) {
+      setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
+      await showMessage(t('Cloud sync Not ok'), error.message);
+      return false;
+    }
+  }
+  loadGame(gameId, editable, goToPlay, preferredHoleIndex);
+  return true;
 }
 
 async function upsertCloudCourse(course) {
@@ -1633,6 +1721,8 @@ async function restoreActiveGameAfterCloudSync() {
     return;
   }
 
+  if (activeRound.summaryOnly) return;
+
   if (!isEditing) {
     applyGameToState(activeRound);
     saveState();
@@ -1679,14 +1769,19 @@ async function syncFromCloud(pushLocal = true, quiet = false) {
     customCourses = customCourses.filter(course => !isCourseDeleted(course));
     if (pushLocal) await Promise.all(userEditableCourses().map(upsertCloudCourse));
 
-    const [cloudCourses, cloudRounds] = await Promise.all([
+    const startupCutoff = Date.now() - STARTUP_HISTORY_DAYS * 24 * 60 * 60 * 1000;
+    const [cloudCourses, cloudRoundResult] = await Promise.all([
       fetchCloudCourses(),
-      fetchCloudRounds()
+      fetchCloudRoundSummaries({ fromMs: startupCutoff, includePlaying: true })
     ]);
 
     customCourses = mergeById(customCourses, cloudCourses).filter(course => !isCourseDeleted(course));
-    savedRounds = mergeRounds(savedRounds, cloudRounds);
+    savedRounds = mergeRoundSummaries(savedRounds, cloudRoundResult.summaries).filter(round => !isRoundDeleted(round));
     lastRoundIndexSyncAt = Date.now();
+    if (!activeGameId || !savedRounds.some(round => round.id === activeGameId)) chooseInitialGame();
+    if (activeGameId && (isEditing || currentView === 'play' || currentView === 'leaderboard')) {
+      await ensureRoundFullyLoaded(activeGameId);
+    }
     await restoreActiveGameAfterCloudSync();
     saveCoursesLocal();
     saveHistoryLocal();
@@ -1991,36 +2086,20 @@ async function refreshCurrentCloudRound() {
 }
 
 async function refreshChangedCloudRounds() {
-  const rows = await fetchCloudRoundIndex();
-  const deleteMarkers = rows.filter(isDeleteMarkerRow).map(rowDeleteInfo);
-  deleteMarkers.forEach(info => {
-    if (info.id || info.savedAt || info.name) markRoundDeleted(info);
-  });
-
-  const changedIds = rows
-    .filter(row => !isDeleteMarkerRow(row))
-    .filter(row => !deleteMarkers.some(deleted => rowMatchesDeleteInfo(row, deleted)))
-    .filter(row => {
-      const id = cloudRowLocalId(row);
-      const localRound = savedRounds.find(round => round.id === id);
-      if (!localRound) return true;
-      const remoteVersion = cloudRowVersion(row);
-      const localVersion = Math.max(0, Number(localRound.totals?.cloudVersion || 0));
-      return remoteVersion > localVersion || JSON.stringify(row.totals || {}) !== JSON.stringify(localRound.totals || {});
-    })
-    .map(row => cloudRowLocalId(row));
-
-  const changedRounds = (await Promise.all(changedIds.map(fetchCloudRoundById))).filter(Boolean);
-  savedRounds = mergeRounds(savedRounds, changedRounds).filter(round => !isRoundDeleted(round));
+  const cutoff = Date.now() - STARTUP_HISTORY_DAYS * 24 * 60 * 60 * 1000;
+  const { summaries, deleteMarkers } = await fetchCloudRoundSummaries({ fromMs: cutoff, includePlaying: true });
+  const previous = JSON.stringify(savedRounds.map(round => [round.id, round.summaryOnly, round.totals?.cloudVersion, round.totals]));
+  savedRounds = mergeRoundSummaries(savedRounds, summaries).filter(round => !isRoundDeleted(round));
   if (!isEditing && activeGameId) {
     const activeRound = savedRounds.find(round => round.id === activeGameId);
-    if (activeRound) {
+    if (activeRound && !activeRound.summaryOnly) {
       applyGameToState(activeRound);
       saveState();
     }
   }
   saveHistoryLocal();
-  return Boolean(changedRounds.length || deleteMarkers.length);
+  const next = JSON.stringify(savedRounds.map(round => [round.id, round.summaryOnly, round.totals?.cloudVersion, round.totals]));
+  return previous !== next || Boolean(deleteMarkers.length);
 }
 
 async function refreshCloudCoursesForSetup(preferredCourseId = state.courseId) {
@@ -3023,6 +3102,15 @@ function updateScorePad() {
     }
     const quickScore = String(par + Number(button.dataset.scoreOffset || 0));
     button.classList.toggle('active', Boolean(value) && value === quickScore);
+  });
+}
+
+function mergeRoundSummaries(localRounds, remoteSummaries) {
+  return window.SIMPLE_GOLF_SYNC.mergeRoundSummaries(localRounds, remoteSummaries, {
+    normalize: normalizeRound,
+    isDeleted: isRoundDeleted,
+    limit: GAME_LIMIT,
+    getVersion: round => Number(round?.totals?.cloudVersion || 0)
   });
 }
 
@@ -4664,6 +4752,31 @@ function historyTimeRange(value) {
   }
 }
 
+async function refreshHistorySummaries(value) {
+  if (!hasSupabaseConfig() || document.hidden) return;
+  const { start, end } = historyTimeRange(value);
+  setSyncState({ ready: true, busy: true, title: t('Sending and loading scorecard data.') });
+  try {
+    const { summaries } = await fetchCloudRoundSummaries({
+      fromMs: start?.getTime() || 0,
+      toMs: end ? end.getTime() - 1 : 0
+    });
+    savedRounds = mergeRoundSummaries(savedRounds, summaries).filter(round => !isRoundDeleted(round));
+    saveHistoryLocal();
+    setSyncState({
+      ready: true,
+      busy: false,
+      ok: true,
+      label: t('Cloud sync ok'),
+      title: `Supabase room: ${supabaseConfig().syncKey}`,
+      lastSyncedAt: Date.now()
+    });
+    renderStart();
+  } catch (error) {
+    setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
+  }
+}
+
 function roundMatchesHistoryTime(round, value) {
   const { start, end } = historyTimeRange(value);
   if (!start && !end) return true;
@@ -4800,7 +4913,13 @@ function teamScoreChip(teamLabel, player1, player2, score) {
 function roundScoreSummaryHtml(round) {
   const players = Array.isArray(round.players) ? round.players : [];
   if (round.gameType === 'landlord') {
-    const total = landlordTotals(normalizeRound(round));
+    if (round.summaryOnly && !Array.isArray(round.totals?.landlordPoints)) {
+      const complete = Math.max(0, Number(round.totals?.complete || 0));
+      return `<span class="landlord-score-line"><span class="history-result"><span>${escapeHtml(t('View scorecard'))}</span><strong>${complete}/18</strong></span></span>`;
+    }
+    const total = round.summaryOnly && Array.isArray(round.totals?.landlordPoints)
+      ? { points: round.totals.landlordPoints }
+      : landlordTotals(normalizeRound(round));
     return `<span class="landlord-score-line player-count-${players.length}">
       <span class="landlord-player-row">
         ${players.map((player, index) => `<span class="history-result${total.points[index] > 0 ? ' winner' : (total.points[index] < 0 ? ' loser' : '')}"><span>${escapeHtml(player)}</span><strong>${signedPoints(total.points[index])}</strong></span>`).join('')}
@@ -4809,7 +4928,9 @@ function roundScoreSummaryHtml(round) {
   }
   const [a1 = 'Player 1', a2 = 'Player 2', b1 = 'Player 3', b2 = 'Player 4'] = players;
   const mode = round?.scoreMode === 'net' ? 'net' : 'gross';
-  const score = scoreRoundTotalsForMode(round, mode);
+  const score = round.summaryOnly
+    ? { a: Number(round.totals?.a || 0), b: Number(round.totals?.b || 0) }
+    : scoreRoundTotalsForMode(round, mode);
   return `<span class="score-mode-line">${teamScoreChip(t('Team A'), a1, a2, score.a)}${teamScoreChip(t('Team B'), b1, b2, score.b)}</span>`;
 }
 
@@ -5580,10 +5701,9 @@ function renderGameList(container, rounds, emptyText, status) {
       ? t('View scorecard')
       : (destination.canEdit ? t('Continue scoring') : t('Watch live'));
     row.querySelector('.game-open').setAttribute('aria-label', `${round.courseName || t('Course')} · ${destinationText}`);
-    const openRound = () => {
+    const openRound = async () => {
       const target = window.SIMPLE_GOLF_ROUND_ACCESS.openDestination(round, status, clientId);
-      loadGame(round.id, target.canEdit, false);
-      switchView(target.view);
+      if (await loadGameOnDemand(round.id, target.canEdit, false)) switchView(target.view);
     };
     row.querySelector('.game-open').addEventListener('click', () => {
       openRound();
@@ -5601,7 +5721,8 @@ function renderGameList(container, rounds, emptyText, status) {
       editInfoButton.addEventListener('click', async event => {
         event.stopPropagation();
         if (!(await verifyCodeForRound(round))) return;
-        openEditGameInfoModal(round);
+        const fullRound = await ensureRoundFullyLoaded(round.id);
+        if (fullRound) openEditGameInfoModal(fullRound);
       });
       row.querySelector('.small-actions').append(editInfoButton);
     }
@@ -5721,23 +5842,21 @@ function switchView(name) {
   refreshCloudForCurrentView(true);
 }
 
-function performMainAction(action = 'home') {
+async function performMainAction(action = 'home') {
   switchView('start');
   if (action === 'score') {
     openGameModal();
   } else if (action === 'watch') {
     const liveRound = savedRounds.find(round => gameStatus(round) === 'playing');
     if (liveRound) {
-      loadGame(liveRound.id, hasEditRight(liveRound), false);
-      switchView('leaderboard');
+      if (await loadGameOnDemand(liveRound.id, hasEditRight(liveRound), false)) switchView('leaderboard');
     } else {
       els.playingSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   } else if (action === 'history') {
     const completedRound = savedRounds.find(round => gameStatus(round) !== 'playing');
     if (completedRound) {
-      loadGame(completedRound.id, false, false);
-      switchView('leaderboard');
+      if (await loadGameOnDemand(completedRound.id, false, false)) switchView('leaderboard');
     } else {
       els.historySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -5793,17 +5912,18 @@ function addListeners() {
   });
 
   els.appTitle.addEventListener('click', promptInstallApp);
-  els.historyTimeFilter.addEventListener('change', () => {
+  els.historyTimeFilter.addEventListener('change', async () => {
     if (els.historyTimeFilter.value === 'time-between') {
       openHistoryRangeModal();
       return;
     }
     previousHistoryTimeFilter = els.historyTimeFilter.value;
     renderStart();
+    await refreshHistorySummaries(els.historyTimeFilter.value);
   });
   els.historyCourseFilter.addEventListener('change', renderStart);
   els.historyGameTypeFilter.addEventListener('change', renderStart);
-  els.historyRangeForm.addEventListener('submit', event => {
+  els.historyRangeForm.addEventListener('submit', async event => {
     event.preventDefault();
     const from = els.historyRangeFrom.value;
     const to = els.historyRangeTo.value;
@@ -5817,6 +5937,7 @@ function addListeners() {
     previousHistoryTimeFilter = 'time-between';
     closeHistoryRangeModal();
     renderStart();
+    await refreshHistorySummaries('time-between');
   });
   els.historyRangeCancel.addEventListener('click', cancelHistoryRangeModal);
   els.historyRangeModal.addEventListener('click', event => {
@@ -5876,7 +5997,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.14.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.15.')
     );
   });
 
@@ -6425,12 +6546,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=196', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=197', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v196';
+    const reloadKey = 'jfk.simpleGolfSwReload.v197';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
