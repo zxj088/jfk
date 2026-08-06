@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.14 - Guided iPhone installation
+
+Date: 2026-08-06
+
+Tag: `v6.1.14`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=196`
+
+What is new in this version:
+
+- Android keeps its native one-tap PWA installation prompt.
+- iPhone and iPad Safari users receive clear Share, Add to Home Screen, and Open as Web App instructions.
+- Apple users in another browser are asked to open the page in Safari first, while already-installed standalone apps are recognized.
+- Apple touch icon and standalone web-app metadata improve the installed home-screen experience.
+- PWA asset query version is `v196`.
+
 ### v6.1.13 - Golf-paced cloud refresh
 
 Date: 2026-08-06

@@ -4274,10 +4274,26 @@ async function showRulesDialog() {
 }
 
 async function promptInstallApp() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if (isStandalone) {
+    await showMessage(t('App installed'), t('This app is already installed on this phone.'));
+    return;
+  }
   if (installPromptEvent) {
     installPromptEvent.prompt();
     await installPromptEvent.userChoice.catch(() => null);
     installPromptEvent = null;
+    return;
+  }
+  const userAgent = navigator.userAgent || '';
+  const isAppleMobile = /iPad|iPhone|iPod/i.test(userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isAppleMobile) {
+    const isSafari = /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(userAgent);
+    const message = isSafari
+      ? t('On iPhone or iPad:\n1. Tap the Share button (a square with an upward arrow).\n2. Scroll and choose Add to Home Screen.\n3. Keep Open as Web App enabled, then tap Add.')
+      : t('On iPhone or iPad, first open this page in Safari. Then tap Share, choose Add to Home Screen, and tap Add.');
+    await showMessage(t('Install on iPhone or iPad'), message);
     return;
   }
   await showMessage(t('Add to phone desktop'), t('Use your browser menu and choose Add to Home Screen.'));
@@ -5860,7 +5876,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.13.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.14.')
     );
   });
 
@@ -6409,12 +6425,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=195', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=196', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v195';
+    const reloadKey = 'jfk.simpleGolfSwReload.v196';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
