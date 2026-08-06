@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.16 - Lower-power golf-paced live sync
+
+Date: 2026-08-07
+
+Tag: `v6.1.16`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=198`
+
+What is new in this version:
+
+- The scoring-device edit lease lasts 120 seconds and renews every 30 seconds, reducing repeated database reads and writes while retaining foreground recovery.
+- Live viewers refresh the active game every 30 seconds, which fits normal golf pace and substantially reduces mobile data and battery use.
+- Score changes still upload after the existing 650-millisecond debounce; home summaries remain on a five-minute cadence.
+- Returning to the foreground or recovering connectivity still triggers an immediate contextual refresh.
+- PWA asset query version is `v198`.
+
 ### v6.1.15 - Recent summaries and on-demand scorecards
 
 Date: 2026-08-07

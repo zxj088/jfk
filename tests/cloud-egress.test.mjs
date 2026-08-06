@@ -6,10 +6,10 @@ const app = await readFile(new URL('../app.js', import.meta.url), 'utf8');
 const index = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 
 test('background polling is paused and the foreground cadence is bounded', () => {
-  assert.match(app, /const EDIT_LOCK_TTL_MS = 30000;/);
+  assert.match(app, /const EDIT_LOCK_TTL_MS = 120000;/);
   assert.match(app, /const REFRESH_TIMER_TICK_MS = 5000;/);
-  assert.match(app, /const EDIT_LOCK_REFRESH_MS = 10000;/);
-  assert.match(app, /const LIVE_ROUND_POLL_MS = 15000;/);
+  assert.match(app, /const EDIT_LOCK_REFRESH_MS = 30000;/);
+  assert.match(app, /const LIVE_ROUND_POLL_MS = 30000;/);
   assert.match(app, /const ROUND_INDEX_POLL_MS = 300000;/);
   assert.match(app, /if \(!cloudRefreshEnabled \|\| !hasSupabaseConfig\(\) \|\| document\.hidden \|\| syncState\.busy\) return;/);
   assert.doesNotMatch(app, /}, 1500\);/);
