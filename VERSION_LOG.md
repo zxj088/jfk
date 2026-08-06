@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.11 - Low-egress cloud synchronization
+
+Date: 2026-08-06
+
+Tag: `v6.1.11`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=193`
+
+What is new in this version:
+
+- Startup keeps one complete cloud sync, while later home refreshes use a lightweight 30-second round index and fetch only changed games.
+- Live viewers and scoring ownership checks request only the current game every five seconds.
+- Completed history pages do not poll continuously; background pages pause cloud polling and refresh immediately after returning to the foreground.
+- Opening new-game setup refreshes courses on demand without replacing a form the user has started editing.
+- PWA asset query version is `v193`.
+
 ### v6.1.10 - Unified home game cards
 
 Date: 2026-08-06

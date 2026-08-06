@@ -1,4 +1,4 @@
-self.__SIMPLE_GOLF_BUILD__ = 'v192';
+self.__SIMPLE_GOLF_BUILD__ = 'v193';
 
 self.addEventListener('install', event => {
   self.skipWaiting();

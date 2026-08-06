@@ -11,6 +11,8 @@ const GAME_LIMIT = 200;
 const CLOUD_ROUND_LIMIT = 1000;
 const EDIT_LOCK_TTL_MS = 12000;
 const CLOUD_REQUEST_TIMEOUT_MS = 8000;
+const ACTIVE_ROUND_POLL_MS = 5000;
+const ROUND_INDEX_POLL_MS = 30000;
 const WELCOME_MIN_DURATION_MS = 1000;
 const WELCOME_SEEN_KEY = 'jfk.simpleGolfWelcomeSeen.v1';
 const SCORE_DETAIL_KEY = 'jfk.simpleGolfScoreDetail.v1';
@@ -24,6 +26,9 @@ let pendingWelcomeAction = '';
 let activeOverlay = null;
 let overlayReturnFocus = null;
 let scoreDetailMode = localStorage.getItem(SCORE_DETAIL_KEY) === 'full' ? 'full' : 'compact';
+let cloudRefreshPromise = null;
+let lastRoundIndexSyncAt = 0;
+let cloudRefreshEnabled = false;
 
 function roleIconHtml(isLandlord, className = '') {
   const role = isLandlord ? 'landlord' : 'peasant';
@@ -1440,6 +1445,30 @@ async function fetchCloudRounds() {
     .map(cloudRowToRound);
 }
 
+function cloudRowVersion(row) {
+  return Math.max(0, Number(row?.version || row?.totals?.cloudVersion || 0));
+}
+
+async function fetchCloudRoundIndex() {
+  const queryParts = [
+    `sync_key=eq.${encodeURIComponent(supabaseConfig().syncKey)}`,
+    'order=saved_at.desc',
+    `limit=${CLOUD_ROUND_LIMIT}`
+  ];
+  let rows;
+  try {
+    rows = await supabaseRequest('vegas_rounds', ['select=id,saved_at,totals,version', ...queryParts].join('&'));
+  } catch (error) {
+    if (!/version|column/i.test(String(error?.message || ''))) throw error;
+    cloudVersionSupported = false;
+    rows = await supabaseRequest('vegas_rounds', ['select=id,saved_at,totals', ...queryParts].join('&'));
+  }
+  if (rows.length && cloudVersionSupported === null) {
+    cloudVersionSupported = Object.prototype.hasOwnProperty.call(rows[0], 'version');
+  }
+  return rows;
+}
+
 async function fetchCloudRoundById(roundId) {
   if (!hasSupabaseConfig() || !roundId) return null;
   const query = `select=*&id=eq.${encodeURIComponent(cloudId('round', roundId))}&limit=1`;
@@ -1653,6 +1682,7 @@ async function syncFromCloud(pushLocal = true, quiet = false) {
 
     customCourses = mergeById(customCourses, cloudCourses).filter(course => !isCourseDeleted(course));
     savedRounds = mergeRounds(savedRounds, cloudRounds);
+    lastRoundIndexSyncAt = Date.now();
     await restoreActiveGameAfterCloudSync();
     saveCoursesLocal();
     saveHistoryLocal();
@@ -1938,6 +1968,104 @@ function renderNewGameCourses(preferredCourseId = state.courseId) {
   els.newGameCourse.value = courses.some(course => course.id === preferredCourseId)
     ? preferredCourseId
     : courses[0].id;
+}
+
+async function refreshCurrentCloudRound() {
+  if (!activeGameId) return false;
+  const remoteRound = await fetchCloudRoundById(activeGameId);
+  if (!remoteRound || isRoundDeleted(remoteRound)) return false;
+  const localRound = savedRounds.find(round => round.id === remoteRound.id);
+  const changed = !localRound || JSON.stringify(remoteRound) !== JSON.stringify(localRound);
+  if (!changed) return false;
+  savedRounds = mergeRounds(savedRounds, [remoteRound]);
+  if (!isEditing) {
+    applyGameToState(remoteRound);
+    saveState();
+  }
+  saveHistoryLocal();
+  return true;
+}
+
+async function refreshChangedCloudRounds() {
+  const rows = await fetchCloudRoundIndex();
+  const deleteMarkers = rows.filter(isDeleteMarkerRow).map(rowDeleteInfo);
+  deleteMarkers.forEach(info => {
+    if (info.id || info.savedAt || info.name) markRoundDeleted(info);
+  });
+
+  const changedIds = rows
+    .filter(row => !isDeleteMarkerRow(row))
+    .filter(row => !deleteMarkers.some(deleted => rowMatchesDeleteInfo(row, deleted)))
+    .filter(row => {
+      const id = cloudRowLocalId(row);
+      const localRound = savedRounds.find(round => round.id === id);
+      if (!localRound) return true;
+      const remoteVersion = cloudRowVersion(row);
+      const localVersion = Math.max(0, Number(localRound.totals?.cloudVersion || 0));
+      return remoteVersion > localVersion || JSON.stringify(row.totals || {}) !== JSON.stringify(localRound.totals || {});
+    })
+    .map(row => cloudRowLocalId(row));
+
+  const changedRounds = (await Promise.all(changedIds.map(fetchCloudRoundById))).filter(Boolean);
+  savedRounds = mergeRounds(savedRounds, changedRounds).filter(round => !isRoundDeleted(round));
+  if (!isEditing && activeGameId) {
+    const activeRound = savedRounds.find(round => round.id === activeGameId);
+    if (activeRound) {
+      applyGameToState(activeRound);
+      saveState();
+    }
+  }
+  saveHistoryLocal();
+  return Boolean(changedRounds.length || deleteMarkers.length);
+}
+
+async function refreshCloudCoursesForSetup(preferredCourseId = state.courseId) {
+  if (!hasSupabaseConfig() || document.hidden) return;
+  try {
+    const cloudCourses = await fetchCloudCourses();
+    customCourses = mergeById(customCourses, cloudCourses).filter(course => !isCourseDeleted(course));
+    saveCoursesLocal();
+    if (!els.gameModal.hidden && els.gameForm.dataset.dirty !== 'true') {
+      renderNewGameCourses(preferredCourseId);
+      renderRecentCourseChoices();
+    }
+  } catch (error) {
+    setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
+  }
+}
+
+async function refreshCloudForCurrentView(force = false) {
+  if (!cloudRefreshEnabled || !hasSupabaseConfig() || document.hidden || syncState.busy) return;
+  if (cloudRefreshPromise) return cloudRefreshPromise;
+  cloudRefreshPromise = (async () => {
+    let changed = false;
+    if (isEditing) {
+      await ensureEditLockStillMine();
+      return;
+    }
+    const activeRound = currentGame();
+    const watchingLiveRound = (currentView === 'play' || currentView === 'leaderboard')
+      && activeRound
+      && gameStatus(activeRound) === 'playing';
+    if (watchingLiveRound) {
+      changed = await refreshCurrentCloudRound();
+    } else if (currentView === 'start' && (force || Date.now() - lastRoundIndexSyncAt >= ROUND_INDEX_POLL_MS)) {
+      changed = await refreshChangedCloudRounds();
+      lastRoundIndexSyncAt = Date.now();
+    }
+    setSyncState({
+      ready: true,
+      busy: false,
+      ok: true,
+      label: t('Cloud sync ok'),
+      title: `Supabase room: ${supabaseConfig().syncKey}`,
+      lastSyncedAt: Date.now()
+    });
+    if (changed) render();
+  })().catch(error => {
+    setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
+  }).finally(() => { cloudRefreshPromise = null; });
+  return cloudRefreshPromise;
 }
 
 function flipBombIconHtml() {
@@ -2739,6 +2867,7 @@ function openGameModal() {
   showGameWizardStep(1);
   els.gameModal.hidden = false;
   els.gameForm.dataset.dirty = 'false';
+  refreshCloudCoursesForSetup(state.courseId);
   els.newGameCountry.focus();
 }
 
@@ -5561,6 +5690,7 @@ function switchView(name) {
   renderHeaderStatus();
   renderScoringDeviceBar();
   saveState();
+  refreshCloudForCurrentView(true);
 }
 
 function performMainAction(action = 'home') {
@@ -5718,7 +5848,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.10.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.11.')
     );
   });
 
@@ -6225,6 +6355,8 @@ async function init() {
     await syncFromCloud(false);
     if (pendingSyncRound) await flushPendingRoundSync();
   } finally {
+    cloudRefreshEnabled = true;
+    refreshCloudForCurrentView(true);
     if (els.welcomeScreen && !hasSeenWelcome) {
       const remainingWelcomeTime = Math.max(0, WELCOME_MIN_DURATION_MS - (performance.now() - welcomeStartedAt));
       if (remainingWelcomeTime) {
@@ -6237,19 +6369,10 @@ async function init() {
     }
   }
   window.setInterval(() => {
-    if (!hasSupabaseConfig() || syncState.busy) return;
-    if (isEditing) {
-      ensureEditLockStillMine();
-    } else {
-      syncFromCloud(false, true);
-    }
-  }, 1500);
+    refreshCloudForCurrentView();
+  }, ACTIVE_ROUND_POLL_MS);
   window.addEventListener('focus', () => {
-    if (isEditing && hasSupabaseConfig()) {
-      ensureEditLockStillMine();
-    } else if (hasSupabaseConfig() && !syncState.busy) {
-      syncFromCloud(false, true);
-    }
+    refreshCloudForCurrentView(true);
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && pendingSyncRound) {
@@ -6257,8 +6380,7 @@ async function init() {
       return;
     }
     if (!document.hidden && hasSupabaseConfig()) {
-      if (isEditing) ensureEditLockStillMine();
-      else if (!syncState.busy) syncFromCloud(false, true);
+      refreshCloudForCurrentView(true);
     }
   });
   window.addEventListener('online', () => {
@@ -6266,7 +6388,7 @@ async function init() {
       flushPendingRoundSync();
       return;
     }
-    if (!isEditing && hasSupabaseConfig() && !syncState.busy) syncFromCloud(false, true);
+    refreshCloudForCurrentView(true);
   });
   window.addEventListener('pagehide', () => {
     if (pendingSyncRound) flushPendingRoundSync();
@@ -6275,12 +6397,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=192', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=193', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v192';
+    const reloadKey = 'jfk.simpleGolfSwReload.v193';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
