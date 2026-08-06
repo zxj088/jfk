@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [html, app, css, mobileCss] = await Promise.all([
+const [html, app, css, mobileCss, i18n] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
   readFile(new URL('../styles.css', import.meta.url), 'utf8'),
-  readFile(new URL('../mobile-ux.css', import.meta.url), 'utf8')
+  readFile(new URL('../mobile-ux.css', import.meta.url), 'utf8'),
+  readFile(new URL('../i18n.js', import.meta.url), 'utf8')
 ]);
 
 test('mobile score display defaults to simple and retains a full-detail control', () => {
@@ -14,7 +15,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=193/);
+  assert.match(html, /mobile-ux\.css\?v=194/);
 });
 
 test('new game setup exposes recent courses and protects dirty forms from Escape', () => {
@@ -29,6 +30,22 @@ test('mobile setup uses a three-course row and compact help popovers', () => {
   assert.match(html, /class="hint-popover"[\s\S]*About scoring mode/);
   assert.match(html, /About under par flip/);
   assert.match(html, /About edit code/);
+});
+
+test('landlord multiplier help stays in the wide control column', () => {
+  assert.match(css, /\.landlord-action-group > \.field-help\s*\{[\s\S]*?grid-column:\s*2;[\s\S]*?font-size:\s*11px;/);
+  assert.match(html, /The manual multiplier is agreed before teeing off on this hole\./);
+  assert.match(i18n, /手动倍数为本洞开球前大家约定，炸弹是自动计算总杆低于标准杆翻倍/);
+});
+
+test('landlord player choices stay on one equal-width row', () => {
+  assert.match(css, /\.landlord-choice-list\s*\{[\s\S]*?repeat\(var\(--landlord-choice-columns, 3\), minmax\(0, 1fr\)\)/);
+  assert.match(app, /--landlord-choice-columns', config\.playerCount/);
+});
+
+test('landlord result cards use role icons without repeated visible role text', () => {
+  assert.match(app, /aria-label="\$\{escapeHtml\(`\$\{player\} · \$\{role\} \$\{points\}`\)\}"/);
+  assert.doesNotMatch(app, /\$\{escapeHtml\(player\)\} · \$\{escapeHtml\(role\)\}/);
 });
 
 test('live game colors are stable and history actions are secondary', () => {

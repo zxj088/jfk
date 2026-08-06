@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.12 - Compact landlord scoring controls
+
+Date: 2026-08-06
+
+Tag: `v6.1.12`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=194`
+
+What is new in this version:
+
+- Three- and four-player landlord choices stay on one equal-width row.
+- Multiplier guidance sits below the controls in the wide column, uses smaller text, and explains the pre-hole manual agreement and automatic below-par bomb.
+- Per-player hole results use the existing role icons without repeating visible landlord or peasant labels; accessible labels retain the role.
+- PWA asset query version is `v194`.
+
 ### v6.1.11 - Low-egress cloud synchronization
 
 Date: 2026-08-06

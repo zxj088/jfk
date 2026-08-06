@@ -3311,6 +3311,7 @@ function renderLandlordActions() {
   if (!active) return;
   autoLandlordMultiplierForHole(activePlayHoleIndex);
   const config = normalizeLandlordState(state.landlord, state.players.length);
+  els.landlordChoices.style.setProperty('--landlord-choice-columns', config.playerCount);
   els.landlordHoleResult.style.setProperty('--landlord-result-columns', config.playerCount);
   const landlordIndex = config.landlords[activePlayHoleIndex];
   const holeStarted = (state.scores[activePlayHoleIndex] || [])
@@ -3350,7 +3351,8 @@ function renderLandlordActions() {
   const playerResults = playerDisplayIndexes(config.playerCount).map(index => {
     const player = state.players[index];
     const role = index === landlordIndex ? t('Landlord') : t('Peasant');
-    return `<span class="${result.points[index] > 0 ? 'point-positive' : (result.points[index] < 0 ? 'point-negative' : '')}">${roleIconHtml(index === landlordIndex)} ${escapeHtml(player)} · ${escapeHtml(role)} <strong>${signedPoints(result.points[index])}</strong></span>`;
+    const points = signedPoints(result.points[index]);
+    return `<span class="${result.points[index] > 0 ? 'point-positive' : (result.points[index] < 0 ? 'point-negative' : '')}" aria-label="${escapeHtml(`${player} · ${role} ${points}`)}">${roleIconHtml(index === landlordIndex)} ${escapeHtml(player)} <strong>${points}</strong></span>`;
   }).join('');
   const multiplierSummary = t('Hole result: Manual multiplier {manual} x Bomb multiplier {bomb}', {
     manual: result.manualMultiplier,
@@ -5848,7 +5850,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.11.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.12.')
     );
   });
 
@@ -6397,12 +6399,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=193', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=194', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v193';
+    const reloadKey = 'jfk.simpleGolfSwReload.v194';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
