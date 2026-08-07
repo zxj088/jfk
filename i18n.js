@@ -24,7 +24,7 @@
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.2.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛战况、查看历史记分卡，以及多设备云端同步。版本 6.1.2。',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.17.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛战况、查看历史记分卡，以及多设备云端同步。版本 6.1.17。',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.0.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.2.0。',
-    'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.1.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.2.1。',
+    'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.2.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.2.2。',
     'Add to phone desktop': '添加到手机桌面',
     'App installed': '应用已安装',
     'This app is already installed on this phone.': '此应用已经安装在这台手机上。',

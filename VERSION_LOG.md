@@ -4,6 +4,23 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.2.2 - Correct installation icons
+
+Date: 2026-08-07
+
+Tag: `v6.2.2`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=202`
+
+What is new in this version:
+
+- Rebuilt the corrupted 192×192 PWA icon from the verified 512×512 source.
+- Added a dedicated 180×180 Apple touch icon with a new filename to avoid stale iOS icon caches.
+- Installation icons are declared as regular `any` icons instead of incorrectly claiming that the artwork is maskable.
+- PWA asset query version is `v202`.
+
 ### v6.2.1 - One clear scoring-system action
 
 Date: 2026-08-07

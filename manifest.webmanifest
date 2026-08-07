@@ -2,7 +2,7 @@
   "name": "Simple Golf Scorecard",
   "short_name": "Golf Scorecard",
   "id": "/jfk/",
-  "start_url": "./?source=pwa&v=201",
+  "start_url": "./?source=pwa&v=202",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f4ef",
@@ -13,19 +13,19 @@
       "src": "./assets/jfk-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./assets/jfk-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./assets/jfk-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
