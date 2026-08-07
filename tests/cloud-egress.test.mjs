@@ -26,9 +26,28 @@ test('startup and idle refresh use recent summaries without eager full-round dow
   assert.match(app, /const STARTUP_HISTORY_DAYS = 7;/);
   assert.match(app, /select=id,saved_at,name,course_id,course_name,players,totals,version/);
   assert.match(app, /fetchCloudRoundSummaries\(\{ fromMs: startupCutoff, includePlaying: true \}\)/);
-  assert.match(app, /mergeRoundSummaries\(savedRounds, cloudRoundResult\.summaries\)/);
+  assert.match(app, /reconcileRoundSummaries\(savedRounds, cloudRoundResult\.summaries/);
   assert.doesNotMatch(app, /changedIds\.map\(fetchCloudRoundById\)/);
   assert.match(app, /watchingLiveRound[\s\S]*refreshCurrentCloudRound\(\)/);
+});
+
+test('confirmed deletes physically remove cloud rows without persistent tombstones', () => {
+  assert.match(app, /async function deleteCloudRound[\s\S]*method: 'DELETE'/);
+  assert.match(app, /async function deleteCloudCourse[\s\S]*method: 'DELETE'/);
+  assert.doesNotMatch(app, /function uploadLocalDeleteMarkers/);
+  assert.doesNotMatch(app, /function uploadLocalCourseDeleteMarkers/);
+  assert.doesNotMatch(app, /function deleteInfoToCloudRow/);
+  assert.match(app, /localStorage\.removeItem\(LEGACY_DELETE_KEY\)/);
+  assert.match(app, /localStorage\.removeItem\(LEGACY_COURSE_DELETE_KEY\)/);
+});
+
+test('cloud snapshots remove missing cached data while preserving explicit offline work', () => {
+  assert.match(app, /window\.SIMPLE_GOLF_SYNC\.reconcileRoundSummaries/);
+  assert.match(app, /preserve: round => round\?\.id/);
+  assert.match(app, /const PENDING_COURSES_KEY = 'jfk\.vegasGolfPendingCourses\.v1'/);
+  assert.match(app, /await flushPendingCourses\(\)/);
+  assert.match(app, /customCourses = mergeById\(cloudCourses, pendingCourses\)/);
+  assert.doesNotMatch(app, /userEditableCourses\(\)\.map\(upsertCloudCourse\)/);
 });
 
 test('full rounds load only when a summary is opened or resumed for scoring', () => {

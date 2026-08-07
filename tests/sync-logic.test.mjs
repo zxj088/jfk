@@ -3,7 +3,7 @@ import test from 'node:test';
 
 await import('../sync-logic.js');
 
-const { mergeRoundSnapshots, mergeRoundSummaries } = globalThis.SIMPLE_GOLF_SYNC;
+const { mergeRoundSnapshots, mergeRoundSummaries, reconcileRoundSummaries } = globalThis.SIMPLE_GOLF_SYNC;
 
 test('remote snapshot replaces the same local round', () => {
   const result = mergeRoundSnapshots(
@@ -53,4 +53,27 @@ test('a newer summary replaces stale full data and requires an on-demand load', 
   const result = mergeRoundSummaries([full], [summary]);
   assert.equal(result[0], summary);
   assert.equal(result[0].summaryOnly, true);
+});
+
+test('authoritative reconciliation removes local rounds missing from the queried scope', () => {
+  const result = reconcileRoundSummaries(
+    [
+      { id: 'recent-deleted', savedAt: 30 },
+      { id: 'recent-live', savedAt: 20 },
+      { id: 'older-cached', savedAt: 5 }
+    ],
+    [{ id: 'recent-live', savedAt: 20, summaryOnly: true }],
+    { inScope: round => round.savedAt >= 10 }
+  );
+  assert.deepEqual(result.map(round => round.id), ['recent-live', 'older-cached']);
+});
+
+test('authoritative reconciliation preserves explicitly pending local rounds', () => {
+  const pending = { id: 'pending-offline', savedAt: 30 };
+  const result = reconcileRoundSummaries(
+    [pending],
+    [],
+    { inScope: () => true, preserve: round => round.id === pending.id }
+  );
+  assert.equal(result[0], pending);
 });

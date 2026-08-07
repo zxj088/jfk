@@ -36,5 +36,15 @@
     return mergeRoundSnapshots(localRounds, mergedSummaries, { ...options, normalize });
   }
 
-  root.SIMPLE_GOLF_SYNC = Object.freeze({ mergeRoundSnapshots, mergeRoundSummaries });
+  function reconcileRoundSummaries(localRounds, remoteSummaries, options = {}) {
+    const inScope = options.inScope || (() => true);
+    const preserve = options.preserve || (() => false);
+    const remoteIds = new Set((remoteSummaries || []).map(round => round?.id).filter(Boolean));
+    const retainedLocal = (localRounds || []).filter(round => (
+      !inScope(round) || remoteIds.has(round?.id) || preserve(round)
+    ));
+    return mergeRoundSummaries(retainedLocal, remoteSummaries, options);
+  }
+
+  root.SIMPLE_GOLF_SYNC = Object.freeze({ mergeRoundSnapshots, mergeRoundSummaries, reconcileRoundSummaries });
 })(globalThis);

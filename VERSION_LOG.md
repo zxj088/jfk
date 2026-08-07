@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.1.17 - Database-authoritative deletion
+
+Date: 2026-08-07
+
+Tag: `v6.1.17`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=199`
+
+What is new in this version:
+
+- Confirmed game and custom-course deletion physically removes the Supabase row instead of creating a permanent tombstone.
+- Queried cloud ranges are authoritative, so another phone removes cached games and courses that no longer exist in the database.
+- Active edits, pending score uploads, and explicitly queued course changes remain protected during weak-network recovery.
+- Startup no longer uploads every locally cached custom course, preventing an old phone from recreating deleted data.
+- Legacy local deletion lists are cleared during v199 startup and are never uploaded again.
+- PWA asset query version is `v199`.
+
 ### v6.1.16 - Lower-power golf-paced live sync
 
 Date: 2026-08-07
