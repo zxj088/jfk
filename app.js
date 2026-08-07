@@ -559,7 +559,6 @@ const els = {
   ],
   tableTeamATotal: document.querySelector('#tableTeamATotal'),
   tableTeamBTotal: document.querySelector('#tableTeamBTotal'),
-  editGame: document.querySelector('#editGame'),
   courseListCountry: document.querySelector('#courseListCountry'),
   courseListRegion: document.querySelector('#courseListRegion'),
   courseList: document.querySelector('#courseList'),
@@ -1308,13 +1307,11 @@ function setSyncState(next) {
 }
 
 function renderSyncStatus() {
-  if (!els.syncStatus || !els.editGame) return;
+  if (!els.syncStatus) return;
   els.syncStatus.textContent = syncState.busy ? t('sync...') : (syncState.ok ? t('sync') : syncState.label);
   els.syncStatus.title = syncState.title;
   els.syncStatus.classList.toggle('sync-ok', Boolean(syncState.ok) && !syncState.busy);
   els.syncStatus.classList.toggle('sync-bad', !syncState.ok && !syncState.busy);
-  els.editGame.textContent = isEditing ? t('Finish') : t('Edit');
-  els.editGame.disabled = !currentGame();
   if (els.shareCurrentScorecard) {
     els.shareCurrentScorecard.hidden = !window.SIMPLE_GOLF_ROUND_ACCESS.canShareScorecard(currentGame(), gameStatus(currentGame()));
   }
@@ -1356,7 +1353,8 @@ function renderScoringDeviceBar() {
   const historyIndex = completedRounds.findIndex(item => item.id === round.id);
   els.previousHistoryGame.disabled = historyIndex <= 0;
   els.nextHistoryGame.disabled = historyIndex < 0 || historyIndex >= completedRounds.length - 1;
-  els.takeOverScoring.hidden = finished || isEditing;
+  els.takeOverScoring.textContent = isEditing ? t('Finish game') : t('Take over scoring');
+  els.takeOverScoring.hidden = finished;
 }
 
 async function showAdjacentHistoryGame(direction = 1) {
@@ -3747,6 +3745,7 @@ async function takeOverScoring() {
     const locked = await acquireEditLock(round);
     if (!locked) return;
     isEditing = true;
+    activePlayHoleIndex = firstIncompleteHole();
     saveState();
     render();
     switchView('play');
@@ -3928,10 +3927,6 @@ async function confirmActionWithCode(round, title, message) {
     }
     errorMessage = t('The edit code is not correct. Try again.');
   }
-}
-
-async function confirmEditWithCode(round) {
-  return confirmActionWithCode(round, t('Edit game'), t('Enter code, then choose Yes to edit this game.'));
 }
 
 async function confirmFinishWithCode(round) {
@@ -5778,7 +5773,10 @@ function addListeners() {
   });
   els.gameForm.addEventListener('input', () => { els.gameForm.dataset.dirty = 'true'; });
   els.gameForm.addEventListener('change', () => { els.gameForm.dataset.dirty = 'true'; });
-  els.takeOverScoring?.addEventListener('click', takeOverScoring);
+  els.takeOverScoring?.addEventListener('click', async () => {
+    if (isEditing) await finishCurrentGame();
+    else await takeOverScoring();
+  });
   els.previousHistoryGame?.addEventListener('click', () => showAdjacentHistoryGame(-1));
   els.nextHistoryGame?.addEventListener('click', () => showAdjacentHistoryGame(1));
   els.welcomeActions.forEach(button => {
@@ -5816,21 +5814,6 @@ function addListeners() {
   els.historyRangeCancel.addEventListener('click', cancelHistoryRangeModal);
   els.historyRangeModal.addEventListener('click', event => {
     if (event.target === els.historyRangeModal) cancelHistoryRangeModal();
-  });
-
-  els.editGame.addEventListener('click', async () => {
-    if (!currentGame()) return;
-    if (!isEditing) {
-      if (!(await confirmEditWithCode(currentGame()))) return;
-      const locked = await acquireEditLock(currentGame());
-      if (!locked) return;
-      isEditing = true;
-      saveState();
-      render();
-      return;
-    }
-
-    await finishCurrentGame();
   });
 
   els.shareButton.addEventListener('click', async () => {
@@ -5871,7 +5854,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.0.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.1.')
     );
   });
 
@@ -6426,12 +6409,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=200', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=201', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v200';
+    const reloadKey = 'jfk.simpleGolfSwReload.v201';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

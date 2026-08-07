@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.2.1 - One clear scoring-system action
+
+Date: 2026-08-07
+
+Tag: `v6.2.1`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=201`
+
+What is new in this version:
+
+- The scoring system bar now has one action: `Take over scoring` before ownership and `Finish game` after ownership.
+- The duplicate Play-page takeover/edit button has been removed.
+- Taking over scoring opens the first incomplete hole instead of leaving the scorer on a previously viewed hole.
+- The full takeover warning remains when another phone currently owns the scoring lock.
+- PWA asset query version is `v201`.
+
 ### v6.2.0 - Server-authorized scorecard writes
 
 Date: 2026-08-07
