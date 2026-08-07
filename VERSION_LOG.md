@@ -4,6 +4,26 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.2.0 - Server-authorized scorecard writes
+
+Date: 2026-08-07
+
+Tag: `v6.2.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=200`
+
+What is new in this version:
+
+- Anonymous clients retain public scorecard viewing but can no longer insert, update, or delete database rows directly.
+- The `scorecard-write` Edge Function validates the game or course edit code, including universal code `59`, before every cloud mutation.
+- Edit codes are migrated out of publicly readable JSON into an RLS-protected credential table.
+- A phone verifies once when taking over scoring, remembers the code locally, and keeps immediate local-first score entry with background uploads.
+- Round updates retain optimistic version checks; failed deletes do not remove local data, and repeated wrong-code attempts are rate limited.
+- Pending course uploads no longer discard a newer edit when an older slow request finishes.
+- PWA asset query version is `v200`.
+
 ### v6.1.17 - Database-authoritative deletion
 
 Date: 2026-08-07

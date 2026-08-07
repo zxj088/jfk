@@ -8,6 +8,7 @@ const LEGACY_DELETE_KEY = 'jfk.vegasGolfDeletedRounds.v1';
 const LEGACY_COURSE_DELETE_KEY = 'jfk.vegasGolfDeletedCourses.v1';
 const PENDING_COURSES_KEY = 'jfk.vegasGolfPendingCourses.v1';
 const PENDING_SYNC_KEY = 'jfk.vegasGolfPendingRound.v1';
+const EDIT_CREDENTIALS_KEY = 'jfk.vegasGolfEditCredentials.v1';
 const GAME_LIMIT = 200;
 const CLOUD_ROUND_LIMIT = 1000;
 const STARTUP_HISTORY_DAYS = 7;
@@ -485,6 +486,7 @@ let state = {
 let customCourses = [];
 let savedRounds = [];
 let pendingCourses = [];
+let editCredentials = {};
 let syncState = {
   ready: false,
   busy: false,
@@ -859,6 +861,26 @@ function loadJson(key, fallback) {
   }
 }
 
+function editCredentialKey(type, id) {
+  return `${type}:${id}`;
+}
+
+function editCodeFor(type, id, fallback = '') {
+  return String(editCredentials[editCredentialKey(type, id)] || fallback || '').trim();
+}
+
+function rememberEditCode(type, id, code) {
+  const normalized = String(code || '').trim();
+  if (!id || !/^\d{2}$/.test(normalized)) return;
+  editCredentials[editCredentialKey(type, id)] = normalized;
+  localStorage.setItem(EDIT_CREDENTIALS_KEY, JSON.stringify(editCredentials));
+}
+
+function forgetEditCode(type, id) {
+  delete editCredentials[editCredentialKey(type, id)];
+  localStorage.setItem(EDIT_CREDENTIALS_KEY, JSON.stringify(editCredentials));
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, activeGameId, isEditing, currentView, activePlayHoleIndex }));
 }
@@ -922,7 +944,7 @@ function gameStatus(round) {
 }
 
 function gameCode(round) {
-  return String(round?.totals?.editCode || '').trim();
+  return editCodeFor('round', round?.id, round?.totals?.editCode);
 }
 
 function queuePendingCourse(course) {
@@ -1033,7 +1055,8 @@ function supabaseConfig() {
   return {
     url: String(raw.url || '').trim().replace(/\/+$/, ''),
     anonKey: String(raw.anonKey || '').trim(),
-    syncKey: String(raw.syncKey || 'default').trim() || 'default'
+    syncKey: String(raw.syncKey || 'default').trim() || 'default',
+    writeUrl: String(raw.writeUrl || '').trim()
   };
 }
 
@@ -1091,6 +1114,50 @@ async function supabaseRequest(table, query = '', options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+async function secureWriteRequest(action, resourceType, localId, code, options = {}) {
+  const config = supabaseConfig();
+  const url = config.writeUrl || `${config.url}/functions/v1/scorecard-write`;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), CLOUD_REQUEST_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${config.anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        action,
+        resourceType,
+        resourceId: cloudId(resourceType, localId),
+        syncKey: config.syncKey,
+        code,
+        ...options
+      }),
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error(t('Cloud request timed out. Check the connection and try again.'));
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = result.error === 'TOO_MANY_ATTEMPTS'
+      ? t('Too many incorrect attempts. Try again later.')
+      : (result.error || response.statusText);
+    const error = new Error(message);
+    if (result.error === 'VERSION_CONFLICT') error.code = 'VERSION_CONFLICT';
+    if (result.error === 'EDIT_CODE_INVALID') error.code = 'EDIT_CODE_INVALID';
+    if (result.error === 'TOO_MANY_ATTEMPTS') error.code = 'TOO_MANY_ATTEMPTS';
+    throw error;
+  }
+  return result;
+}
+
 function courseToCloudRow(course) {
   return {
     id: cloudId('course', course.id),
@@ -1100,7 +1167,6 @@ function courseToCloudRow(course) {
     pars: {
       values: course.pars,
       indexes: normalizeCourseIndexes(course.indexes),
-      editCode: String(course.editCode || ''),
       country: String(course.country || ''),
       region: String(course.region || ''),
       club: String(course.club || ''),
@@ -1158,7 +1224,7 @@ function cloudRowToCourse(row) {
     name: row.name,
     pars: Array.isArray(storedPars) ? storedPars : (Array.isArray(storedPars?.values) ? storedPars.values : []),
     indexes: Array.isArray(storedPars?.indexes) ? storedPars.indexes : undefined,
-    editCode: Array.isArray(storedPars) ? '' : String(storedPars?.editCode || ''),
+    editCode: editCodeFor('course', row.course_id, Array.isArray(storedPars) ? '' : storedPars?.editCode),
     country: Array.isArray(storedPars) ? '' : String(storedPars?.country || ''),
     region: Array.isArray(storedPars) ? '' : String(storedPars?.region || ''),
     club: Array.isArray(storedPars) ? '' : String(storedPars?.club || ''),
@@ -1173,6 +1239,8 @@ function isCourseDeleteMarkerRow(row) {
 
 function roundToCloudRow(round) {
   const normalized = normalizeRound(round);
+  const publicTotals = { ...normalized.totals };
+  delete publicTotals.editCode;
   const row = {
     id: cloudId('round', normalized.id),
     sync_key: supabaseConfig().syncKey,
@@ -1188,7 +1256,7 @@ function roundToCloudRow(round) {
     players: normalized.players,
     birdie_flip: normalized.birdieFlip,
     scores: normalized.scores,
-    totals: normalized.totals
+    totals: publicTotals
   };
   if (cloudVersionSupported) row.version = Math.max(1, Number(normalized.totals.cloudVersion || 1));
   return row;
@@ -1214,6 +1282,7 @@ function cloudRowToRound(row) {
     scores: row.scores,
     totals: {
       ...(row.totals || {}),
+      editCode: editCodeFor('round', cloudRowLocalId(row), row.totals?.editCode),
       cloudVersion: Math.max(0, Number(row.version || row.totals?.cloudVersion || 0))
     }
   });
@@ -1398,18 +1467,20 @@ async function loadGameOnDemand(gameId, editable = false, goToPlay = true, prefe
 
 async function upsertCloudCourse(course) {
   if (!hasSupabaseConfig()) return;
-  await supabaseRequest('vegas_courses', 'on_conflict=id', {
-    method: 'POST',
-    body: courseToCloudRow(course),
-    prefer: 'resolution=merge-duplicates,return=minimal'
-  });
+  const code = editCodeFor('course', course.id, course.editCode);
+  if (!/^\d{2}$/.test(code)) throw new Error(t('Enter the 2 digit edit code for this game.'));
+  rememberEditCode('course', course.id, code);
+  await secureWriteRequest('upsert', 'course', course.id, code, { row: courseToCloudRow(course) });
 }
 
 async function flushPendingCourses() {
   if (!hasSupabaseConfig() || !pendingCourses.length) return;
   for (const course of [...pendingCourses]) {
     await upsertCloudCourse(course);
-    clearPendingCourse(course.id);
+    const stillPending = pendingCourses.find(item => item.id === course.id);
+    if (stillPending && JSON.stringify(stillPending) === JSON.stringify(course)) {
+      clearPendingCourse(course.id);
+    }
   }
 }
 
@@ -1417,77 +1488,35 @@ async function upsertCloudRound(round) {
   if (!hasSupabaseConfig()) return;
   const normalized = normalizeRound(round);
   const expectedVersion = Number(normalized.totals.cloudVersion || 0);
-  if (cloudVersionSupported && expectedVersion > 0) {
-    const nextVersion = expectedVersion + 1;
-    normalized.totals.cloudVersion = nextVersion;
-    const rows = await supabaseRequest(
-      'vegas_rounds',
-      `id=eq.${encodeURIComponent(cloudId('round', normalized.id))}&version=eq.${expectedVersion}`,
-      {
-        method: 'PATCH',
-        body: roundToCloudRow(normalized),
-        prefer: 'return=representation'
-      }
-    );
-    if (!Array.isArray(rows) || rows.length === 0) {
-      const error = new Error(t('This game changed on another phone. Latest scores were loaded.'));
-      error.code = 'VERSION_CONFLICT';
-      throw error;
-    }
-    round.totals.cloudVersion = nextVersion;
-    replaceRound(round);
-    return;
-  }
-  if (cloudVersionSupported) normalized.totals.cloudVersion = 1;
-  let rows;
+  const code = gameCode(normalized);
+  if (!/^\d{2}$/.test(code)) throw new Error(t('Enter the 2 digit edit code for this game.'));
+  rememberEditCode('round', normalized.id, code);
+  let result;
   try {
-    rows = await supabaseRequest('vegas_rounds', 'on_conflict=id', {
-      method: 'POST',
-      body: roundToCloudRow(normalized),
-      prefer: 'resolution=merge-duplicates,return=representation'
+    result = await secureWriteRequest('upsert', 'round', normalized.id, code, {
+      expectedVersion,
+      row: roundToCloudRow(normalized)
     });
   } catch (error) {
-    if (!cloudVersionSupported || !/version|column/i.test(String(error?.message || ''))) throw error;
-    cloudVersionSupported = false;
-    normalized.totals.cloudVersion = 0;
-    rows = await supabaseRequest('vegas_rounds', 'on_conflict=id', {
-      method: 'POST',
-      body: roundToCloudRow(normalized),
-      prefer: 'resolution=merge-duplicates,return=representation'
-    });
+    if (error?.code === 'VERSION_CONFLICT') {
+      error.message = t('This game changed on another phone. Latest scores were loaded.');
+    }
+    throw error;
   }
-  if (cloudVersionSupported) {
-    round.totals.cloudVersion = Number(rows?.[0]?.version || 1);
-    replaceRound(round);
-  }
+  round.totals.cloudVersion = Number(result.row?.version || expectedVersion + 1 || 1);
+  replaceRound(round);
 }
 
 async function deleteCloudCourse(courseId) {
   if (!hasSupabaseConfig()) return;
-  await supabaseRequest('vegas_courses', `id=eq.${encodeURIComponent(cloudId('course', courseId))}`, {
-    method: 'DELETE',
-    prefer: 'return=representation'
-  });
+  await secureWriteRequest('delete', 'course', courseId, editCodeFor('course', courseId));
 }
 
 async function deleteCloudRound(roundOrId) {
   if (!hasSupabaseConfig()) return;
   const round = typeof roundOrId === 'string' ? { id: roundOrId } : normalizeRound(roundOrId);
-  const byId = await supabaseRequest('vegas_rounds', `id=eq.${encodeURIComponent(cloudId('round', round.id))}`, {
-    method: 'DELETE',
-    prefer: 'return=representation'
-  });
-  if (Array.isArray(byId) && byId.length) return byId.length;
-  if (!round.savedAt || !round.name) return 0;
-  const byRoundFields = await supabaseRequest(
-    'vegas_rounds',
-    `sync_key=eq.${encodeURIComponent(supabaseConfig().syncKey)}&saved_at=eq.${encodeURIComponent(round.savedAt)}&name=eq.${encodeURIComponent(round.name)}`,
-    {
-      method: 'DELETE',
-      prefer: 'return=representation'
-    }
-  );
-  return Array.isArray(byRoundFields) ? byRoundFields.length : 0;
+  const result = await secureWriteRequest('delete', 'round', round.id, gameCode(round));
+  return Number(result.deleted || 0);
 }
 
 function chooseInitialGame() {
@@ -3864,13 +3893,18 @@ async function askCodeDialog(errorMessage = '') {
 }
 
 async function verifyCodeForRound(round) {
-  const code = gameCode(round);
   if (!round) return false;
   let errorMessage = '';
   while (true) {
     const answer = await askCodeDialog(errorMessage);
     if (answer === false) return false;
-    if (codeMatchesRound(round, answer)) return true;
+    try {
+      await secureWriteRequest('verify', 'round', round.id, answer);
+      rememberEditCode('round', round.id, answer);
+      return true;
+    } catch (error) {
+      if (error?.code !== 'EDIT_CODE_INVALID') throw error;
+    }
     errorMessage = t('The edit code is not correct. Try again.');
   }
 }
@@ -3885,7 +3919,13 @@ async function confirmActionWithCode(round, title, message) {
   while (true) {
     const answer = await confirmCodeDialog(title, message, errorMessage);
     if (answer === false) return false;
-    if (codeMatchesRound(round, answer)) return true;
+    try {
+      await secureWriteRequest('verify', 'round', round.id, answer);
+      rememberEditCode('round', round.id, answer);
+      return true;
+    } catch (error) {
+      if (error?.code !== 'EDIT_CODE_INVALID') throw error;
+    }
     errorMessage = t('The edit code is not correct. Try again.');
   }
 }
@@ -3912,7 +3952,13 @@ async function confirmFinishWithCode(round) {
       cancelText: t('No')
     });
     if (answer === false) return false;
-    if (codeMatchesRound(round, answer.value)) return { share: answer.checked };
+    try {
+      await secureWriteRequest('verify', 'round', round.id, answer.value);
+      rememberEditCode('round', round.id, answer.value);
+      return { share: answer.checked };
+    } catch (error) {
+      if (error?.code !== 'EDIT_CODE_INVALID') throw error;
+    }
     errorMessage = t('The edit code is not correct. Try again.');
   }
 }
@@ -3986,7 +4032,13 @@ async function confirmCourseActionWithCode(course, title, message) {
       errorMessage
     );
     if (answer === false) return false;
-    if (answer === '59' || (/^\d{2}$/.test(course.editCode || '') && answer === course.editCode)) return true;
+    try {
+      await secureWriteRequest('verify', 'course', course.id, answer);
+      rememberEditCode('course', course.id, answer);
+      return true;
+    } catch (error) {
+      if (error?.code !== 'EDIT_CODE_INVALID') throw error;
+    }
     errorMessage = t('The edit code is not correct. Try again.');
   }
 }
@@ -4024,6 +4076,7 @@ async function deleteHistoryGame(round) {
     return;
   }
   savedRounds = savedRounds.filter(item => item.id !== round.id);
+  forgetEditCode('round', round.id);
   if (activeGameId === round.id) {
     activeGameId = '';
     chooseInitialGame();
@@ -4488,6 +4541,7 @@ function renderCourses() {
         try {
           await deleteCloudCourse(course.id);
           clearPendingCourse(course.id);
+          forgetEditCode('course', course.id);
           customCourses = customCourses.filter(item => item.id !== course.id);
           saveCoursesLocal();
           if (state.courseId === course.id) state.courseId = defaultCourses[0].id;
@@ -5817,7 +5871,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.1.17.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.0.')
     );
   });
 
@@ -6282,9 +6336,12 @@ async function init() {
   }
   localStorage.removeItem(LEGACY_DELETE_KEY);
   localStorage.removeItem(LEGACY_COURSE_DELETE_KEY);
+  editCredentials = loadJson(EDIT_CREDENTIALS_KEY, {});
   customCourses = loadJson(COURSE_KEY, []);
   pendingCourses = loadJson(PENDING_COURSES_KEY, []).map(normalizeCourse);
   savedRounds = loadJson(HISTORY_KEY, []).map(normalizeRound);
+  customCourses.forEach(course => rememberEditCode('course', course.id, course.editCode));
+  savedRounds.forEach(round => rememberEditCode('round', round.id, round.totals?.editCode));
   pendingSyncRound = loadPendingRoundLocal();
   if (pendingSyncRound) savedRounds = mergeRounds(savedRounds, [pendingSyncRound]);
   const savedState = loadJson(STORAGE_KEY, {});
@@ -6369,12 +6426,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=199', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=200', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v199';
+    const reloadKey = 'jfk.simpleGolfSwReload.v200';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

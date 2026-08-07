@@ -32,8 +32,8 @@ test('startup and idle refresh use recent summaries without eager full-round dow
 });
 
 test('confirmed deletes physically remove cloud rows without persistent tombstones', () => {
-  assert.match(app, /async function deleteCloudRound[\s\S]*method: 'DELETE'/);
-  assert.match(app, /async function deleteCloudCourse[\s\S]*method: 'DELETE'/);
+  assert.match(app, /async function deleteCloudRound[\s\S]*secureWriteRequest\('delete', 'round'/);
+  assert.match(app, /async function deleteCloudCourse[\s\S]*secureWriteRequest\('delete', 'course'/);
   assert.doesNotMatch(app, /function uploadLocalDeleteMarkers/);
   assert.doesNotMatch(app, /function uploadLocalCourseDeleteMarkers/);
   assert.doesNotMatch(app, /function deleteInfoToCloudRow/);
@@ -46,6 +46,7 @@ test('cloud snapshots remove missing cached data while preserving explicit offli
   assert.match(app, /preserve: round => round\?\.id/);
   assert.match(app, /const PENDING_COURSES_KEY = 'jfk\.vegasGolfPendingCourses\.v1'/);
   assert.match(app, /await flushPendingCourses\(\)/);
+  assert.match(app, /JSON\.stringify\(stillPending\) === JSON\.stringify\(course\)/);
   assert.match(app, /customCourses = mergeById\(cloudCourses, pendingCourses\)/);
   assert.doesNotMatch(app, /userEditableCourses\(\)\.map\(upsertCloudCourse\)/);
 });
@@ -75,5 +76,5 @@ test('history defaults to the most recent seven days', () => {
 
 test('the universal edit code 59 remains available', () => {
   assert.match(app, /value === '59'/);
-  assert.match(app, /answer === '59'/);
+  assert.match(app, /secureWriteRequest\('verify'/);
 });

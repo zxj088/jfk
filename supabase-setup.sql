@@ -1,6 +1,6 @@
 -- Paste this whole file into Supabase SQL Editor and run it once.
--- This setup allows anyone with the public anon key to read/write these
--- scorecard tables. Use it only for non-sensitive golf score data.
+-- Public scorecards remain anonymously readable. All writes are performed by
+-- the scorecard-write Edge Function after server-side edit-code validation.
 
 create table if not exists public.vegas_courses (
   id text primary key,
@@ -36,6 +36,47 @@ create table if not exists public.vegas_rounds (
 alter table public.vegas_rounds
 add column if not exists version bigint not null default 1;
 
+create table if not exists public.scorecard_credentials (
+  resource_type text not null check (resource_type in ('round', 'course')),
+  resource_id text not null,
+  sync_key text not null,
+  edit_code text not null check (edit_code ~ '^[0-9]{2}$'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (resource_type, resource_id)
+);
+
+create table if not exists public.scorecard_write_limits (
+  failure_key text primary key,
+  window_started timestamptz not null default now(),
+  attempts integer not null default 0
+);
+
+create or replace function public.scorecard_check_rate_limit(p_key text, p_increment boolean default false)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_attempts integer;
+  started timestamptz;
+begin
+  if p_increment then
+    insert into public.scorecard_write_limits (failure_key, window_started, attempts)
+    values (p_key, now(), 1)
+    on conflict (failure_key) do update set
+      window_started = case when scorecard_write_limits.window_started < now() - interval '10 minutes' then now() else scorecard_write_limits.window_started end,
+      attempts = case when scorecard_write_limits.window_started < now() - interval '10 minutes' then 1 else scorecard_write_limits.attempts + 1 end
+    returning attempts, window_started into current_attempts, started;
+  else
+    select attempts, window_started into current_attempts, started
+    from public.scorecard_write_limits where failure_key = p_key;
+  end if;
+  return started is null or started < now() - interval '10 minutes' or current_attempts < 8;
+end;
+$$;
+
 create index if not exists vegas_courses_sync_key_idx on public.vegas_courses (sync_key);
 create index if not exists vegas_rounds_sync_key_saved_at_idx on public.vegas_rounds (sync_key, saved_at desc);
 
@@ -61,10 +102,20 @@ for each row execute function public.vegas_set_updated_at();
 
 alter table public.vegas_courses enable row level security;
 alter table public.vegas_rounds enable row level security;
+alter table public.scorecard_credentials enable row level security;
+alter table public.scorecard_write_limits enable row level security;
 
 grant usage on schema public to anon;
-grant select, insert, update, delete on public.vegas_courses to anon;
-grant select, insert, update, delete on public.vegas_rounds to anon;
+grant select on public.vegas_courses to anon;
+grant select on public.vegas_rounds to anon;
+revoke insert, update, delete on public.vegas_courses from anon, authenticated;
+revoke insert, update, delete on public.vegas_rounds from anon, authenticated;
+revoke all on public.scorecard_credentials from public, anon, authenticated;
+revoke all on public.scorecard_write_limits from public, anon, authenticated;
+grant all on public.scorecard_credentials to service_role;
+grant all on public.scorecard_write_limits to service_role;
+revoke all on function public.scorecard_check_rate_limit(text, boolean) from public, anon, authenticated;
+grant execute on function public.scorecard_check_rate_limit(text, boolean) to service_role;
 
 drop policy if exists "vegas_courses_select" on public.vegas_courses;
 create policy "vegas_courses_select"
@@ -73,23 +124,8 @@ to anon
 using (true);
 
 drop policy if exists "vegas_courses_insert" on public.vegas_courses;
-create policy "vegas_courses_insert"
-on public.vegas_courses for insert
-to anon
-with check (true);
-
 drop policy if exists "vegas_courses_update" on public.vegas_courses;
-create policy "vegas_courses_update"
-on public.vegas_courses for update
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "vegas_courses_delete" on public.vegas_courses;
-create policy "vegas_courses_delete"
-on public.vegas_courses for delete
-to anon
-using (true);
 
 drop policy if exists "vegas_rounds_select" on public.vegas_rounds;
 create policy "vegas_rounds_select"
@@ -98,20 +134,5 @@ to anon
 using (true);
 
 drop policy if exists "vegas_rounds_insert" on public.vegas_rounds;
-create policy "vegas_rounds_insert"
-on public.vegas_rounds for insert
-to anon
-with check (true);
-
 drop policy if exists "vegas_rounds_update" on public.vegas_rounds;
-create policy "vegas_rounds_update"
-on public.vegas_rounds for update
-to anon
-using (true)
-with check (true);
-
 drop policy if exists "vegas_rounds_delete" on public.vegas_rounds;
-create policy "vegas_rounds_delete"
-on public.vegas_rounds for delete
-to anon
-using (true);

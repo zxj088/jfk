@@ -1,36 +1,36 @@
 # Supabase Setup
 
-Use this when you want courses and saved scorecards to appear on every phone.
+The `/jfk` app keeps scorecards publicly readable so a shared link opens without an account. Cloud writes are not public: the `scorecard-write` Edge Function validates the two-digit edit code (or universal code `59`) before using the service role.
 
-## 1. Create the database tables
+## New project
 
-1. Open your Supabase project.
-2. Go to SQL Editor.
-3. Paste the full contents of `supabase-setup.sql`.
-4. Run it once.
+1. Run `supabase-setup.sql` in the Supabase SQL Editor.
+2. Deploy `supabase/functions/scorecard-write/index.ts` as the `scorecard-write` function.
+3. Put the project URL, public anon key, shared `syncKey`, and function URL in `supabase-config.js`.
+4. Confirm anon can select `vegas_rounds` and `vegas_courses`, but direct anon insert, update, and delete all return permission errors.
 
-## 2. Add your project keys
+The service role key is supplied automatically to deployed Supabase Edge Functions. Never put it in this repository or in browser code.
 
-1. In Supabase, copy your Project URL.
-2. Copy your public anon key.
-3. Put both values into `supabase-config.js`.
+## Upgrade an existing project
 
-Example:
+Deployment order matters:
 
-```js
-window.VEGAS_SUPABASE = {
-  url: 'https://your-project-ref.supabase.co',
-  anonKey: 'your-public-anon-key',
-  syncKey: 'default'
-};
-```
+1. Deploy the `scorecard-write` Edge Function.
+2. Apply `supabase/migrations/20260807180000_secure_scorecard_writes.sql` in one transaction.
+3. Verify the migration copied every existing valid edit code into `scorecard_credentials`, removed `editCode` from public JSON, and revoked anon writes.
+4. Publish the matching v200 web client immediately after the migration.
+5. Test viewing without a code, current-device scoring, takeover from another phone, finish, and delete.
 
-Use the same `syncKey` on all phones that should share the same courses and history.
+Do not publish the v200 client before the function and migration are ready: v200 intentionally has no direct-table write fallback because such a fallback would reopen the security hole.
 
-## 3. Publish the update
+## Behavior
 
-Commit and push the updated files to GitHub. After GitHub Pages refreshes, open the app on each phone and tap `Sync`.
+- Viewers only use anonymous reads and never receive edit codes.
+- A scoring phone remembers a verified code locally and keeps immediate local score entry while uploads run in the background.
+- A takeover verifies the code once. The old scoring phone becomes read-only when it next checks the cloud lock.
+- Deletes are removed locally only after the server confirms that a cloud row was deleted.
+- Offline pending scores remain local and retry when connectivity returns.
 
-## Privacy note
+## Privacy and limits
 
-This simple setup uses Supabase's public anon key and open row-level security policies for easy sharing. Do not store private or sensitive data in this scorecard.
+The scorecard data itself remains public to support share links. Two-digit codes are deliberately simple and the universal code `59` remains supported, so this is an integrity boundary rather than high-security authentication. Do not store sensitive personal data in scorecards.
