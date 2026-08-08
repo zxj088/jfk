@@ -12,16 +12,16 @@
   <meta name="apple-mobile-web-app-title" content="简单高尔夫记分卡">
   <title>Simple Golf Scorecard</title>
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon-v202.png">
-  <link rel="manifest" href="./manifest.webmanifest?v=202">
-  <link rel="stylesheet" href="./styles.css?v=202">
-  <link rel="stylesheet" href="./mobile-ux.css?v=202">
+  <link rel="manifest" href="./manifest.webmanifest?v=203">
+  <link rel="stylesheet" href="./styles.css?v=203">
+  <link rel="stylesheet" href="./mobile-ux.css?v=203">
 </head>
 <body>
   <div class="welcome-screen" id="welcomeScreen" role="status" aria-live="polite">
     <div class="welcome-shade"></div>
     <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
     <div class="welcome-copy">
-      <strong class="welcome-version">v6.2.2</strong>
+      <strong class="welcome-version">v6.3.0</strong>
       <p>Welcome to use the Simple Golf Scorecard</p>
       <p lang="zh-CN">欢迎使用简单高尔夫记分卡</p>
       <div class="welcome-actions" aria-label="Choose what to do" data-bilingual>
@@ -423,22 +423,22 @@
         <section class="team-card team-a">
           <h3>Team A</h3>
           <div class="player-setup-row">
-            <label><span class="visually-hidden">Player 1</span><span class="player-name-picker"><input id="newPlayerA1" type="text" list="historyPlayerA1" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players"></button><datalist id="historyPlayerA1"></datalist><span class="history-player-menu" hidden></span></span></label>
+            <label><span class="visually-hidden">Player 1</span><span class="player-name-picker"><input id="newPlayerA1" type="text" list="historyPlayerA1" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players">Past</button><datalist id="historyPlayerA1"></datalist><span class="history-player-menu" hidden></span></span></label>
             <label><span class="visually-hidden">Handicap</span><span class="number-stepper"><button type="button" data-step="-1" aria-label="Decrease handicap">−</button><input id="newHandicapA1" type="number" min="0" max="54" inputmode="numeric" value="0" aria-label="Handicap" required><button type="button" data-step="1" aria-label="Increase handicap">+</button></span></label>
           </div>
           <div class="player-setup-row">
-            <label><span class="visually-hidden">Player 2</span><span class="player-name-picker"><input id="newPlayerA2" type="text" list="historyPlayerA2" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players"></button><datalist id="historyPlayerA2"></datalist><span class="history-player-menu" hidden></span></span></label>
+            <label><span class="visually-hidden">Player 2</span><span class="player-name-picker"><input id="newPlayerA2" type="text" list="historyPlayerA2" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players">Past</button><datalist id="historyPlayerA2"></datalist><span class="history-player-menu" hidden></span></span></label>
             <label><span class="visually-hidden">Handicap</span><span class="number-stepper"><button type="button" data-step="-1" aria-label="Decrease handicap">−</button><input id="newHandicapA2" type="number" min="0" max="54" inputmode="numeric" value="0" aria-label="Handicap" required><button type="button" data-step="1" aria-label="Increase handicap">+</button></span></label>
           </div>
         </section>
         <section class="team-card team-b">
           <h3>Team B</h3>
           <div class="player-setup-row">
-            <label><span class="visually-hidden">Player 3</span><span class="player-name-picker"><input id="newPlayerB1" type="text" list="historyPlayerB1" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players"></button><datalist id="historyPlayerB1"></datalist><span class="history-player-menu" hidden></span></span></label>
+            <label><span class="visually-hidden">Player 3</span><span class="player-name-picker"><input id="newPlayerB1" type="text" list="historyPlayerB1" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players">Past</button><datalist id="historyPlayerB1"></datalist><span class="history-player-menu" hidden></span></span></label>
             <label><span class="visually-hidden">Handicap</span><span class="number-stepper"><button type="button" data-step="-1" aria-label="Decrease handicap">−</button><input id="newHandicapB1" type="number" min="0" max="54" inputmode="numeric" value="0" aria-label="Handicap" required><button type="button" data-step="1" aria-label="Increase handicap">+</button></span></label>
           </div>
           <div class="player-setup-row player-four-setup">
-            <label><span class="visually-hidden">Player 4</span><span class="player-name-picker"><input id="newPlayerB2" type="text" list="historyPlayerB2" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players"></button><datalist id="historyPlayerB2"></datalist><span class="history-player-menu" hidden></span></span></label>
+            <label><span class="visually-hidden">Player 4</span><span class="player-name-picker"><input id="newPlayerB2" type="text" list="historyPlayerB2" autocomplete="off" placeholder="Enter or select player" required><button class="history-picker-button" type="button" aria-label="Show historical players">Past</button><datalist id="historyPlayerB2"></datalist><span class="history-player-menu" hidden></span></span></label>
             <label><span class="visually-hidden">Handicap</span><span class="number-stepper"><button type="button" data-step="-1" aria-label="Decrease handicap">−</button><input id="newHandicapB2" type="number" min="0" max="54" inputmode="numeric" value="0" aria-label="Handicap" required><button type="button" data-step="1" aria-label="Increase handicap">+</button></span></label>
           </div>
         </section>
@@ -499,25 +499,24 @@
             <option value="fixed">Fixed Wolf</option>
           </select>
         </div>
-        <div class="field-control landlord-setup" hidden>
-          <div class="field-label-row">
-            <label for="newLandlordMaxPoints">Maximum points per hole</label>
-            <details class="hint-popover">
-              <summary aria-label="About maximum points per hole" title="About maximum points per hole">?</summary>
-              <p>Caps each Pack player's win or loss on one hole after multipliers. It limits points only and never limits recorded strokes.</p>
-            </details>
-          </div>
-          <input id="newLandlordMaxPoints" type="number" min="1" max="20" inputmode="numeric" value="10">
-        </div>
-        <div class="toggle-row option-with-hint landlord-setup" hidden>
-          <label for="newLandlordTieWins">
-            <span>Tie: higher-handicap landlord wins</span>
-            <input id="newLandlordTieWins" type="checkbox">
+        <div class="field-control landlord-setup landlord-comparison-control" hidden>
+          <label class="best-peasant-count-label" for="newLandlordBestPeasantCount">
+            <span>Landlord vs</span>
+            <select id="newLandlordBestPeasantCount"></select>
+            <span>best Pack scores</span>
           </label>
-          <details class="hint-popover">
-            <summary aria-label="About tied-hole advantage" title="About tied-hole advantage">?</summary>
-            <p>Normally, a tied hole scores zero. When enabled, if the Wolf has a higher handicap than the group's lowest-handicap player, the tie is awarded to the Wolf at the current multiplier.</p>
-          </details>
+          <small class="field-help">Compares the sum of the selected number of lowest Pack scores with the Wolf score multiplied by that number.</small>
+        </div>
+        <div class="field-control landlord-setup landlord-tie-option" hidden>
+          <label class="tie-outcome-label" for="newLandlordTieOutcome">
+            <span>When tied</span>
+            <select id="newLandlordTieOutcome">
+              <option value="draw">No win or loss</option>
+              <option value="higher-handicap-landlord">Higher-handicap landlord wins</option>
+              <option value="peasants">Peasants win</option>
+              <option value="landlord">Landlord wins</option>
+            </select>
+          </label>
         </div>
         </div>
       </section>
@@ -643,10 +642,11 @@
     </form>
   </div>
 
-  <script src="./sync-logic.js?v=202" defer></script>
-  <script src="./round-access.js?v=202" defer></script>
-  <script src="./i18n.js?v=202" defer></script>
-  <script src="./supabase-config.js?v=202"></script>
-  <script src="./app.js?v=202" defer></script>
+  <script src="./sync-logic.js?v=203" defer></script>
+  <script src="./round-access.js?v=203" defer></script>
+  <script src="./landlord-scoring.js?v=203" defer></script>
+  <script src="./i18n.js?v=203" defer></script>
+  <script src="./supabase-config.js?v=203"></script>
+  <script src="./app.js?v=203" defer></script>
 </body>
 </html>

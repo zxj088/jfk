@@ -59,15 +59,14 @@ const LAS_VEGAS_RULES_TEXT = [
 ].join('\n\n');
 const LANDLORD_RULES_SECTIONS = [
   'Players: 3 or 4 players. Each hole has one landlord 👲; the other players are peasants 👨‍🌾.',
-  'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. The landlord’s score is multiplied by the number of peasants and compared with the peasants’ total score.',
+  'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to add together; compare that sum with the Wolf score multiplied by the same number.',
   'Recorded strokes have no maximum limit.',
   'Wolf selection: Result-Based Rotation follows the result of each hole. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.',
   'If the landlord wins, the landlord continues on the next hole. If the peasants win, the peasant with the lowest Gross or Net score becomes the next landlord. If multiple winning peasants tie, choose the player with fewer previous turns as landlord; if still tied, rotate forward from the current landlord through the player order. The landlord can still be changed manually on the next hole.',
   'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is x1.',
   'Special-score multipliers use gross strokes and multiply together with the manually selected x1, x2, or x4.',
   'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.',
-  'Per-hole cap: Each peasant cannot win or lose more than the selected cap on one hole. The landlord’s limit is the cap multiplied by the number of peasants.',
-  'Tied hole: Normally everyone scores zero. If the higher-handicap-landlord option is enabled, an eligible landlord wins the tie at the current multiplier.'
+  'Tied hole: Choose whether nobody wins, an eligible higher-handicap landlord wins, the peasants win, or the landlord wins.'
 ];
 const COURSE_SEARCH_AREAS = [
     {
@@ -622,8 +621,8 @@ const els = {
   newGameScoreMode: document.querySelector('#newGameScoreMode'),
   newGameType: document.querySelector('#newGameType'),
   newLandlordPlayerCount: document.querySelector('#newLandlordPlayerCount'),
-  newLandlordMaxPoints: document.querySelector('#newLandlordMaxPoints'),
-  newLandlordTieWins: document.querySelector('#newLandlordTieWins'),
+  newLandlordBestPeasantCount: document.querySelector('#newLandlordBestPeasantCount'),
+  newLandlordTieOutcome: document.querySelector('#newLandlordTieOutcome'),
   newLandlordMode: document.querySelector('#newLandlordMode'),
   newFixedLandlordPlayer: document.querySelector('#newFixedLandlordPlayer'),
   gameWizardProgress: document.querySelector('#gameWizardProgress'),
@@ -682,11 +681,12 @@ const els = {
 };
 
 function defaultLandlordState(playerCount = 3) {
+  const count = playerCount === 4 ? 4 : 3;
   return {
-    playerCount: playerCount === 4 ? 4 : 3,
+    playerCount: count,
     handicapEnabled: true,
-    maxPoints: 10,
-    tieHigherHandicapLandlordWins: false,
+    bestPeasantCount: count - 1,
+    tieOutcome: 'draw',
     selectionMode: 'rotating',
     fixedLandlordIndex: 0,
     landlords: Array.from({ length: 18 }, () => 0),
@@ -703,11 +703,14 @@ function normalizeLandlordState(value, playerCount = 3) {
   const selectionMode = source.selectionMode === 'fixed' ? 'fixed' : 'rotating';
   const requestedFixedIndex = Math.round(Number(source.fixedLandlordIndex) || 0);
   const fixedLandlordIndex = requestedFixedIndex >= 0 && requestedFixedIndex < count ? requestedFixedIndex : 0;
+  const validTieOutcomes = ['draw', 'higher-handicap-landlord', 'peasants', 'landlord'];
+  const legacyTieOutcome = source.tieHigherHandicapLandlordWins ? 'higher-handicap-landlord' : 'draw';
+  const tieOutcome = validTieOutcomes.includes(source.tieOutcome) ? source.tieOutcome : legacyTieOutcome;
   return {
     playerCount: count,
     handicapEnabled: source.handicapEnabled !== false,
-    maxPoints: Math.max(1, Math.min(20, Math.round(Number(source.maxPoints) || 10))),
-    tieHigherHandicapLandlordWins: Boolean(source.tieHigherHandicapLandlordWins),
+    bestPeasantCount: Math.max(1, Math.min(count - 1, Math.round(Number(source.bestPeasantCount) || count - 1))),
+    tieOutcome,
     selectionMode,
     fixedLandlordIndex,
     landlords: Array.from({ length: 18 }, (_, index) => {
@@ -2595,10 +2598,27 @@ function updateGameTypeFields() {
   });
   els.newPlayerB2.required = playerCount === 4;
   els.newHandicapB2.required = playerCount === 4;
+  renderBestPeasantCountOptions(playerCount);
   els.newGameBirdieFlip.closest('.option-with-hint').hidden = isLandlord;
   const fixedMode = isLandlord && els.newLandlordMode?.value === 'fixed';
   document.querySelector('.fixed-landlord-player')?.toggleAttribute('hidden', !fixedMode);
   renderFixedLandlordPlayers();
+}
+
+function renderBestPeasantCountOptions(playerCount) {
+  if (!els.newLandlordBestPeasantCount) return;
+  const maxCount = Math.max(1, Number(playerCount) - 1);
+  const previousMax = Math.max(0, Number(els.newLandlordBestPeasantCount.dataset.maxCount) || 0);
+  const current = Number(els.newLandlordBestPeasantCount.value) || maxCount;
+  const selected = previousMax && current === previousMax
+    ? maxCount
+    : Math.max(1, Math.min(maxCount, current));
+  els.newLandlordBestPeasantCount.innerHTML = Array.from({ length: maxCount }, (_, index) => {
+    const value = index + 1;
+    return `<option value="${value}">${value}</option>`;
+  }).join('');
+  els.newLandlordBestPeasantCount.value = String(selected);
+  els.newLandlordBestPeasantCount.dataset.maxCount = String(maxCount);
 }
 
 function gameFormPlayers() {
@@ -2635,7 +2655,8 @@ function renderGameReview() {
   if (isLandlord) {
     rows.push([t('Wolf selection'), t(els.newLandlordMode.value === 'fixed' ? 'Fixed Wolf' : 'Rotating Wolf')]);
     if (els.newLandlordMode.value === 'fixed') rows.push([t('Fixed Wolf'), players[fixedIndex]]);
-    rows.push([t('Maximum points per hole'), els.newLandlordMaxPoints.value]);
+    rows.push([t('Best Pack scores'), els.newLandlordBestPeasantCount.value]);
+    rows.push([t('When tied'), t(tieOutcomeLabel(els.newLandlordTieOutcome.value))]);
   }
   els.gameReview.innerHTML = rows.map(([label, value]) => `<div><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></div>`).join('');
 }
@@ -2771,8 +2792,8 @@ function openGameModal() {
   els.newGameType.value = 'vegas';
   els.newGameType.disabled = false;
   els.newLandlordPlayerCount.value = '3';
-  els.newLandlordMaxPoints.value = '10';
-  els.newLandlordTieWins.checked = false;
+  els.newLandlordBestPeasantCount.value = '2';
+  els.newLandlordTieOutcome.value = 'draw';
   els.newLandlordMode.value = 'rotating';
   els.newFixedLandlordPlayer.value = '0';
   els.newGameTeeTime.value = dateTimeInputValue(new Date());
@@ -2809,8 +2830,8 @@ function openEditGameInfoModal(round) {
   els.newGameType.value = normalized.gameType;
   els.newGameType.disabled = true;
   els.newLandlordPlayerCount.value = String(normalized.landlord.playerCount);
-  els.newLandlordMaxPoints.value = String(normalized.landlord.maxPoints);
-  els.newLandlordTieWins.checked = normalized.landlord.tieHigherHandicapLandlordWins;
+  els.newLandlordBestPeasantCount.value = String(normalized.landlord.bestPeasantCount);
+  els.newLandlordTieOutcome.value = normalized.landlord.tieOutcome;
   els.newLandlordMode.value = normalized.landlord.selectionMode;
   els.newGameTeeTime.value = normalized.totals.teeTime || dateTimeInputValue(new Date(normalized.savedAt));
   els.newPlayerA1.value = normalized.players[0];
@@ -3215,14 +3236,30 @@ function signedPoints(value) {
 }
 
 function landlordSettingsSummary(source = state) {
+  return landlordSettingsParts(source).join(' · ');
+}
+
+function landlordSettingsParts(source = state) {
   const config = normalizeLandlordState(source.landlord, source.players?.length || 3);
   const parts = [
     t('{count} players', { count: config.playerCount }),
-    t('Cap {cap}', { cap: config.maxPoints })
+    t('Best {count} Pack scores', { count: config.bestPeasantCount }),
+    t('Tie: {result}', { result: t(tieOutcomeLabel(config.tieOutcome)) })
   ];
-  if (config.tieHigherHandicapLandlordWins) parts.push(t('Tie: higher-handicap landlord wins'));
-  parts.push(t(config.selectionMode === 'fixed' ? 'Fixed Wolf' : 'Rotating Wolf'));
-  return parts.join(' · ');
+  if (config.selectionMode === 'fixed') {
+    const fixedPlayer = source.players?.[config.fixedLandlordIndex] || t('Fixed Wolf');
+    parts.push(t('Fixed Wolf: {player}', { player: fixedPlayer }));
+  } else {
+    parts.push(t('Rotating Wolf'));
+  }
+  return parts;
+}
+
+function tieOutcomeLabel(value) {
+  if (value === 'higher-handicap-landlord') return 'Higher-handicap landlord wins';
+  if (value === 'peasants') return 'Peasants win';
+  if (value === 'landlord') return 'Landlord wins';
+  return 'No win or loss';
 }
 
 function setLandlordForHole(playerIndex) {
@@ -3420,34 +3457,28 @@ function scoreLandlordHole({
   strokeIndex,
   landlordIndex,
   multiplier = 1,
-  maxPoints = 3,
+  bestPeasantCount,
   handicapEnabled = true,
-  tieHigherHandicapLandlordWins = false
+  tieOutcome = 'draw'
 }) {
   const gross = grossScores.map(parseScore);
   if (gross.some(value => value === null) || landlordIndex < 0 || landlordIndex >= gross.length) return null;
   const received = handicaps.map(handicap => handicapStrokes(handicap, strokeIndex));
   const net = gross.map((score, index) => Math.max(1, score - received[index]));
   const scoringValues = handicapEnabled ? net : gross;
-  const peasantIndexes = gross.map((_, index) => index).filter(index => index !== landlordIndex);
-  const landlordTotal = scoringValues[landlordIndex] * peasantIndexes.length;
-  const peasantsTotal = peasantIndexes.reduce((sum, index) => sum + scoringValues[index], 0);
-  const diff = peasantsTotal - landlordTotal;
-  const tiePrivilege = diff === 0
-    && tieHigherHandicapLandlordWins
-    && Number(handicaps[landlordIndex] || 0) > Math.min(...handicaps.map(value => Number(value) || 0));
-  const landlordWon = diff > 0 || tiePrivilege;
-  const tied = diff === 0 && !tiePrivilege;
-  const stake = Math.min(
-    Math.max(1, Math.round(Number(maxPoints) || 3)),
-    Math.max(1, Math.round(Number(multiplier) || 1))
-  );
-  const points = gross.map(() => 0);
-  if (!tied) {
-    points[landlordIndex] = (landlordWon ? 1 : -1) * stake * peasantIndexes.length;
-    peasantIndexes.forEach(index => { points[index] = (landlordWon ? -1 : 1) * stake; });
-  }
-  return { gross, net, scoringValues, received, landlordIndex, peasantIndexes, landlordTotal, peasantsTotal, diff, landlordWon, tied, stake, points };
+  const tieWinner = window.SIMPLE_GOLF_LANDLORD_SCORING.resolveTieWinner({
+    tieOutcome,
+    handicaps,
+    landlordIndex
+  });
+  const comparison = window.SIMPLE_GOLF_LANDLORD_SCORING.compareLandlordWithBestPeasants({
+    scoringValues,
+    landlordIndex,
+    bestPeasantCount,
+    multiplier,
+    tieWinner
+  });
+  return comparison ? { gross, net, scoringValues, received, landlordIndex, ...comparison } : null;
 }
 
 function landlordHoleResult(roundOrState, holeIndex) {
@@ -3468,9 +3499,9 @@ function landlordHoleResult(roundOrState, holeIndex) {
     handicaps: normalizeHandicaps(source.handicaps).slice(0, playerCount),
     strokeIndex: Number(indexes?.[holeIndex] || holeIndex + 1),
     landlordIndex: config.landlords[holeIndex],
-    maxPoints: config.maxPoints,
+    bestPeasantCount: config.bestPeasantCount,
     handicapEnabled: source.scoreMode === 'net',
-    tieHigherHandicapLandlordWins: config.tieHigherHandicapLandlordWins
+    tieOutcome: config.tieOutcome
   };
   const baseResult = scoreLandlordHole({ ...commonOptions, multiplier: 1 });
   if (!baseResult) return null;
@@ -5010,7 +5041,7 @@ async function createLandlordScorecardAsset(round) {
   const playerCardHeights = roleStatistics.map(statistics => 94 + roleLineCount(statistics) * 38);
   const playerCardOffsets = playerCardHeights.map((_, index) => playerCardHeights
     .slice(0, index).reduce((sum, height) => sum + height + playerCardGap, 0));
-  const statisticsTop = 280;
+  const statisticsTop = 330;
   const statisticsHeight = playerCardHeights.reduce((sum, height) => sum + height, 0) + playerCardGap * Math.max(0, playerCount - 1);
   const tableTop = statisticsTop + 48 + statisticsHeight + 18;
   const headerHeight = 62;
@@ -5025,17 +5056,33 @@ async function createLandlordScorecardAsset(round) {
   ctx.fillStyle = '#f6f7f4';
   ctx.fillRect(0, 0, logicalWidth, logicalHeight);
   ctx.fillStyle = '#0b5d46';
-  ctx.fillRect(0, 0, logicalWidth, 260);
+  ctx.fillRect(0, 0, logicalWidth, 310);
   drawScorecardCourseIcon(ctx, 70, 91, 42);
   drawScorecardText(ctx, normalized.courseName, 128, 54, { align: 'left', color: '#fff', font: 'bold 36px Arial, Microsoft YaHei, sans-serif', maxWidth: 440 });
   drawScorecardText(ctx, t('Fight the Landlord'), 128, 101, { align: 'left', color: '#f2d37f', font: 'bold 25px Arial, Microsoft YaHei, sans-serif', maxWidth: 440 });
   drawScorecardText(ctx, '18/18', 750, 70, { align: 'right', color: '#fff', font: 'bold 42px Arial, Microsoft YaHei, sans-serif' });
   drawScorecardText(ctx, t('Completed'), 750, 116, { align: 'right', color: '#dceee8', font: 'bold 19px Arial, Microsoft YaHei, sans-serif' });
   drawScorecardText(ctx, `${roundListDate(normalized)} · ${roundModeLine(normalized)}`, 128, 143, { align: 'left', color: '#dceee8', font: '20px Arial, Microsoft YaHei, sans-serif', maxWidth: 500 });
+  const settingParts = landlordSettingsParts(normalized);
+  drawScorecardText(ctx, settingParts.slice(0, 3).join(' · '), margin, 178, {
+    align: 'left', color: '#ffffff', font: 'bold 19px Arial, Microsoft YaHei, sans-serif', maxWidth: contentWidth
+  });
+  drawScorecardText(ctx, settingParts.slice(3).join(' · '), margin, 207, {
+    align: 'left', color: '#dceee8', font: '18px Arial, Microsoft YaHei, sans-serif', maxWidth: contentWidth
+  });
   const resultGap = 8;
   const resultWidth = (contentWidth - resultGap * (playerCount - 1)) / playerCount;
   normalized.players.slice(0, playerCount).forEach((player, index) => {
-    drawScorecardResultBlock(ctx, margin + index * (resultWidth + resultGap), 184, resultWidth, 58, player, totalsValue.points[index]);
+    drawScorecardResultBlock(
+      ctx,
+      margin + index * (resultWidth + resultGap),
+      230,
+      resultWidth,
+      70,
+      player,
+      totalsValue.points[index],
+      `HCP ${normalized.handicaps[index] || 0}`
+    );
   });
 
   drawScorecardText(ctx, `${t('Leaderboard')} · ${roundModeLine(normalized)}`, margin, statisticsTop + 27, {
@@ -5854,7 +5901,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.2.2.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.0.')
     );
   });
 
@@ -6243,8 +6290,8 @@ function addListeners() {
       landlord: normalizeLandlordState({
         ...(editingGameInfoId ? savedRounds.find(round => round.id === editingGameInfoId)?.landlord : null),
         playerCount,
-        maxPoints: els.newLandlordMaxPoints.value,
-        tieHigherHandicapLandlordWins: els.newLandlordTieWins.checked,
+        bestPeasantCount: els.newLandlordBestPeasantCount.value,
+        tieOutcome: els.newLandlordTieOutcome.value,
         selectionMode: els.newLandlordMode.value === 'fixed' ? 'fixed' : 'rotating',
         fixedLandlordIndex: Number(els.newFixedLandlordPlayer.value) || 0
       }, playerCount)
@@ -6409,12 +6456,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=202', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=203', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v202';
+    const reloadKey = 'jfk.simpleGolfSwReload.v203';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

@@ -9,13 +9,13 @@ test('web assets, manifest and service worker use one build number', async () =>
     readFile(new URL('../sw.js', import.meta.url), 'utf8'),
     readFile(new URL('../manifest.webmanifest', import.meta.url), 'utf8')
   ]);
-  const assetVersions = [...html.matchAll(/(?:styles\.css|sync-logic\.js|round-access\.js|i18n\.js|app\.js)\?v=(\d+)/g)].map(match => match[1]);
+  const assetVersions = [...html.matchAll(/(?:styles\.css|sync-logic\.js|round-access\.js|landlord-scoring\.js|i18n\.js|app\.js)\?v=(\d+)/g)].map(match => match[1]);
   const workerRegistration = app.match(/sw\.js\?v=(\d+)/)?.[1];
   const reloadVersion = app.match(/simpleGolfSwReload\.v(\d+)/)?.[1];
   const workerVersion = worker.match(/BUILD__ = 'v(\d+)'/)?.[1];
   const manifestVersion = JSON.parse(manifestText).start_url.match(/[?&]v=(\d+)/)?.[1];
   const versions = [...assetVersions, workerRegistration, reloadVersion, workerVersion, manifestVersion];
-  assert.equal(assetVersions.length, 5);
+  assert.equal(assetVersions.length, 6);
   assert.ok(versions.every(Boolean));
   assert.equal(new Set(versions).size, 1, `Build versions differ: ${versions.join(', ')}`);
 });

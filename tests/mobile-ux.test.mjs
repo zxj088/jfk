@@ -15,7 +15,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=202/);
+  assert.match(html, /mobile-ux\.css\?v=203/);
 });
 
 test('the play-page action uses explicit takeover and finish states', () => {
@@ -38,6 +38,42 @@ test('mobile setup uses a three-course row and compact help popovers', () => {
   assert.match(html, /class="hint-popover"[\s\S]*About scoring mode/);
   assert.match(html, /About under par flip/);
   assert.match(html, /About edit code/);
+});
+
+test('player history suggestions use a labeled button without dropdown arrows', () => {
+  assert.match(html, /id="newPlayerA1"[^>]*list="historyPlayerA1"/);
+  assert.match(html, /<datalist id="historyPlayerA1"><\/datalist>/);
+  assert.match(html, /class="history-picker-button"[^>]*>Past<\/button>/);
+  assert.match(html, /class="history-player-menu" hidden/);
+  assert.doesNotMatch(css, /history-picker-button::after/);
+  assert.match(css, /\.player-name-picker > input::\-webkit-calendar-picker-indicator\s*\{[\s\S]*?display:\s*none !important/);
+});
+
+test('landlord setup selects how many best Pack scores are compared', () => {
+  assert.match(html, /id="newLandlordBestPeasantCount"/);
+  assert.doesNotMatch(html, /id="newLandlordMaxPoints"/);
+  assert.match(app, /bestPeasantCount:\s*els\.newLandlordBestPeasantCount\.value/);
+  assert.match(app, /renderBestPeasantCountOptions\(playerCount\)/);
+});
+
+test('landlord setup offers all four tied-hole outcomes', () => {
+  assert.match(html, /id="newLandlordTieOutcome"/);
+  assert.match(html, /value="draw">No win or loss/);
+  assert.match(html, /value="higher-handicap-landlord">Higher-handicap landlord wins/);
+  assert.match(html, /value="peasants">Peasants win/);
+  assert.match(html, /value="landlord">Landlord wins/);
+  assert.doesNotMatch(html, /id="newLandlordTieWins"/);
+  assert.match(app, /tieOutcome:\s*els\.newLandlordTieOutcome\.value/);
+});
+
+test('shared landlord scorecard header includes every game setting', () => {
+  assert.match(app, /function landlordSettingsParts\(source = state\)/);
+  assert.match(app, /Best \{count\} Pack scores/);
+  assert.match(app, /Tie: \{result\}/);
+  assert.match(app, /Fixed Wolf: \{player\}/);
+  assert.match(app, /settingParts\.slice\(0, 3\)\.join/);
+  assert.match(app, /settingParts\.slice\(3\)\.join/);
+  assert.match(app, /`HCP \$\{normalized\.handicaps\[index\] \|\| 0\}`/);
 });
 
 test('landlord multiplier help stays in the wide control column', () => {

@@ -1345,11 +1345,7 @@ textarea {
 }
 
 .player-setup-row .player-name-picker {
-  grid-template-columns: minmax(0, 1fr) 40px;
-}
-
-.player-setup-row .history-picker-button {
-  min-width: 40px;
+  grid-template-columns: minmax(0, 1fr) 54px;
 }
 
 .player-setup-row .number-stepper {
@@ -1371,7 +1367,7 @@ textarea {
 .player-name-picker {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 48px;
+  grid-template-columns: minmax(0, 1fr) 58px;
   margin-top: 4px;
 }
 
@@ -1388,24 +1384,49 @@ textarea {
 }
 
 .history-picker-button {
-  position: relative;
-  display: grid;
-  min-width: 48px;
-  place-items: center;
-  padding: 0;
+  min-width: 54px;
+  padding: 0 6px;
   border-radius: 0 8px 8px 0;
   color: var(--green);
   background: #fff;
-  font-size: 0;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.history-picker-button::after {
-  width: 10px;
-  height: 10px;
-  border-right: 3px solid currentColor;
-  border-bottom: 3px solid currentColor;
-  content: '';
-  transform: translateY(-3px) rotate(45deg);
+.player-name-picker > input::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.best-peasant-count-label {
+  display: grid;
+  grid-template-columns: auto minmax(64px, 88px) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.landlord-comparison-control,
+.landlord-tie-option {
+  grid-column: 1 / -1;
+}
+
+.best-peasant-count-label select {
+  width: 100%;
+  margin: 0;
+}
+
+.tie-outcome-label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.tie-outcome-label select {
+  width: 100%;
+  margin: 0;
 }
 
 .number-stepper {

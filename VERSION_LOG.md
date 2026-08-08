@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.3.0 - Configurable Wolf and Pack comparison
+
+Date: 2026-08-08
+
+Tag: `v6.3.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=203`
+
+What is new in this version:
+
+- Wolf & Pack setup replaces the per-hole cap with a choice of how many lowest Pack scores are summed and compared with The Wolf score multiplied by the same number.
+- Tied holes can be configured as no win or loss, an eligible higher-handicap Wolf win, a Pack win, or a Wolf win; forced results retain manual and special-score multipliers and zero-sum points.
+- Legacy games without the new settings continue to compare all Pack players and preserve the former tied-hole behavior.
+- Player setup keeps browser history suggestions and adds an explicit labeled history list that restores the selected player's latest handicap without ambiguous arrow icons.
+- Shared Wolf & Pack scorecards show the complete game setup in the header, including players and handicaps, player count, score mode, compared Pack-score count, tied-hole rule, Wolf selection mode, and fixed Wolf when applicable.
+- PWA asset query version is `v203`.
+
 ### v6.2.2 - Correct installation icons
 
 Date: 2026-08-07

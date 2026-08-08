@@ -9,6 +9,7 @@ const files = [
   'mobile-ux.css',
   'sync-logic.js',
   'round-access.js',
+  'landlord-scoring.js',
   'i18n.js',
   'app.js',
   'sw.js',
