@@ -1649,6 +1649,19 @@ textarea {
   gap: 8px;
 }
 
+.history-filter-toggle,
+.history-show-more {
+  min-height: 44px;
+  border-color: #cfded7;
+  color: var(--green-strong);
+  background: #fff;
+  font-weight: 900;
+}
+
+.history-show-more {
+  width: 100%;
+}
+
 @media (max-width: 620px) {
   .history-filters {
     grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) minmax(0, 1fr);
@@ -1792,16 +1805,19 @@ textarea {
 
 @media (max-width: 620px) {
   .home-actions {
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
+  .home-action-primary { grid-column: 1 / -1; }
+
   .home-action {
-    min-height: 82px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 5px;
-    text-align: center;
+    min-height: 66px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px;
+    text-align: left;
   }
 
   .home-action-icon {
@@ -1819,6 +1835,18 @@ textarea {
   .home-action small {
     display: none;
   }
+}
+
+.game-destination {
+  display: inline-flex;
+  width: max-content;
+  margin-top: 3px;
+  border-radius: 999px;
+  padding: 4px 9px;
+  color: var(--green-strong) !important;
+  background: var(--green-2);
+  font-size: 12px !important;
+  font-weight: 900;
 }
 
 .game-section h3 {

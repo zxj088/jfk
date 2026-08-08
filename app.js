@@ -469,6 +469,7 @@ let installPromptEvent = null;
 let courseSearchMode = 'shared';
 let previousHistoryTimeFilter = 'last-7-days';
 let historyRange = { from: '', to: '' };
+let historyExpanded = false;
 const clientId = getClientId();
 let state = {
   gameType: 'vegas',
@@ -636,6 +637,9 @@ const els = {
   historyTimeFilter: document.querySelector('#historyTimeFilter'),
   historyCourseFilter: document.querySelector('#historyCourseFilter'),
   historyGameTypeFilter: document.querySelector('#historyGameTypeFilter'),
+  historyFilterToggle: document.querySelector('#historyFilterToggle'),
+  historyFilters: document.querySelector('#historyFilters'),
+  historyShowMore: document.querySelector('#historyShowMore'),
   historyRangeModal: document.querySelector('#historyRangeModal'),
   historyRangeForm: document.querySelector('#historyRangeForm'),
   historyRangeFrom: document.querySelector('#historyRangeFrom'),
@@ -5581,7 +5585,25 @@ function renderGameList(container, rounds, emptyText, status) {
   if (!rounds.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.textContent = emptyText;
+    const message = document.createElement('p');
+    message.textContent = emptyText;
+    empty.append(message);
+    const action = document.createElement('button');
+    action.type = 'button';
+    action.textContent = t(status === 'playing' ? 'Start a new game' : 'Clear filters');
+    action.addEventListener('click', () => {
+      if (status === 'playing') {
+        openGameModal();
+        return;
+      }
+      els.historyTimeFilter.value = 'last-7-days';
+      els.historyCourseFilter.value = 'all';
+      els.historyGameTypeFilter.value = 'all';
+      previousHistoryTimeFilter = 'last-7-days';
+      historyExpanded = false;
+      renderStart();
+    });
+    empty.append(action);
     container.append(empty);
     return;
   }
@@ -5604,6 +5626,7 @@ function renderGameList(container, rounds, emptyText, status) {
           </span>
           <span class="game-line game-meta"></span>
           <span class="game-line game-score"></span>
+          <span class="game-destination"></span>
         </span>
       </div>
     `;
@@ -5616,6 +5639,7 @@ function renderGameList(container, rounds, emptyText, status) {
     const destinationText = status === 'history'
       ? t('View scorecard')
       : (destination.canEdit ? t('Continue scoring') : t('Watch live'));
+    row.querySelector('.game-destination').textContent = destinationText;
     row.querySelector('.game-open').setAttribute('aria-label', `${round.courseName || t('Course')} · ${destinationText}`);
     const openRound = async () => {
       const target = window.SIMPLE_GOLF_ROUND_ACCESS.openDestination(round, status, clientId);
@@ -5660,8 +5684,16 @@ function renderGameList(container, rounds, emptyText, status) {
 function renderStart() {
   const playing = savedRounds.filter(round => gameStatus(round) === 'playing');
   const history = savedRounds.filter(round => gameStatus(round) !== 'playing');
+  if (els.playingSection) els.playingSection.hidden = playing.length === 0;
   renderGameList(els.playingList, playing, t('No games currently playing'), 'playing');
-  renderGameList(els.historyList, filteredHistoryRounds(history), t('No finished games'), 'history');
+  const filteredHistory = filteredHistoryRounds(history);
+  const visibleHistory = historyExpanded ? filteredHistory : filteredHistory.slice(0, 3);
+  renderGameList(els.historyList, visibleHistory, t('No finished games match these filters'), 'history');
+  if (els.historyShowMore) {
+    els.historyShowMore.hidden = filteredHistory.length <= 3;
+    els.historyShowMore.textContent = t(historyExpanded ? 'Show less' : 'Show more');
+    els.historyShowMore.setAttribute('aria-expanded', String(historyExpanded));
+  }
 }
 
 function render() {
@@ -5763,19 +5795,21 @@ async function performMainAction(action = 'home') {
   if (action === 'score') {
     openGameModal();
   } else if (action === 'watch') {
-    const liveRound = savedRounds.find(round => gameStatus(round) === 'playing');
-    if (liveRound) {
+    const liveRounds = savedRounds.filter(round => gameStatus(round) === 'playing');
+    if (liveRounds.length === 1) {
+      const liveRound = liveRounds[0];
       if (await loadGameOnDemand(liveRound.id, hasEditRight(liveRound), false)) switchView('leaderboard');
-    } else {
-      els.playingSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
     }
+    if (!liveRounds.length && els.playingSection) els.playingSection.hidden = false;
+    els.playingSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else if (action === 'history') {
-    const completedRound = savedRounds.find(round => gameStatus(round) !== 'playing');
-    if (completedRound) {
-      if (await loadGameOnDemand(completedRound.id, false, false)) switchView('leaderboard');
-    } else {
-      els.historySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const completedRounds = savedRounds.filter(round => gameStatus(round) !== 'playing');
+    if (completedRounds.length === 1) {
+      if (await loadGameOnDemand(completedRounds[0].id, false, false)) switchView('leaderboard');
+      return;
     }
+    els.historySection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
@@ -5837,11 +5871,22 @@ function addListeners() {
       return;
     }
     previousHistoryTimeFilter = els.historyTimeFilter.value;
+    historyExpanded = false;
     renderStart();
     await refreshHistorySummaries(els.historyTimeFilter.value);
   });
-  els.historyCourseFilter.addEventListener('change', renderStart);
-  els.historyGameTypeFilter.addEventListener('change', renderStart);
+  els.historyCourseFilter.addEventListener('change', () => { historyExpanded = false; renderStart(); });
+  els.historyGameTypeFilter.addEventListener('change', () => { historyExpanded = false; renderStart(); });
+  els.historyFilterToggle?.addEventListener('click', () => {
+    const expanded = els.historyFilterToggle.getAttribute('aria-expanded') !== 'true';
+    els.historyFilterToggle.setAttribute('aria-expanded', String(expanded));
+    els.historyFilterToggle.textContent = t(expanded ? 'Hide filters' : 'Filter scorecards');
+    els.historyFilters.hidden = !expanded;
+  });
+  els.historyShowMore?.addEventListener('click', () => {
+    historyExpanded = !historyExpanded;
+    renderStart();
+  });
   els.historyRangeForm.addEventListener('submit', async event => {
     event.preventDefault();
     const from = els.historyRangeFrom.value;
@@ -5901,7 +5946,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.0.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.1.')
     );
   });
 
@@ -6456,12 +6501,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=203', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=204', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v203';
+    const reloadKey = 'jfk.simpleGolfSwReload.v204';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

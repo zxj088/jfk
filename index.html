@@ -12,16 +12,16 @@
   <meta name="apple-mobile-web-app-title" content="简单高尔夫记分卡">
   <title>Simple Golf Scorecard</title>
   <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon-v202.png">
-  <link rel="manifest" href="./manifest.webmanifest?v=203">
-  <link rel="stylesheet" href="./styles.css?v=203">
-  <link rel="stylesheet" href="./mobile-ux.css?v=203">
+  <link rel="manifest" href="./manifest.webmanifest?v=204">
+  <link rel="stylesheet" href="./styles.css?v=204">
+  <link rel="stylesheet" href="./mobile-ux.css?v=204">
 </head>
 <body>
   <div class="welcome-screen" id="welcomeScreen" role="status" aria-live="polite">
     <div class="welcome-shade"></div>
     <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
     <div class="welcome-copy">
-      <strong class="welcome-version">v6.3.0</strong>
+      <strong class="welcome-version">v6.3.1</strong>
       <p>Welcome to use the Simple Golf Scorecard</p>
       <p lang="zh-CN">欢迎使用简单高尔夫记分卡</p>
       <div class="welcome-actions" aria-label="Choose what to do" data-bilingual>
@@ -227,6 +227,13 @@
         <div class="section-heading">
           <h2>Home</h2>
         </div>
+        <section class="game-section home-game-section" id="playingSection">
+          <div class="home-section-heading">
+            <span class="live-mark" aria-hidden="true"></span>
+            <div><h3>Playing</h3><p>Continue scoring or watch the live leaderboard</p></div>
+          </div>
+          <div class="history-list" id="playingList"></div>
+        </section>
         <section class="home-actions" aria-label="Main actions">
           <button class="home-action home-action-primary" id="newGame" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9998;</span>
@@ -241,19 +248,13 @@
             <span><strong>Past scorecards</strong><small>Open finished rounds</small></span>
           </button>
         </section>
-        <section class="game-section home-game-section" id="playingSection">
-          <div class="home-section-heading">
-            <span class="live-mark" aria-hidden="true"></span>
-            <div><h3>Playing</h3><p>Continue scoring or watch the live leaderboard</p></div>
-          </div>
-          <div class="history-list" id="playingList"></div>
-        </section>
         <section class="game-section home-game-section" id="historySection">
           <div class="home-section-heading">
             <span class="history-mark" aria-hidden="true">&#10003;</span>
             <div><h3>History</h3><p>Review and share completed scorecards</p></div>
           </div>
-          <div class="history-filters">
+          <button class="history-filter-toggle" id="historyFilterToggle" type="button" aria-expanded="false" aria-controls="historyFilters">Filter scorecards</button>
+          <div class="history-filters" id="historyFilters" hidden>
             <label>
               Time
               <select id="historyTimeFilter">
@@ -277,6 +278,7 @@
             </label>
           </div>
           <div class="history-list" id="historyList"></div>
+          <button class="history-show-more" id="historyShowMore" type="button" hidden>Show more</button>
         </section>
       </section>
     </main>
@@ -642,11 +644,11 @@
     </form>
   </div>
 
-  <script src="./sync-logic.js?v=203" defer></script>
-  <script src="./round-access.js?v=203" defer></script>
-  <script src="./landlord-scoring.js?v=203" defer></script>
-  <script src="./i18n.js?v=203" defer></script>
-  <script src="./supabase-config.js?v=203"></script>
-  <script src="./app.js?v=203" defer></script>
+  <script src="./sync-logic.js?v=204" defer></script>
+  <script src="./round-access.js?v=204" defer></script>
+  <script src="./landlord-scoring.js?v=204" defer></script>
+  <script src="./i18n.js?v=204" defer></script>
+  <script src="./supabase-config.js?v=204"></script>
+  <script src="./app.js?v=204" defer></script>
 </body>
 </html>

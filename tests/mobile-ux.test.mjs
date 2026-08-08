@@ -15,7 +15,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=203/);
+  assert.match(html, /mobile-ux\.css\?v=204/);
 });
 
 test('the play-page action uses explicit takeover and finish states', () => {

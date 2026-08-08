@@ -4,6 +4,28 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.3.1 - Clearer home page
+
+Date: 2026-08-08
+
+Tag: `v6.3.1`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=204`
+
+What is new in this version:
+
+- Active games appear before the main home actions and the section stays hidden when there are none.
+- Start scoring remains a clear full-width primary phone action; Watch live and Past scorecards remain secondary actions.
+- A single matching round opens directly, while multiple rounds scroll to the relevant list for user selection.
+- Round cards show an explicit Continue scoring, Watch live, or View scorecard destination.
+- History filters start collapsed, the first three matching rounds are shown by default, and Show more reveals the full filtered list.
+- Empty results provide a direct Start a new game or Clear filters action.
+- PWA asset query version is `v204`.
+
+Verified with JavaScript syntax checking, 63 automated tests, the production build, and Chinese/English 390px browser checks with no horizontal scrolling or console errors.
+
 ### v6.3.0 - Configurable Wolf and Pack comparison
 
 Date: 2026-08-08
