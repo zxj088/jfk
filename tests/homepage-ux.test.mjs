@@ -44,6 +44,8 @@ test('shared games use a read-only deep link without credentials', () => {
 
 test('history filters are collapsible and long history starts with three cards', () => {
   assert.match(html, /id="historyFilterToggle"[^>]*aria-expanded="false"/);
+  assert.match(html, /id="historyFilterToggle"[^>]*>More past games<\/button>/);
+  assert.match(app, /t\(expanded \? 'Hide filters' : 'More past games'\)/);
   assert.match(html, /id="historyFilters" hidden/);
   assert.match(html, /id="historyShowMore"/);
   assert.match(app, /filteredHistory\.slice\(0, 3\)/);

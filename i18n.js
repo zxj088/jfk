@@ -441,7 +441,7 @@
     'No finished games': '暂无已结束的比赛',
     'No finished games match these filters': '没有符合条件的记分卡',
     'Start a new game': '开始新比赛',
-    'Filter scorecards': '筛选记分卡',
+    'More past games': '更多历史比赛',
     'Hide filters': '收起筛选',
     'Clear filters': '清除筛选',
     'Show more': '显示更多',

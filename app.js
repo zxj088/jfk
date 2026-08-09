@@ -6421,7 +6421,7 @@ function addListeners() {
   els.historyFilterToggle?.addEventListener('click', () => {
     const expanded = els.historyFilterToggle.getAttribute('aria-expanded') !== 'true';
     els.historyFilterToggle.setAttribute('aria-expanded', String(expanded));
-    els.historyFilterToggle.textContent = t(expanded ? 'Hide filters' : 'Filter scorecards');
+    els.historyFilterToggle.textContent = t(expanded ? 'Hide filters' : 'More past games');
     els.historyFilters.hidden = !expanded;
   });
   els.historyShowMore?.addEventListener('click', () => {
