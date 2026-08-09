@@ -4507,7 +4507,7 @@ async function confirmFinishWithCode(round) {
     });
     if (answer === false) return false;
     try {
-      await secureWriteRequest('verify', 'round', round.id, answer.value);
+      await secureWriteRequest('verify', 'round', round.id, answer);
       rememberEditCode('round', round.id, answer);
       return true;
     } catch (error) {

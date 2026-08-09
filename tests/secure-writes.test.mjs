@@ -52,3 +52,10 @@ test('a successful takeover remembers its code locally without exposing it to vi
   assert.match(app, /rememberEditCode\('round'/);
   assert.match(app, /editCode: editCodeFor\('round'/);
 });
+
+test('finishing a game verifies and remembers the string returned by the code dialog', () => {
+  const finishFlow = app.slice(app.indexOf('async function confirmFinishWithCode'), app.indexOf('async function finishCurrentGame'));
+  assert.match(finishFlow, /secureWriteRequest\('verify', 'round', round\.id, answer\)/);
+  assert.match(finishFlow, /rememberEditCode\('round', round\.id, answer\)/);
+  assert.doesNotMatch(finishFlow, /answer\.value/);
+});
