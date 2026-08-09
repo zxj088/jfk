@@ -2670,13 +2670,29 @@ input:disabled {
 }
 
 .analysis-player,
-.analysis-highlight-grid > span {
+.analysis-highlight-grid > span,
+.analysis-highlight-link {
   min-width: 0;
   padding: 11px 8px;
   border: 1px solid #dfe7e3;
   border-radius: 10px;
   background: #f7faf8;
   text-align: center;
+}
+
+.analysis-highlight-link {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: none;
+}
+.analysis-highlight-link:hover,
+.analysis-highlight-link:focus-visible {
+  border-color: var(--green);
+  background: #edf7f1;
+  outline: 2px solid color-mix(in srgb, var(--green) 25%, transparent);
+  outline-offset: 1px;
 }
 
 .analysis-player span,
@@ -2692,6 +2708,7 @@ input:disabled {
   margin: 0;
   border-top: 1px solid var(--line);
   background: #fff;
+  scroll-margin-top: 165px;
 }
 
 .analysis-hole:first-of-type { border-top: 0; }

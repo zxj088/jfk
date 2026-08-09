@@ -3887,7 +3887,11 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
       }
       return summary;
     }, { count: 0, max: 1, hole: 0 });
-    return { label: t('Multiplied holes'), value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0' };
+    return {
+      label: t('Multiplied holes'),
+      value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0',
+      hole: multiplied.hole || 0
+    };
   }
   const flipped = state.scores.reduce((summary, scores, holeIndex) => {
     const result = scoreHole(scores, Number(course.pars[holeIndex] || 4), holeIndex, displayMode);
@@ -3897,7 +3901,13 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     summary.extra += Math.abs(result.delta) - Math.abs(originalDelta);
     return summary;
   }, { count: 0, extra: 0 });
-  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}` };
+  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}`, hole: 0 };
+}
+
+function analysisHighlightCard(label, value, hole = 0) {
+  const content = `<small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong>`;
+  if (!hole) return `<span>${content}</span>`;
+  return `<button type="button" class="analysis-highlight-link" data-analysis-hole="${hole}" aria-label="${escapeHtml(`${label}: ${value}`)}">${content}</button>`;
 }
 
 function analysisSpecialPointBadges(scores, par, playerCount, result, gameType) {
@@ -3949,7 +3959,7 @@ function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
       return [{
         hole: holeIndex + 1,
         magnitude: Math.max(...result.points.slice(0, playerCount).map(value => Math.abs(value))),
-        html: `<details class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} · x${result.multiplier}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
+        html: `<details id="analysis-hole-${holeIndex + 1}" class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} · x${result.multiplier}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
           <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: state.players[landlordIndex], score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
           <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(`${packNames}: ${result.selectedPeasantIndexes.map(index => result.scoringValues[index]).join(' + ')} = ${result.peasantsTotal}`)}</p>
           <p><strong>${escapeHtml(t('Multiplier'))}</strong><br>${escapeHtml(t('Manual x{manual} × special x{special} = x{total}', { manual: result.manualMultiplier, special: result.specialMultiplier, total: result.multiplier }))}</p>
@@ -3969,7 +3979,7 @@ function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
     return [{
       hole: holeIndex + 1,
       magnitude: Math.abs(result.delta),
-      html: `<details class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} ${signedPoints(Math.abs(result.delta))}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
+      html: `<details id="analysis-hole-${holeIndex + 1}" class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} ${signedPoints(Math.abs(result.delta))}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
         <p>${escapeHtml(t('Using {mode} scores: {scores}', { mode: t(state.scoreMode === 'net' ? 'Net' : 'Gross'), scores: result.activeValues.join(' · ') }))}</p>
         <p>${escapeHtml(`${t('Team A')}: ${result.aNumber.originalValue}${result.aNumber.flipped ? ` → ${result.aNumber.value}` : ''}`)}</p>
         <p>${escapeHtml(`${t('Team B')}: ${result.bNumber.originalValue}${result.bNumber.flipped ? ` → ${result.bNumber.value}` : ''}`)}</p>
@@ -4020,11 +4030,11 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
     <section class="analysis-section">
       <div class="analysis-section-title"><h3>${escapeHtml(t('Highlights'))}</h3></div>
       <div class="analysis-highlight-grid">
-        <span><small>${escapeHtml(t('Birdies'))}</small><strong>${special.birdies}</strong></span>
-        <span><small>${escapeHtml(t('Eagles'))}</small><strong>${special.eagles}</strong></span>
-        <span><small>${escapeHtml(t('Holes in one'))}</small><strong>${special.holesInOne}</strong></span>
-        <span><small>${escapeHtml(t('Biggest swing'))}</small><strong>${biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--'}</strong></span>
-        <span><small>${escapeHtml(ruleImpact.label)}</small><strong>${escapeHtml(ruleImpact.value)}</strong></span>
+        ${analysisHighlightCard(t('Birdies'), String(special.birdies))}
+        ${analysisHighlightCard(t('Eagles'), String(special.eagles))}
+        ${analysisHighlightCard(t('Holes in one'), String(special.holesInOne))}
+        ${analysisHighlightCard(t('Biggest swing'), biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--', biggest?.hole)}
+        ${analysisHighlightCard(ruleImpact.label, ruleImpact.value, ruleImpact.hole)}
       </div>
     </section>
     <section class="analysis-section analysis-hole-section">
@@ -6363,6 +6373,16 @@ function addListeners() {
   els.resultsScoreModeSelect?.addEventListener('change', () => {
     resultsScoreMode = els.resultsScoreModeSelect.value === 'net' ? 'net' : 'gross';
     setResultsPanel(els.resultsAnalysisTab.getAttribute('aria-selected') === 'true' ? 'analysis' : 'scores');
+  });
+  els.resultsAnalysisPanel?.addEventListener('click', event => {
+    const trigger = event.target.closest('[data-analysis-hole]');
+    if (!trigger) return;
+    const hole = Number(trigger.dataset.analysisHole);
+    const details = els.resultsAnalysisPanel.querySelector(`#analysis-hole-${hole}`);
+    if (!details) return;
+    details.open = true;
+    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    details.querySelector('summary')?.focus({ preventScroll: true });
   });
 
   els.rulesButton.addEventListener('click', () => {

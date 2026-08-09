@@ -70,3 +70,12 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   const analysisRows = app.slice(app.indexOf('function analysisHoleRows'), app.indexOf('function renderGameAnalysis'));
   assert.doesNotMatch(analysisRows, /Points balance: \{points\} = 0/);
 });
+
+test('hole-specific highlight cards open and scroll to the matching hole analysis', () => {
+  assert.match(app, /function analysisHighlightCard[\s\S]*data-analysis-hole/);
+  assert.match(app, /id="analysis-hole-\$\{holeIndex \+ 1\}"/);
+  assert.match(app, /Biggest swing[\s\S]*biggest\?\.hole/);
+  assert.match(app, /analysisHighlightCard\(ruleImpact\.label, ruleImpact\.value, ruleImpact\.hole\)/);
+  assert.match(app, /resultsAnalysisPanel\?\.addEventListener\('click'[\s\S]*details\.open = true[\s\S]*scrollIntoView/);
+  assert.match(css, /\.analysis-highlight-link[\s\S]*cursor: pointer/);
+});
