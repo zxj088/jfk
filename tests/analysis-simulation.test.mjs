@@ -34,7 +34,9 @@ test('simulated four-player landlord match matches every analysis aggregate', ()
     { values: [4, 5, 6, 7], landlord: 0, multiplier: 1 },
     { values: [5, 4, 6, 7], landlord: 1, multiplier: 1 },
     { values: [4, 5, 6, 7], landlord: 2, multiplier: 1 },
-    { values: [3, 5, 6, 7], landlord: 3, multiplier: 4 }
+    { values: [3, 5, 6, 7], landlord: 3, multiplier: 4 },
+    { values: [5, 3, 6, 7], landlord: 0, multiplier: 2 },
+    { values: [2, 5, 6, 7], landlord: 1, multiplier: 2 }
   ].map(hole => ({
     ...hole,
     result: compareLandlordWithBestPeasants({
@@ -63,17 +65,19 @@ test('simulated four-player landlord match matches every analysis aggregate', ()
     return magnitudes.flatMap((value, index) => value === max ? [index + 1] : []);
   });
 
-  assert.deepEqual(totals, [7, 7, -1, -13]);
+  assert.deepEqual(totals, [3, 3, 3, -9]);
   assert.equal(totals.reduce((sum, value) => sum + value, 0), 0);
   assert.deepEqual(role, [
-    { landlordCount: 1, peasantCount: 3, landlordPoints: 3, peasantPoints: 4 },
-    { landlordCount: 1, peasantCount: 3, landlordPoints: 3, peasantPoints: 4 },
-    { landlordCount: 1, peasantCount: 3, landlordPoints: -3, peasantPoints: 2 },
-    { landlordCount: 1, peasantCount: 3, landlordPoints: -12, peasantPoints: -1 }
+    { landlordCount: 2, peasantCount: 4, landlordPoints: -3, peasantPoints: 6 },
+    { landlordCount: 2, peasantCount: 4, landlordPoints: -3, peasantPoints: 6 },
+    { landlordCount: 1, peasantCount: 5, landlordPoints: -3, peasantPoints: 6 },
+    { landlordCount: 1, peasantCount: 5, landlordPoints: -12, peasantPoints: 3 }
   ]);
-  assert.deepEqual(maxHoles, [[4], [4], [4], [4]]);
-  assert.deepEqual(holes.filter(hole => hole.multiplier > 1).map(hole => [holes.indexOf(hole) + 1, hole.multiplier]), [[4, 4]]);
-  assert.equal(holes.flatMap(hole => hole.values).filter((score, index) => 4 - score === 1).length, 1);
+  assert.deepEqual(maxHoles, [[5], [6], [4], [4]]);
+  assert.deepEqual(holes.filter(hole => hole.multiplier > 1).map(hole => [holes.indexOf(hole) + 1, hole.multiplier]), [[4, 4], [5, 2], [6, 2]]);
+  const landlordScores = holes.flatMap(hole => hole.values);
+  assert.equal(landlordScores.filter(score => 4 - score === 1).length, 2);
+  assert.equal(landlordScores.filter(score => score !== 1 && 4 - score >= 2).length, 1);
 });
 
 test('simulated Las Vegas match matches flips, tied biggest holes and special-score totals', () => {
@@ -81,7 +85,8 @@ test('simulated Las Vegas match matches flips, tied biggest holes and special-sc
     vegasHole([4, 5, 5, 7]),
     vegasHole([5, 7, 3, 6]),
     vegasHole([3, 6, 3, 7]),
-    vegasHole([5, 7, 3, 6])
+    vegasHole([5, 7, 3, 6]),
+    vegasHole([2, 6, 3, 7])
   ];
   const teamA = holes.reduce((sum, hole) => sum + hole.delta, 0);
   const teamB = -teamA;
@@ -89,7 +94,7 @@ test('simulated Las Vegas match matches flips, tied biggest holes and special-sc
   const maxMagnitude = Math.max(...holes.map(hole => Math.abs(hole.delta)));
   const biggestHoles = holes.flatMap((hole, index) => Math.abs(hole.delta) === maxMagnitude ? [index + 1] : []);
 
-  assert.deepEqual([teamA, teamB], [-65, 65]);
+  assert.deepEqual([teamA, teamB], [-54, 54]);
   assert.equal(teamA + teamB, 0);
   assert.deepEqual(flipped, [{ hole: 2, extra: 18 }, { hole: 4, extra: 18 }]);
   assert.equal(flipped.reduce((sum, item) => sum + item.extra, 0), 36);
@@ -98,5 +103,5 @@ test('simulated Las Vegas match matches flips, tied biggest holes and special-sc
     birdies: holes.reduce((sum, hole) => sum + hole.birdies, 0),
     eagles: holes.reduce((sum, hole) => sum + hole.eagles, 0),
     holesInOne: holes.reduce((sum, hole) => sum + hole.holesInOne, 0)
-  }, { birdies: 4, eagles: 0, holesInOne: 0 });
+  }, { birdies: 5, eagles: 1, holesInOne: 0 });
 });
