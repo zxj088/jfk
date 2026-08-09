@@ -4,6 +4,28 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.0 - Unified results and interactive match analysis
+
+Date: 2026-08-09
+
+Tag: `v6.5.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=207`
+
+What is new in this version:
+
+- Results use clear Scores and Analysis tabs with a compact Gross/Net reference selector that does not change the saved game.
+- Match analysis shows total results, special scores, tied biggest-swing holes, multiplier or flip details, and expandable calculations.
+- Highlight cards open detailed lists; selecting an item scrolls to, expands and temporarily highlights the matching hole.
+- Wolf & Pack player cards show role counts, role-specific points and every tied biggest-swing hole.
+- Positive points use a plus sign and green text, negative points use a minus sign and red text, and zero remains neutral.
+- Completed games open the locked results page without prompting for the retired summary PNG.
+- PWA asset query version is `v207`.
+
+Verified with JavaScript syntax checking, 90 automated tests, the production build, and mobile-width layout checks.
+
 ### v6.4.0 - Group-game positioning, rematch, sharing and calculation explanations
 
 Date: 2026-08-09

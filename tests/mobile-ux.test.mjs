@@ -16,7 +16,7 @@ test('mobile score display stays complete without a separate detail toolbar', ()
   assert.doesNotMatch(html, /class="score-display-toolbar"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=206/);
+  assert.match(html, /mobile-ux\.css\?v=207/);
 });
 
 test('the play-page action uses explicit takeover and finish states', () => {
