@@ -463,6 +463,18 @@ body {
 .calculation-steps p { margin: 0; line-height: 1.45; }
 .calculation-steps strong { color: var(--ink); }
 
+.vegas-hole-result {
+  margin: 10px 0 4px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.vegas-hole-result[hidden] { display: none; }
+.vegas-hole-result > strong { display: block; font-size: 18px; }
+.vegas-hole-result .calculation-explanation { margin-top: 8px; }
+
 @media (max-width: 620px) {
   .rematch-card { grid-template-columns: 1fr; }
   .rematch-card button { width: 100%; }

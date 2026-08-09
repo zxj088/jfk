@@ -16,3 +16,14 @@ test('landlord explanation consumes the scoring result without recalculating poi
   assert.match(app, /<details class="calculation-explanation">/);
   assert.match(css, /\.calculation-explanation/);
 });
+
+test('Las Vegas explanation and scorecard sharing consume the same scoreHole result', () => {
+  assert.match(app, /function renderVegasCalculationExplanation\(scores, par\)/);
+  assert.match(app, /const result = scoreHole\(scores, par, activePlayHoleIndex\)/);
+  assert.match(app, /originalValue: low \* 10 \+ high/);
+  assert.match(app, /activeValues,/);
+  assert.match(app, /function scoreVegasValues\(/);
+  assert.match(app, /return scoreVegasValues\(\{ gross, net, par, scoreMode: state\.scoreMode/);
+  assert.match(app, /scoreRoundTotalsForMode[\s\S]*scoreVegasValues\(\{ gross, net, par, scoreMode: mode/);
+  assert.match(css, /\.vegas-hole-result/);
+});

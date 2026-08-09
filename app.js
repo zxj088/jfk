@@ -526,6 +526,7 @@ const els = {
   landlordMultipliers: document.querySelector('#landlordMultipliers'),
   landlordAutomaticBomb: document.querySelector('#landlordAutomaticBomb'),
   landlordHoleResult: document.querySelector('#landlordHoleResult'),
+  vegasHoleResult: document.querySelector('#vegasHoleResult'),
   landlordLeaderboard: document.querySelector('#landlordLeaderboard'),
   rulesButton: document.querySelector('#rulesButton'),
   languageButton: document.querySelector('#languageButton'),
@@ -3503,6 +3504,37 @@ function renderLandlordActions() {
   els.landlordHoleResult.innerHTML = `<strong class="landlord-auto-status">${escapeHtml(multiplierSummary)}</strong>${playerResults}${explanation}`;
 }
 
+function renderVegasCalculationExplanation(scores, par) {
+  if (!els.vegasHoleResult) return;
+  const active = state.gameType === 'vegas' && Boolean(currentGame());
+  els.vegasHoleResult.hidden = !active;
+  if (!active) return;
+  const result = scoreHole(scores, par, activePlayHoleIndex);
+  if (!result) {
+    els.vegasHoleResult.hidden = true;
+    els.vegasHoleResult.innerHTML = '';
+    return;
+  }
+  const winner = result.delta === 0 ? '' : (result.delta > 0 ? 'A' : 'B');
+  const points = Math.abs(result.delta);
+  const headline = winner ? t('Team {team} wins {points}', { team: winner, points }) : t('Both teams tie this hole');
+  const activeScores = result.activeValues.join(' · ');
+  const aAfter = result.aNumber.flipped ? t(' → {value} after flip', { value: result.aNumber.value }) : '';
+  const bAfter = result.bNumber.flipped ? t(' → {value} after flip', { value: result.bNumber.value }) : '';
+  const high = Math.max(result.aNumber.value, result.bNumber.value);
+  const low = Math.min(result.aNumber.value, result.bNumber.value);
+  const flipNote = result.aUnderPar && result.bUnderPar
+    ? t('Both teams had an under-par score, so no flip was applied.')
+    : (!result.aNumber.flipped && !result.bNumber.flipped ? t('No flip was applied.') : '');
+  els.vegasHoleResult.innerHTML = `<strong>${escapeHtml(headline)}</strong><details class="calculation-explanation"><summary>${escapeHtml(t('View calculation'))}</summary><div class="calculation-steps">
+    <p>${escapeHtml(t('Using {mode} scores: {scores}', { mode: t(state.scoreMode === 'net' ? 'Net' : 'Gross'), scores: activeScores }))}</p>
+    <p>${escapeHtml(t('Team A pair: {before}{after}', { before: result.aNumber.originalValue, after: aAfter }))}</p>
+    <p>${escapeHtml(t('Team B pair: {before}{after}', { before: result.bNumber.originalValue, after: bAfter }))}</p>
+    ${flipNote ? `<p>${escapeHtml(flipNote)}</p>` : ''}
+    <p>${escapeHtml(t('Difference: {high} − {low} = {points}', { high, low, points }))}</p>
+  </div></details>`;
+}
+
 function renderPlayEntry() {
   if (!els.playPlayerRows) return;
   const course = currentCourse();
@@ -3526,6 +3558,7 @@ function renderPlayEntry() {
   els.playPlayerRows.innerHTML = '';
 
   renderLandlordActions();
+  renderVegasCalculationExplanation(scores, par);
   if (!game) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
@@ -3600,7 +3633,30 @@ function teamNumber(scores, par, shouldFlip) {
   const flipped = Boolean(shouldFlip);
   return {
     value: flipped ? high * 10 + low : low * 10 + high,
+    originalValue: low * 10 + high,
     flipped
+  };
+}
+
+function scoreVegasValues({ gross, net, par, scoreMode = 'gross', underParFlip = true }) {
+  const activeValues = scoreMode === 'net' ? net : gross;
+  const aUnderPar = Math.min(gross[0], gross[1]) < par;
+  const bUnderPar = Math.min(gross[2], gross[3]) < par;
+  const flipA = underParFlip && bUnderPar && !aUnderPar;
+  const flipB = underParFlip && aUnderPar && !bUnderPar;
+  const aNumber = teamNumber(activeValues.slice(0, 2), par, flipA);
+  const bNumber = teamNumber(activeValues.slice(2, 4), par, flipB);
+  return {
+    aNumber,
+    bNumber,
+    delta: bNumber.value - aNumber.value,
+    gross,
+    net,
+    activeValues,
+    flipA,
+    flipB,
+    aUnderPar,
+    bUnderPar
   };
 }
 
@@ -3720,29 +3776,7 @@ function holeGrossAndNet(scores, holeIndex) {
 function scoreHole(scores, par, holeIndex) {
   const { gross, net } = holeGrossAndNet(scores, holeIndex);
   if (gross.some(value => value === null)) return null;
-
-  const activeValues = state.scoreMode === 'net' ? net : gross;
-  const teamA = [activeValues[0], activeValues[1]];
-  const teamB = [activeValues[2], activeValues[3]];
-  const grossTeamA = [gross[0], gross[1]];
-  const grossTeamB = [gross[2], gross[3]];
-  const aUnderPar = Math.min(...grossTeamA) < par;
-  const bUnderPar = Math.min(...grossTeamB) < par;
-  const flipA = state.underParFlip && bUnderPar && !aUnderPar;
-  const flipB = state.underParFlip && aUnderPar && !bUnderPar;
-  const aNumber = teamNumber(teamA, par, flipA);
-  const bNumber = teamNumber(teamB, par, flipB);
-  const delta = bNumber.value - aNumber.value;
-
-  return {
-    aNumber,
-    bNumber,
-    delta,
-    gross,
-    net,
-    aUnderPar,
-    bUnderPar
-  };
+  return scoreVegasValues({ gross, net, par, scoreMode: state.scoreMode, underParFlip: state.underParFlip });
 }
 
 function totals() {
@@ -4938,19 +4972,10 @@ function scoreRoundTotalsForMode(round, scoreMode) {
     const net = gross.map((score, playerIndex) => {
       return Math.max(1, score - handicapStrokes(handicaps[playerIndex], indexValue));
     });
-    const activeValues = mode === 'net' ? net : gross;
-    const teamA = [activeValues[0], activeValues[1]];
-    const teamB = [activeValues[2], activeValues[3]];
-    const aUnderPar = Math.min(gross[0], gross[1]) < par;
-    const bUnderPar = Math.min(gross[2], gross[3]) < par;
-    const flipA = normalized.underParFlip && bUnderPar && !aUnderPar;
-    const flipB = normalized.underParFlip && aUnderPar && !bUnderPar;
-    const aNumber = teamNumber(teamA, par, flipA);
-    const bNumber = teamNumber(teamB, par, flipB);
-    const delta = bNumber.value - aNumber.value;
+    const result = scoreVegasValues({ gross, net, par, scoreMode: mode, underParFlip: normalized.underParFlip });
 
-    sum.a += delta;
-    sum.b -= delta;
+    sum.a += result.delta;
+    sum.b -= result.delta;
     sum.complete += 1;
     return sum;
   }, { a: 0, b: 0, complete: 0 });
