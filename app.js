@@ -3915,7 +3915,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(Math.abs(result.delta) - Math.abs(originalDelta)) }) });
     return summary;
   }, { count: 0, extra: 0, items: [] });
-  return { label: t('Flipped holes'), value: String(flipped.count), hole: 0, items: flipped.items };
+  return { label: t('Flipped holes'), value: flipped.count > 1 ? t('Multiple holes') : String(flipped.count), hole: 0, items: flipped.items };
 }
 
 function analysisHighlightCard(group, label, value, items = []) {
