@@ -11,6 +11,7 @@ const [html, app, css, mobileCss, i18n] = await Promise.all([
 ]);
 
 test('mobile score display stays complete without a separate detail toolbar', () => {
+  assert.match(html, /data-view="play"[\s\S]*>Score<\/span>[\s\S]*data-view="leaderboard"[\s\S]*>Results<\/span>/);
   assert.match(app, /scoreDetailMode = 'full'/);
   assert.doesNotMatch(html, /id="scoreDetailToggle"/);
   assert.doesNotMatch(html, /class="score-display-toolbar"/);

@@ -57,6 +57,8 @@
     'Home': '主页',
     'Play': '记分',
     'Leaderboard': '成绩',
+    'Score': '记分',
+    'Results': '成绩',
     'Courses': '球场',
     'Views': '页面',
     'Local only': '仅保存在本机',
