@@ -7,6 +7,8 @@ const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
 test('homepage keeps its three main actions above every active game', () => {
+  const homeView = html.slice(html.indexOf('id="startView"'), html.indexOf('id="playView"'));
+  assert.doesNotMatch(homeView, /<h2>Home<\/h2>/);
   assert.ok(html.indexOf('class="home-actions"') < html.indexOf('id="playingSection"'));
   assert.match(html, /id="newGame"[\s\S]*New game/);
   assert.match(html, /id="homePositioning"[\s\S]*Every hole settled automatically/);
