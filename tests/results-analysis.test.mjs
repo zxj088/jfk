@@ -35,7 +35,9 @@ test('analysis labels remain fully localized and special scores always use gross
 test('analysis reuses scoring results and finishing opens the locked score page', () => {
   assert.match(app, /function analysisHoleRows[\s\S]*landlordHoleResult\(displayState, holeIndex\)/);
   assert.match(app, /function analysisHoleRows[\s\S]*scoreHole\(scores, par, holeIndex, displayMode\)/);
-  assert.match(app, /function renderGameAnalysis[\s\S]*Points balance/);
+  assert.match(app, /function renderGameAnalysis[\s\S]*Total score/);
+  const renderedAnalysis = app.slice(app.indexOf('function renderGameAnalysis'), app.indexOf('function roundFromState'));
+  assert.doesNotMatch(renderedAnalysis, /Points balance/);
   assert.doesNotMatch(app, /checkboxLabel: t\('Share game scoring card'\)/);
   assert.match(app, /render\(\);\s*resultsScoreMode = state\.scoreMode;\s*setResultsPanel\('scores'\);\s*switchView\('leaderboard'\);/);
 });

@@ -4095,9 +4095,6 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude) })) : [];
   const biggestValue = String(biggestItems.length);
   analysisHighlightGroups = new Map();
-  const pointBalance = state.gameType === 'landlord'
-    ? points.reduce((sum, value) => sum + value, 0)
-    : total.a + total.b;
   const settings = state.gameType === 'landlord'
     ? `${t('Fight the Landlord')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
     : `${t('Las Vegas')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
@@ -4120,7 +4117,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
       ${displayMode === 'net' ? `<small class="analysis-gross-rule-note">${escapeHtml(t('Special scores, flips and bombs are always determined by actual gross strokes.'))}</small>` : ''}
     </section>
     <section class="analysis-section">
-      <div class="analysis-section-title"><h3>${escapeHtml(t('Total score'))}</h3><span>${escapeHtml(t('Points balance'))}: <strong class="${pointBalance === 0 ? 'point-positive' : 'point-negative'}">${signedPoints(pointBalance)}</strong></span></div>
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Total score'))}</h3></div>
       <div class="analysis-player-grid player-count-${playerCount}">${playerCards}</div>
     </section>
     <section class="analysis-section">
