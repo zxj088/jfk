@@ -533,8 +533,11 @@ const els = {
   welcomeLanguageButton: document.querySelector('#welcomeLanguageButton'),
   shareButton: document.querySelector('#shareButton'),
   aboutButton: document.querySelector('#aboutButton'),
-  shareCurrentScorecard: document.querySelector('#shareCurrentScorecard'),
   shareRoundLink: document.querySelector('#shareRoundLink'),
+  resultsScoreTab: document.querySelector('#resultsScoreTab'),
+  resultsAnalysisTab: document.querySelector('#resultsAnalysisTab'),
+  resultsScorePanel: document.querySelector('#resultsScorePanel'),
+  resultsAnalysisPanel: document.querySelector('#resultsAnalysisPanel'),
   courseSelect: document.querySelector('#courseSelect'),
   birdieFlip: document.querySelector('#birdieFlip'),
   scoreMode: document.querySelector('#scoreMode'),
@@ -1325,9 +1328,6 @@ function renderSyncStatus() {
   els.syncStatus.title = syncState.title;
   els.syncStatus.classList.toggle('sync-ok', Boolean(syncState.ok) && !syncState.busy);
   els.syncStatus.classList.toggle('sync-bad', !syncState.ok && !syncState.busy);
-  if (els.shareCurrentScorecard) {
-    els.shareCurrentScorecard.hidden = !window.SIMPLE_GOLF_ROUND_ACCESS.canShareScorecard(currentGame(), gameStatus(currentGame()));
-  }
   renderScoringDeviceBar();
 }
 
@@ -3809,6 +3809,120 @@ function totals() {
   }, { a: 0, b: 0, complete: 0, players: [0, 0, 0, 0], playersGross: [0, 0, 0, 0], playersNet: [0, 0, 0, 0] });
 }
 
+function setResultsPanel(panel = 'scores') {
+  const analysisActive = panel === 'analysis';
+  els.resultsScorePanel.hidden = analysisActive;
+  els.resultsAnalysisPanel.hidden = !analysisActive;
+  els.resultsScoreTab.classList.toggle('active', !analysisActive);
+  els.resultsAnalysisTab.classList.toggle('active', analysisActive);
+  els.resultsScoreTab.setAttribute('aria-selected', String(!analysisActive));
+  els.resultsAnalysisTab.setAttribute('aria-selected', String(analysisActive));
+  if (analysisActive) renderGameAnalysis();
+}
+
+function analysisSpecialScores(course, playerCount) {
+  return state.scores.reduce((summary, scores, holeIndex) => {
+    const par = Number(course.pars[holeIndex] || 4);
+    scores.slice(0, playerCount).forEach(rawScore => {
+      const score = parseScore(rawScore);
+      if (score === null) return;
+      if (score === 1) summary.holesInOne += 1;
+      else if (par - score >= 2) summary.eagles += 1;
+      else if (par - score === 1) summary.birdies += 1;
+    });
+    return summary;
+  }, { birdies: 0, eagles: 0, holesInOne: 0 });
+}
+
+function analysisHoleRows(course, playerCount) {
+  return state.scores.flatMap((scores, holeIndex) => {
+    const par = Number(course.pars[holeIndex] || 4);
+    if (state.gameType === 'landlord') {
+      const result = landlordHoleResult(state, holeIndex);
+      if (!result) return [];
+      const config = normalizeLandlordState(state.landlord, state.players.length);
+      const landlordIndex = config.landlords[holeIndex];
+      const packNames = result.selectedPeasantIndexes.map(index => state.players[index]).join(' + ');
+      const winner = result.diff === 0 ? t(tieOutcomeLabel(config.tieOutcome)) : t(result.landlordWon ? 'The Wolf' : 'The Pack');
+      const balance = result.points.slice(0, playerCount).map(signedPoints).join(' + ');
+      return [{
+        hole: holeIndex + 1,
+        magnitude: Math.max(...result.points.slice(0, playerCount).map(value => Math.abs(value))),
+        html: `<details class="analysis-hole"><summary><span>${escapeHtml(t('Hole {value}', { value: holeIndex + 1 }))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><strong>${escapeHtml(winner)} · x${result.multiplier}</strong></summary><div class="calculation-steps">
+          <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: state.players[landlordIndex], score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
+          <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(`${packNames}: ${result.selectedPeasantIndexes.map(index => result.scoringValues[index]).join(' + ')} = ${result.peasantsTotal}`)}</p>
+          <p>${escapeHtml(t('Points balance: {points} = 0', { points: balance }))}</p>
+        </div></details>`
+      }];
+    }
+    const result = scoreHole(scores, par, holeIndex);
+    if (!result) return [];
+    const winner = result.delta === 0 ? t('Tie') : t('Team {team}', { team: result.delta > 0 ? 'A' : 'B' });
+    const flipLabel = result.aNumber.flipped || result.bNumber.flipped ? t('Flip') : t('Without flip');
+    return [{
+      hole: holeIndex + 1,
+      magnitude: Math.abs(result.delta),
+      html: `<details class="analysis-hole"><summary><span>${escapeHtml(t('Hole {value}', { value: holeIndex + 1 }))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><strong>${escapeHtml(winner)} ${signedPoints(Math.abs(result.delta))}</strong></summary><div class="calculation-steps">
+        <p>${escapeHtml(t('Using {mode} scores: {scores}', { mode: t(state.scoreMode === 'net' ? 'Net' : 'Gross'), scores: result.activeValues.join(' · ') }))}</p>
+        <p>${escapeHtml(`${t('Team A')}: ${result.aNumber.originalValue}${result.aNumber.flipped ? ` → ${result.aNumber.value}` : ''}`)}</p>
+        <p>${escapeHtml(`${t('Team B')}: ${result.bNumber.originalValue}${result.bNumber.flipped ? ` → ${result.bNumber.value}` : ''}`)}</p>
+        <p>${escapeHtml(`${flipLabel} · ${t('Points balance: {points} = 0', { points: `${signedPoints(result.delta)} + ${signedPoints(-result.delta)}` })}`)}</p>
+      </div></details>`
+    }];
+  });
+}
+
+function renderGameAnalysis() {
+  if (!els.resultsAnalysisPanel) return;
+  const game = currentGame();
+  if (!game) {
+    els.resultsAnalysisPanel.innerHTML = `<div class="empty-state">${escapeHtml(t('No games currently playing'))}</div>`;
+    return;
+  }
+  const course = currentCourse();
+  const total = totals();
+  const playerCount = state.gameType === 'landlord' ? normalizeLandlordState(state.landlord, state.players.length).playerCount : 4;
+  const points = state.gameType === 'landlord' ? total.landlordPoints.slice(0, playerCount) : [total.a, total.a, total.b, total.b];
+  const special = analysisSpecialScores(course, playerCount);
+  const holes = analysisHoleRows(course, playerCount);
+  const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
+  const pointBalance = state.gameType === 'landlord'
+    ? points.reduce((sum, value) => sum + value, 0)
+    : total.a + total.b;
+  const settings = state.gameType === 'landlord'
+    ? `${t('Fight the Landlord')} · ${t(state.scoreMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
+    : `${t('Las Vegas')} · ${t(state.scoreMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
+  const playerCards = playerDisplayIndexes(playerCount).map(index => `<article class="analysis-player">
+    <span>${escapeHtml(state.players[index])}</span>
+    <strong class="${points[index] > 0 ? 'point-positive' : (points[index] < 0 ? 'point-negative' : '')}">${signedPoints(points[index])}</strong>
+    <small>${escapeHtml(t('Gross'))} ${total.playersGross[index]}${state.scoreMode === 'net' ? ` · ${escapeHtml(t('Net'))} ${total.playersNet[index]}` : ''}</small>
+  </article>`).join('');
+  els.resultsAnalysisPanel.innerHTML = `
+    <section class="analysis-summary-card">
+      <p class="eyebrow">${escapeHtml(t('Game summary'))}</p>
+      <h2>${escapeHtml(course.name)}</h2>
+      <p>${escapeHtml(settings)}</p>
+      <span>${escapeHtml(roundListDate(game))} · ${total.complete}/18</span>
+    </section>
+    <section class="analysis-section">
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Player totals'))}</h3><span>${escapeHtml(t('Points balance'))}: <strong class="${pointBalance === 0 ? 'point-positive' : 'point-negative'}">${signedPoints(pointBalance)}</strong></span></div>
+      <div class="analysis-player-grid player-count-${playerCount}">${playerCards}</div>
+    </section>
+    <section class="analysis-section">
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Highlights'))}</h3></div>
+      <div class="analysis-highlight-grid">
+        <span><small>${escapeHtml(t('Birdies'))}</small><strong>${special.birdies}</strong></span>
+        <span><small>${escapeHtml(t('Eagles'))}</small><strong>${special.eagles}</strong></span>
+        <span><small>${escapeHtml(t('Holes in one'))}</small><strong>${special.holesInOne}</strong></span>
+        <span><small>${escapeHtml(t('Biggest swing'))}</small><strong>${biggest ? `${t('Hole {value}', { value: biggest.hole })} · ${biggest.magnitude}` : '--'}</strong></span>
+      </div>
+    </section>
+    <section class="analysis-section analysis-hole-section">
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Hole-by-hole analysis'))}</h3><span>${holes.length}/18</span></div>
+      ${holes.length ? holes.map(item => item.html).join('') : `<p class="analysis-empty">${escapeHtml(t('Complete a hole to see its analysis.'))}</p>`}
+    </section>`;
+}
+
 function roundFromState(existing = {}, statusOverride = null) {
   const course = currentCourse();
   const previousTotals = existing.totals || {};
@@ -4167,16 +4281,14 @@ async function confirmFinishWithCode(round) {
       inputMode: 'numeric',
       maxLength: '2',
       pattern: '[0-9]{2}',
-      checkbox: true,
-      checkboxLabel: t('Share game scoring card'),
       okText: t('Yes'),
       cancelText: t('No')
     });
     if (answer === false) return false;
     try {
       await secureWriteRequest('verify', 'round', round.id, answer.value);
-      rememberEditCode('round', round.id, answer.value);
-      return { share: answer.checked };
+      rememberEditCode('round', round.id, answer);
+      return true;
     } catch (error) {
       if (error?.code !== 'EDIT_CODE_INVALID') throw error;
     }
@@ -4223,8 +4335,8 @@ async function finishCurrentGame() {
       lastSyncedAt: Date.now()
     });
     render();
-    switchView('start');
-    if (finishAnswer.share) await openShareCard(finished);
+    setResultsPanel('scores');
+    switchView('leaderboard');
     return true;
   } catch (error) {
     setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
@@ -5897,6 +6009,7 @@ function render() {
   renderScoreStrip();
   renderHoles();
   renderLandlordLeaderboard();
+  renderGameAnalysis();
   renderPlayEntry();
   renderCourses();
   renderStart();
@@ -6122,13 +6235,8 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
   });
   els.shareRoundLink?.addEventListener('click', () => shareRound());
-  els.shareCurrentScorecard?.addEventListener('click', () => {
-    const round = currentGame();
-    if (!window.SIMPLE_GOLF_ROUND_ACCESS.canShareScorecard(round, gameStatus(round))) return;
-    els.topActions?.classList.remove('open');
-    els.topMenuButton?.setAttribute('aria-expanded', 'false');
-    openShareCard(round);
-  });
+  els.resultsScoreTab?.addEventListener('click', () => setResultsPanel('scores'));
+  els.resultsAnalysisTab?.addEventListener('click', () => setResultsPanel('analysis'));
 
   els.rulesButton.addEventListener('click', () => {
     els.topActions?.classList.remove('open');

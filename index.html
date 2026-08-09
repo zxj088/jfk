@@ -56,7 +56,6 @@
       <button id="languageButton" class="header-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
       <button class="top-menu-button" id="topMenuButton" type="button" aria-label="Open menu" title="Open menu" aria-expanded="false" aria-controls="topActions"><span></span><span></span><span></span></button>
       <div class="top-actions" id="topActions">
-        <button id="shareCurrentScorecard" type="button" hidden>Share scorecard</button>
         <button id="shareButton" type="button" aria-label="Recommend to golfers" title="Recommend to golfers">Recommend to golfers</button>
         <button id="rulesButton" class="rules-button" type="button" aria-label="Show Las Vegas rules" title="Show Las Vegas rules"><span id="rulesLabel">Las Vegas Rule</span></button>
         <button id="aboutButton" class="about-button" type="button">About</button>
@@ -142,6 +141,11 @@
       </section>
 
       <section class="view" id="leaderboardView">
+        <nav class="results-view-tabs" aria-label="Results views">
+          <button type="button" class="active" id="resultsScoreTab" aria-selected="true" aria-controls="resultsScorePanel">Scores</button>
+          <button type="button" id="resultsAnalysisTab" aria-selected="false" aria-controls="resultsAnalysisPanel">Analysis</button>
+        </nav>
+        <div id="resultsScorePanel">
         <div class="score-display-toolbar">
           <span>Score display</span>
           <button id="scoreDetailToggle" type="button" aria-pressed="false">Show full score</button>
@@ -203,6 +207,8 @@
           </table>
         </section>
         <section class="landlord-leaderboard" id="landlordLeaderboard" hidden></section>
+        </div>
+        <section class="results-analysis" id="resultsAnalysisPanel" hidden aria-label="Game analysis"></section>
       </section>
 
       <section class="view" id="coursesView">
