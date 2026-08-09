@@ -22,8 +22,9 @@
     <button id="welcomeLanguageButton" class="welcome-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
     <div class="welcome-copy">
       <strong class="welcome-version">v6.3.2</strong>
-      <p>Welcome to use the Simple Golf Scorecard</p>
-      <p lang="zh-CN">欢迎使用简单高尔夫记分卡</p>
+      <p>Las Vegas &amp; Wolf/Pack scoring</p>
+      <p lang="zh-CN">拉斯与斗地主，自动算输赢</p>
+      <small class="welcome-positioning">Keep your official score elsewhere—JFK GOLF handles your group game.<br><span lang="zh-CN">正式成绩照常记录，JFK GOLF 专门计算球友局输赢。</span></small>
       <div class="welcome-actions" aria-label="Choose what to do" data-bilingual>
         <button type="button" data-welcome-action="score"><strong>Start scoring</strong><small>开始记分</small></button>
         <button type="button" data-welcome-action="watch"><strong>Watch live</strong><small>观看比赛</small></button>
@@ -227,6 +228,11 @@
         <div class="section-heading">
           <h2>Home</h2>
         </div>
+        <section class="home-positioning" id="homePositioning" aria-labelledby="homePositioningTitle">
+          <strong id="homePositioningTitle">Every hole settled automatically</strong>
+          <p>Enter scores; net scoring, flips, multipliers and running points are calculated for you.</p>
+          <small>No account · Share a link to follow live</small>
+        </section>
         <section class="game-section home-game-section" id="playingSection">
           <div class="home-section-heading">
             <span class="live-mark" aria-hidden="true"></span>
@@ -237,11 +243,11 @@
         <section class="home-actions" aria-label="Main actions">
           <button class="home-action home-action-primary" id="newGame" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9998;</span>
-            <span><strong>Start scoring</strong><small>Create a new round</small></span>
+            <span><strong>Start a game</strong><small>Set up Las Vegas or Wolf/Pack</small></span>
           </button>
           <button class="home-action" id="watchGames" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9673;</span>
-            <span><strong>Watch live</strong><small>Follow current games</small></span>
+            <span><strong>Watch live</strong><small>Follow live group-game points</small></span>
           </button>
           <button class="home-action" id="viewScorecards" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9776;</span>

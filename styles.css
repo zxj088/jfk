@@ -86,6 +86,14 @@ body {
   letter-spacing: 0.08em;
 }
 
+.welcome-positioning {
+  display: block;
+  max-width: 620px;
+  margin: 14px auto 0;
+  font-size: clamp(14px, 2.4vw, 18px);
+  line-height: 1.45;
+}
+
 .welcome-version {
   display: inline-flex;
   margin-bottom: 12px;
@@ -396,6 +404,20 @@ body {
 .home-actions {
   margin-top: 8px;
 }
+
+.home-positioning {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #183c32;
+  background: #eef7f2;
+}
+
+.home-positioning strong { font-size: 19px; }
+.home-positioning p { margin: 0; line-height: 1.45; }
+.home-positioning small { color: var(--muted); font-size: 13px; }
 
 .home-action {
   border: 0;

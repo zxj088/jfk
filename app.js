@@ -5726,6 +5726,8 @@ function renderGameList(container, rounds, emptyText, status) {
 function renderStart() {
   const playing = savedRounds.filter(round => gameStatus(round) === 'playing');
   const history = savedRounds.filter(round => gameStatus(round) !== 'playing');
+  const homePositioning = document.querySelector('#homePositioning');
+  if (homePositioning) homePositioning.hidden = playing.length > 0 || history.length > 0;
   if (els.playingSection) els.playingSection.hidden = playing.length === 0;
   renderGameList(els.playingList, playing, t('No games currently playing'), 'playing');
   const filteredHistory = filteredHistoryRounds(history);

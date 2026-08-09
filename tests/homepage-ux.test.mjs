@@ -8,7 +8,9 @@ const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
 test('homepage prioritizes active games and keeps the new-game action explicit', () => {
   assert.ok(html.indexOf('id="playingSection"') < html.indexOf('class="home-actions"'));
-  assert.match(html, /id="newGame"[\s\S]*Start scoring/);
+  assert.match(html, /id="newGame"[\s\S]*Start a game/);
+  assert.match(html, /id="homePositioning"[\s\S]*Every hole settled automatically/);
+  assert.match(app, /homePositioning\.hidden = playing\.length > 0 \|\| history\.length > 0/);
   assert.match(app, /els\.playingSection\.hidden = playing\.length === 0/);
   assert.match(css, /\.home-action-primary \{ grid-column: 1 \/ -1; \}/);
 });
