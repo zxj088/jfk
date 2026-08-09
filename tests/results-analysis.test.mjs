@@ -41,6 +41,7 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.match(app, /function analysisSpecialPointBadges/);
   assert.match(app, /gameType === 'vegas' && !result\.aNumber\.flipped && !result\.bNumber\.flipped/);
   assert.match(app, /gameType === 'landlord' && result\.specialMultiplier <= 1/);
+  assert.match(app, /localizedHoleLabel\(multiplied\.hole\).*x\$\{multiplied\.max\}/);
   assert.match(app, /analysis-badge bomb[\s\S]*flipBombIconHtml/);
   assert.match(app, /analysis-badge flip[\s\S]*Extra \{points\}/);
   assert.match(css, /\.analysis-badge\.good[\s\S]*\.analysis-badge\.bad[\s\S]*\.analysis-badge\.bomb/);

@@ -30,7 +30,7 @@ let welcomeReadyToEnter = false;
 let pendingWelcomeAction = '';
 let activeOverlay = null;
 let overlayReturnFocus = null;
-let scoreDetailMode = localStorage.getItem(SCORE_DETAIL_KEY) === 'full' ? 'full' : 'compact';
+let scoreDetailMode = 'full';
 let resultsScoreMode = '';
 let cloudRefreshPromise = null;
 let lastRoundIndexSyncAt = 0;
@@ -3869,11 +3869,14 @@ function analysisRuleImpact(course) {
       const result = landlordHoleResult(state, holeIndex);
       if (result?.multiplier > 1) {
         summary.count += 1;
-        summary.max = Math.max(summary.max, result.multiplier);
+        if (result.multiplier > summary.max) {
+          summary.max = result.multiplier;
+          summary.hole = holeIndex + 1;
+        }
       }
       return summary;
-    }, { count: 0, max: 1 });
-    return { label: t('Multiplied holes'), value: multiplied.count ? `${multiplied.count} · x${multiplied.max}` : '0' };
+    }, { count: 0, max: 1, hole: 0 });
+    return { label: t('Multiplied holes'), value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0' };
   }
   const flipped = state.scores.reduce((summary, scores, holeIndex) => {
     const result = scoreHole(scores, Number(course.pars[holeIndex] || 4), holeIndex, state.scoreMode);

@@ -10,9 +10,10 @@ const [html, app, css, mobileCss, i18n] = await Promise.all([
   readFile(new URL('../i18n.js', import.meta.url), 'utf8')
 ]);
 
-test('mobile score display defaults to simple and retains a full-detail control', () => {
-  assert.match(app, /scoreDetailMode = localStorage\.getItem\(SCORE_DETAIL_KEY\) === 'full' \? 'full' : 'compact'/);
-  assert.match(html, /id="scoreDetailToggle"/);
+test('mobile score display stays complete without a separate detail toolbar', () => {
+  assert.match(app, /scoreDetailMode = 'full'/);
+  assert.doesNotMatch(html, /id="scoreDetailToggle"/);
+  assert.doesNotMatch(html, /class="score-display-toolbar"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
   assert.match(html, /mobile-ux\.css\?v=206/);

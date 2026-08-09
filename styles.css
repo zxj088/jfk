@@ -2521,6 +2521,11 @@ input:disabled {
 
 .score-strip.landlord-mode .vegas-event-main { grid-column: 1; }
 .score-strip.landlord-mode .vegas-score-pairs { display: none; }
+.score-strip.landlord-mode .match-meta { display: none; }
+.score-strip.landlord-mode .vegas-event-main {
+  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-areas: "emblem copy";
+}
 .score-strip.landlord-mode .share-round-link { grid-column: 2; grid-row: 1; align-self: center; }
 .score-strip.landlord-mode .vegas-event-copy h2,
 .score-strip.landlord-mode .vegas-event-copy p,
