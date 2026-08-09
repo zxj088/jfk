@@ -79,7 +79,9 @@ test('highlight cards open detailed lists whose items jump to matching hole anal
   assert.match(app, /analysisHighlightCard\('rule-impact', ruleImpact\.label, ruleImpact\.value, ruleImpact\.items\)/);
   assert.match(app, /function openAnalysisHighlightModal[\s\S]*data-analysis-hole/);
   assert.match(app, /function openAnalysisHole[\s\S]*details\.open = true[\s\S]*scrollIntoView/);
+  assert.match(app, /function openAnalysisHole[\s\S]*analysis-hole-target[\s\S]*setTimeout/);
   assert.match(app, /items\.length \? '' : ' disabled'/);
   assert.match(css, /\.analysis-highlight-link[\s\S]*cursor: pointer/);
   assert.match(css, /\.analysis-highlight-link:disabled[\s\S]*cursor: default/);
+  assert.match(css, /\.analysis-hole\.analysis-hole-target[\s\S]*@keyframes analysis-hole-highlight/);
 });

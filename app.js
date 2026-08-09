@@ -33,6 +33,7 @@ let overlayReturnFocus = null;
 let scoreDetailMode = 'full';
 let resultsScoreMode = '';
 let analysisHighlightGroups = new Map();
+let analysisHoleHighlightTimer = null;
 let cloudRefreshPromise = null;
 let lastRoundIndexSyncAt = 0;
 let lastEditLockSyncAt = 0;
@@ -3942,9 +3943,16 @@ function openAnalysisHighlightModal(group) {
 function openAnalysisHole(hole) {
   const details = els.resultsAnalysisPanel.querySelector(`#analysis-hole-${hole}`);
   if (!details) return;
+  if (analysisHoleHighlightTimer) window.clearTimeout(analysisHoleHighlightTimer);
+  els.resultsAnalysisPanel.querySelectorAll('.analysis-hole-target').forEach(item => item.classList.remove('analysis-hole-target'));
   details.open = true;
+  details.classList.add('analysis-hole-target');
   details.scrollIntoView({ behavior: 'smooth', block: 'start' });
   details.querySelector('summary')?.focus({ preventScroll: true });
+  analysisHoleHighlightTimer = window.setTimeout(() => {
+    details.classList.remove('analysis-hole-target');
+    analysisHoleHighlightTimer = null;
+  }, 3500);
 }
 
 function analysisSpecialPointBadges(scores, par, playerCount, result, gameType) {
