@@ -4,6 +4,26 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.3 - Clearer home-page priorities
+
+Date: 2026-08-09
+
+Tag: `v6.5.3`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=210`
+
+What is new in this version:
+
+- New game, live viewing and past scorecards now remain above the active-game list on the mobile home page.
+- The redundant Home heading is removed to save vertical space.
+- The history-filter entry now reads More past games / 更多历史比赛.
+- Early-ended games show their real completed-hole count together with Completed / 已结束 instead of Playing / 进行中.
+- PWA asset query version is `v210`.
+
+Verified with JavaScript syntax checking, 91 automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.2 - Reliable game finishing
 
 Date: 2026-08-09
