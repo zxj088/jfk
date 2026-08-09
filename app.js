@@ -3901,7 +3901,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     }, { count: 0, max: 1, hole: 0, items: [] });
     return {
       label: t('Multiplied holes'),
-      value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0',
+      value: !multiplied.count ? '0' : (multiplied.count > 1 ? t('Multiple holes') : `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}`),
       hole: multiplied.hole || 0,
       items: multiplied.items
     };
@@ -3915,7 +3915,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(Math.abs(result.delta) - Math.abs(originalDelta)) }) });
     return summary;
   }, { count: 0, extra: 0, items: [] });
-  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}`, hole: 0, items: flipped.items };
+  return { label: t('Flipped holes'), value: String(flipped.count), hole: 0, items: flipped.items };
 }
 
 function analysisHighlightCard(group, label, value, items = []) {
@@ -4014,7 +4014,8 @@ function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
     const result = scoreHole(scores, par, holeIndex, displayMode);
     if (!result) return [];
     const winner = result.delta === 0 ? t('Tie') : t('Team {team}', { team: result.delta > 0 ? 'A' : 'B' });
-    const flipLabel = result.aNumber.flipped || result.bNumber.flipped ? t('Flip') : t('Without flip');
+    const wasFlipped = result.aNumber.flipped || result.bNumber.flipped;
+    const flipLabel = wasFlipped ? t('Flip') : t('Without flip');
     const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
     const flipExtra = Math.abs(result.delta) - Math.abs(originalDelta);
     const flipBadges = result.aNumber.flipped || result.bNumber.flipped
@@ -4028,7 +4029,7 @@ function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
         <p>${escapeHtml(t('Using {mode} scores: {scores}', { mode: t(state.scoreMode === 'net' ? 'Net' : 'Gross'), scores: result.activeValues.join(' · ') }))}</p>
         <p>${escapeHtml(`${t('Team A')}: ${result.aNumber.originalValue}${result.aNumber.flipped ? ` → ${result.aNumber.value}` : ''}`)}</p>
         <p>${escapeHtml(`${t('Team B')}: ${result.bNumber.originalValue}${result.bNumber.flipped ? ` → ${result.bNumber.value}` : ''}`)}</p>
-        <p><strong>${escapeHtml(flipLabel)}</strong><br>${escapeHtml(t('Before flip {before}; after flip {after}; extra {extra}', { before: Math.abs(originalDelta), after: Math.abs(result.delta), extra: signedPoints(flipExtra) }))}</p>
+        ${wasFlipped ? `<p><strong>${escapeHtml(flipLabel)}</strong><br>${escapeHtml(t('Before flip {before}; after flip {after}; extra {extra}', { before: Math.abs(originalDelta), after: Math.abs(result.delta), extra: signedPoints(flipExtra) }))}</p>` : ''}
       </div></details>`
     }];
   });
@@ -4050,6 +4051,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
   const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude) })) : [];
+  const biggestValue = !biggest ? '--' : (biggestItems.length > 1 ? t('Multiple holes') : `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}`);
   analysisHighlightGroups = new Map();
   const pointBalance = state.gameType === 'landlord'
     ? points.reduce((sum, value) => sum + value, 0)
@@ -4080,7 +4082,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
         ${analysisHighlightCard('birdies', t('Birdies'), String(special.birdies.length), special.birdies)}
         ${analysisHighlightCard('eagles', t('Eagles'), String(special.eagles.length), special.eagles)}
         ${analysisHighlightCard('holes-in-one', t('Holes in one'), String(special.holesInOne.length), special.holesInOne)}
-        ${analysisHighlightCard('biggest-swing', t('Biggest swing'), biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--', biggestItems)}
+        ${analysisHighlightCard('biggest-swing', t('Biggest swing'), biggestValue, biggestItems)}
         ${analysisHighlightCard('rule-impact', ruleImpact.label, ruleImpact.value, ruleImpact.items)}
       </div>
     </section>

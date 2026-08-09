@@ -120,6 +120,7 @@
     'Eagles': '老鹰球',
     'Holes in one': '一杆进洞',
     'Biggest swing': '最大输赢洞',
+    'Multiple holes': '多个洞',
     'Hole-by-hole analysis': '逐洞分析',
     'Complete a hole to see its analysis.': '完成一洞记分后即可查看分析。',
     'Points balance': '输赢合计',

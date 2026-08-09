@@ -60,6 +60,7 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.match(app, /function localizedHoleLabel/);
   assert.match(app, /Manual x\{manual\} × special x\{special\} = x\{total\}/);
   assert.match(app, /Before flip \{before\}; after flip \{after\}; extra \{extra\}/);
+  assert.match(app, /wasFlipped \? `<p><strong>[\s\S]*Before flip[\s\S]*: ''/);
   assert.match(app, /function analysisSpecialPointBadges/);
   assert.match(app, /gameType === 'vegas' && !result\.aNumber\.flipped && !result\.bNumber\.flipped/);
   assert.match(app, /gameType === 'landlord' && result\.specialMultiplier <= 1/);
@@ -76,6 +77,10 @@ test('highlight cards open detailed lists whose items jump to matching hole anal
   assert.match(app, /function analysisHighlightCard[\s\S]*data-analysis-highlight/);
   assert.match(app, /id="analysis-hole-\$\{holeIndex \+ 1\}"/);
   assert.match(app, /const biggestItems = biggest \? holes\.filter\(item => item\.magnitude === biggest\.magnitude\)/);
+  assert.match(app, /biggestItems\.length > 1 \? t\('Multiple holes'\)/);
+  assert.match(app, /multiplied\.count > 1 \? t\('Multiple holes'\)/);
+  assert.match(app, /Flipped holes'\), value: String\(flipped\.count\)/);
+  assert.match(i18n, /'Multiple holes': '多个洞'/);
   assert.match(app, /analysisHighlightCard\('rule-impact', ruleImpact\.label, ruleImpact\.value, ruleImpact\.items\)/);
   assert.match(app, /function openAnalysisHighlightModal[\s\S]*data-analysis-hole/);
   assert.match(app, /function openAnalysisHole[\s\S]*details\.open = true[\s\S]*scrollIntoView/);
