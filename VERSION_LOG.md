@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.2 - Reliable game finishing
+
+Date: 2026-08-09
+
+Tag: `v6.5.2`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=209`
+
+What is new in this version:
+
+- Finishing a completed game now sends the two-digit edit code returned by the confirmation dialog instead of reading a nonexistent object property.
+- Completed games can be locked, shared as final results, analyzed, replayed and deleted normally after all 18 holes are recorded.
+- A dedicated regression test protects the finish-code request shape.
+- PWA asset query version is `v209`.
+
+Verified with JavaScript syntax checking, 91 automated tests, the production build, and complete two-device browser testing.
+
 ### v6.5.1 - Clearer and shorter English interface
 
 Date: 2026-08-09
