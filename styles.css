@@ -445,6 +445,24 @@ body {
   background: rgba(11, 77, 56, 0.86);
 }
 
+.calculation-explanation {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(20, 92, 72, 0.14);
+  padding-top: 8px;
+  color: var(--ink);
+}
+
+.calculation-explanation summary {
+  min-height: 40px;
+  color: var(--green-strong);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calculation-steps { display: grid; gap: 6px; padding: 4px 0 2px; }
+.calculation-steps p { margin: 0; line-height: 1.45; }
+.calculation-steps strong { color: var(--ink); }
+
 @media (max-width: 620px) {
   .rematch-card { grid-template-columns: 1fr; }
   .rematch-card button { width: 100%; }

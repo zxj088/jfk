@@ -3426,6 +3426,26 @@ function setLandlordMultiplier(multiplier) {
   render();
 }
 
+function landlordCalculationExplanation(result, landlordIndex, config) {
+  const landlordName = state.players[landlordIndex];
+  const packNames = result.selectedPeasantIndexes.map(index => state.players[index]);
+  const packScores = result.selectedPeasantIndexes.map(index => result.scoringValues[index]);
+  const winner = result.tied ? '' : t(result.landlordWon ? 'The Wolf' : 'The Pack');
+  const winnerTotal = result.landlordWon ? result.landlordTotal : result.peasantsTotal;
+  const loserTotal = result.landlordWon ? result.peasantsTotal : result.landlordTotal;
+  const comparison = result.diff === 0
+    ? t('Tied at {total}; rule: {rule}.', { total: result.landlordTotal, rule: t(tieOutcomeLabel(config.tieOutcome)) })
+    : t('{side} wins: {winnerTotal} is lower than {loserTotal}.', { side: winner, winnerTotal, loserTotal });
+  const pointBalance = result.points.map(signedPoints).join(' + ');
+  return `<details class="calculation-explanation"><summary>${escapeHtml(t('View calculation'))}</summary><div class="calculation-steps">
+    <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: landlordName, score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
+    <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(t('{players}: {scores} = {total}', { players: packNames.join(' + '), scores: packScores.join(' + '), total: result.peasantsTotal }))}</p>
+    <p>${escapeHtml(comparison)}</p>
+    <p>${escapeHtml(t('Multiplier: manual x{manual} × special x{special} = x{total}', { manual: result.manualMultiplier, special: result.specialMultiplier, total: result.multiplier }))}</p>
+    <p>${escapeHtml(t('Points balance: {points} = 0', { points: pointBalance }))}</p>
+  </div></details>`;
+}
+
 function renderLandlordActions() {
   const active = state.gameType === 'landlord' && Boolean(currentGame());
   els.landlordActions.hidden = !active;
@@ -3479,7 +3499,8 @@ function renderLandlordActions() {
     manual: result.manualMultiplier,
     bomb: result.specialMultiplier
   });
-  els.landlordHoleResult.innerHTML = `<strong class="landlord-auto-status">${escapeHtml(multiplierSummary)}</strong>${playerResults}`;
+  const explanation = landlordCalculationExplanation(result, landlordIndex, config);
+  els.landlordHoleResult.innerHTML = `<strong class="landlord-auto-status">${escapeHtml(multiplierSummary)}</strong>${playerResults}${explanation}`;
 }
 
 function renderPlayEntry() {
