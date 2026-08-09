@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [html, app, css] = await Promise.all([
+const [html, app, css, i18n] = await Promise.all([
   readFile(new URL('../index.html', import.meta.url), 'utf8'),
   readFile(new URL('../app.js', import.meta.url), 'utf8'),
-  readFile(new URL('../styles.css', import.meta.url), 'utf8')
+  readFile(new URL('../styles.css', import.meta.url), 'utf8'),
+  readFile(new URL('../i18n.js', import.meta.url), 'utf8')
 ]);
 
 test('results page offers matching score and analysis tabs without the PNG share entry', () => {
@@ -14,6 +15,17 @@ test('results page offers matching score and analysis tabs without the PNG share
   assert.doesNotMatch(html, /id="shareCurrentScorecard"/);
   assert.match(css, /\.results-view-tabs button\.active[\s\S]*background: var\(--green\)/);
   assert.match(css, /\.analysis-section-title[\s\S]*background: var\(--green\)/);
+});
+
+test('analysis labels remain fully localized and special scores always use gross strokes', () => {
+  assert.match(i18n, /'Under Par Flip On': '低于标准杆翻转开启'/);
+  assert.match(i18n, /'Under Par Flip Off': '低于标准杆翻转关闭'/);
+  assert.match(i18n, /'Flip': '翻转'/);
+  assert.match(i18n, /'Hole in one': '一杆进洞'/);
+  assert.match(app, /const aUnderPar = Math\.min\(gross\[0\], gross\[1\]\) < par/);
+  assert.match(app, /const specialLevel = score =>[\s\S]*baseResult\.gross/);
+  assert.match(app, /function analysisSpecialScores[\s\S]*const score = parseScore\(rawScore\)/);
+  assert.match(app, /function analysisSpecialPointBadges[\s\S]*const gross = scores\.slice\(0, playerCount\)\.map\(parseScore\)/);
 });
 
 test('analysis reuses scoring results and finishing opens the locked score page', () => {
