@@ -31,6 +31,7 @@ let pendingWelcomeAction = '';
 let activeOverlay = null;
 let overlayReturnFocus = null;
 let scoreDetailMode = localStorage.getItem(SCORE_DETAIL_KEY) === 'full' ? 'full' : 'compact';
+let resultsScoreMode = '';
 let cloudRefreshPromise = null;
 let lastRoundIndexSyncAt = 0;
 let lastEditLockSyncAt = 0;
@@ -534,7 +535,9 @@ const els = {
   shareButton: document.querySelector('#shareButton'),
   aboutButton: document.querySelector('#aboutButton'),
   shareRoundLink: document.querySelector('#shareRoundLink'),
-  resultsScoreTab: document.querySelector('#resultsScoreTab'),
+  landlordScoreStripRanking: document.querySelector('#landlordScoreStripRanking'),
+  resultsPrimaryScoreTab: document.querySelector('#resultsPrimaryScoreTab'),
+  resultsSecondaryScoreTab: document.querySelector('#resultsSecondaryScoreTab'),
   resultsAnalysisTab: document.querySelector('#resultsAnalysisTab'),
   resultsScorePanel: document.querySelector('#resultsScorePanel'),
   resultsAnalysisPanel: document.querySelector('#resultsAnalysisPanel'),
@@ -3773,15 +3776,15 @@ function holeGrossAndNet(scores, holeIndex) {
   return { gross, net, indexValue };
 }
 
-function scoreHole(scores, par, holeIndex) {
+function scoreHole(scores, par, holeIndex, scoreMode = state.scoreMode) {
   const { gross, net } = holeGrossAndNet(scores, holeIndex);
   if (gross.some(value => value === null)) return null;
-  return scoreVegasValues({ gross, net, par, scoreMode: state.scoreMode, underParFlip: state.underParFlip });
+  return scoreVegasValues({ gross, net, par, scoreMode, underParFlip: state.underParFlip });
 }
 
-function totals() {
+function totals(scoreMode = state.scoreMode) {
   if (state.gameType === 'landlord') {
-    const landlordTotal = landlordTotals(state);
+    const landlordTotal = landlordTotals({ ...state, scoreMode });
     return {
       a: landlordTotal.points[0] || 0,
       b: landlordTotal.points.slice(1).reduce((sum, value) => sum + value, 0),
@@ -3799,8 +3802,8 @@ function totals() {
       sum.playersGross[scoreIndex] += gross[scoreIndex] || 0;
       sum.playersNet[scoreIndex] += net[scoreIndex] || 0;
     });
-    sum.players = state.scoreMode === 'net' ? sum.playersNet : sum.playersGross;
-    const result = scoreHole(scores, course.pars[index], index);
+    sum.players = scoreMode === 'net' ? sum.playersNet : sum.playersGross;
+    const result = scoreHole(scores, course.pars[index], index, scoreMode);
     if (!result) return sum;
     sum.a += result.delta;
     sum.b -= result.delta;
@@ -3809,15 +3812,37 @@ function totals() {
   }, { a: 0, b: 0, complete: 0, players: [0, 0, 0, 0], playersGross: [0, 0, 0, 0], playersNet: [0, 0, 0, 0] });
 }
 
-function setResultsPanel(panel = 'scores') {
+function configureResultsTabs() {
+  const primaryMode = state.scoreMode === 'net' ? 'net' : 'gross';
+  const secondaryMode = primaryMode === 'net' ? 'gross' : 'net';
+  if (!resultsScoreMode) resultsScoreMode = primaryMode;
+  els.resultsPrimaryScoreTab.dataset.scoreMode = primaryMode;
+  els.resultsSecondaryScoreTab.dataset.scoreMode = secondaryMode;
+  els.resultsPrimaryScoreTab.textContent = t(primaryMode === 'net' ? 'Net' : 'Gross');
+  els.resultsSecondaryScoreTab.textContent = t(secondaryMode === 'net' ? 'Net' : 'Gross');
+}
+
+function setResultsPanel(panel = '') {
+  configureResultsTabs();
   const analysisActive = panel === 'analysis';
+  if (!analysisActive && ['gross', 'net'].includes(panel)) resultsScoreMode = panel;
   els.resultsScorePanel.hidden = analysisActive;
   els.resultsAnalysisPanel.hidden = !analysisActive;
-  els.resultsScoreTab.classList.toggle('active', !analysisActive);
+  [els.resultsPrimaryScoreTab, els.resultsSecondaryScoreTab].forEach(button => {
+    const active = !analysisActive && button.dataset.scoreMode === resultsScoreMode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', String(active));
+  });
   els.resultsAnalysisTab.classList.toggle('active', analysisActive);
-  els.resultsScoreTab.setAttribute('aria-selected', String(!analysisActive));
   els.resultsAnalysisTab.setAttribute('aria-selected', String(analysisActive));
-  if (analysisActive) renderGameAnalysis();
+  if (analysisActive) {
+    renderScoreStrip(state.scoreMode);
+    renderGameAnalysis();
+  } else {
+    renderScoreStrip(resultsScoreMode);
+    renderHoles(resultsScoreMode);
+    renderLandlordLeaderboard(resultsScoreMode);
+  }
 }
 
 function analysisSpecialScores(course, playerCount) {
@@ -3834,6 +3859,63 @@ function analysisSpecialScores(course, playerCount) {
   }, { birdies: 0, eagles: 0, holesInOne: 0 });
 }
 
+function localizedHoleLabel(hole) {
+  return document.documentElement.lang.startsWith('zh') ? `第${hole}洞` : t('Hole {value}', { value: hole });
+}
+
+function analysisRuleImpact(course) {
+  if (state.gameType === 'landlord') {
+    const multiplied = state.scores.reduce((summary, scores, holeIndex) => {
+      const result = landlordHoleResult(state, holeIndex);
+      if (result?.multiplier > 1) {
+        summary.count += 1;
+        summary.max = Math.max(summary.max, result.multiplier);
+      }
+      return summary;
+    }, { count: 0, max: 1 });
+    return { label: t('Multiplied holes'), value: multiplied.count ? `${multiplied.count} · x${multiplied.max}` : '0' };
+  }
+  const flipped = state.scores.reduce((summary, scores, holeIndex) => {
+    const result = scoreHole(scores, Number(course.pars[holeIndex] || 4), holeIndex, state.scoreMode);
+    if (!result || (!result.aNumber.flipped && !result.bNumber.flipped)) return summary;
+    const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
+    summary.count += 1;
+    summary.extra += Math.abs(result.delta) - Math.abs(originalDelta);
+    return summary;
+  }, { count: 0, extra: 0 });
+  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}` };
+}
+
+function analysisSpecialPointBadges(scores, par, playerCount, result, gameType) {
+  if (gameType === 'landlord' && result.specialMultiplier <= 1) return [];
+  if (gameType === 'vegas' && !result.aNumber.flipped && !result.bNumber.flipped) return [];
+  const gross = scores.slice(0, playerCount).map(parseScore);
+  const flippedIndexes = gameType === 'vegas'
+    ? (result.aNumber.flipped ? [0, 1] : [2, 3])
+    : [];
+  const flippedWorst = flippedIndexes.length ? Math.max(...flippedIndexes.map(index => gross[index])) : null;
+  const winningIndexes = gameType === 'landlord'
+    ? (result.landlordWon ? [result.landlordIndex] : result.peasantIndexes)
+    : [];
+  return scores.slice(0, playerCount).flatMap((rawScore, playerIndex) => {
+    const score = parseScore(rawScore);
+    if (score === null) return [];
+    const relative = par - score;
+    const name = state.players[playerIndex] || t('Player');
+    const isTriggeringGoodScore = gameType === 'vegas'
+      ? relative > 0 && !flippedIndexes.includes(playerIndex)
+      : winningIndexes.includes(playerIndex) && (score === 1 || relative > 0);
+    if (isTriggeringGoodScore) {
+      const label = score === 1 ? t('Hole in one') : (relative >= 2 ? t('Eagle') : t('Birdie'));
+      return [`<span class="analysis-badge good">👍 ${escapeHtml(name)} · ${escapeHtml(label)}</span>`];
+    }
+    if (gameType === 'vegas' && flippedIndexes.includes(playerIndex) && score === flippedWorst) {
+      return [`<span class="analysis-badge bad">👎 ${escapeHtml(name)} · ${score}</span>`];
+    }
+    return [];
+  });
+}
+
 function analysisHoleRows(course, playerCount) {
   return state.scores.flatMap((scores, holeIndex) => {
     const par = Number(course.pars[holeIndex] || 4);
@@ -3844,14 +3926,18 @@ function analysisHoleRows(course, playerCount) {
       const landlordIndex = config.landlords[holeIndex];
       const packNames = result.selectedPeasantIndexes.map(index => state.players[index]).join(' + ');
       const winner = result.diff === 0 ? t(tieOutcomeLabel(config.tieOutcome)) : t(result.landlordWon ? 'The Wolf' : 'The Pack');
-      const balance = result.points.slice(0, playerCount).map(signedPoints).join(' + ');
+      const multiplierBadges = [
+        ...(result.specialMultiplier > 1 ? [`<span class="analysis-badge bomb">${flipBombIconHtml()} ${escapeHtml(t('Bomb x{value}', { value: result.specialMultiplier }))}</span>`] : []),
+        ...(result.manualMultiplier > 1 ? [`<span class="analysis-badge multiplier">×${result.manualMultiplier} ${escapeHtml(t('Manual'))}</span>`] : [])
+      ];
+      const badges = [...analysisSpecialPointBadges(scores, par, playerCount, result, 'landlord'), ...multiplierBadges];
       return [{
         hole: holeIndex + 1,
         magnitude: Math.max(...result.points.slice(0, playerCount).map(value => Math.abs(value))),
-        html: `<details class="analysis-hole"><summary><span>${escapeHtml(t('Hole {value}', { value: holeIndex + 1 }))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><strong>${escapeHtml(winner)} · x${result.multiplier}</strong></summary><div class="calculation-steps">
+        html: `<details class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} · x${result.multiplier}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
           <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: state.players[landlordIndex], score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
           <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(`${packNames}: ${result.selectedPeasantIndexes.map(index => result.scoringValues[index]).join(' + ')} = ${result.peasantsTotal}`)}</p>
-          <p>${escapeHtml(t('Points balance: {points} = 0', { points: balance }))}</p>
+          <p><strong>${escapeHtml(t('Multiplier'))}</strong><br>${escapeHtml(t('Manual x{manual} × special x{special} = x{total}', { manual: result.manualMultiplier, special: result.specialMultiplier, total: result.multiplier }))}</p>
         </div></details>`
       }];
     }
@@ -3859,14 +3945,20 @@ function analysisHoleRows(course, playerCount) {
     if (!result) return [];
     const winner = result.delta === 0 ? t('Tie') : t('Team {team}', { team: result.delta > 0 ? 'A' : 'B' });
     const flipLabel = result.aNumber.flipped || result.bNumber.flipped ? t('Flip') : t('Without flip');
+    const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
+    const flipExtra = Math.abs(result.delta) - Math.abs(originalDelta);
+    const flipBadges = result.aNumber.flipped || result.bNumber.flipped
+      ? [`<span class="analysis-badge flip">${flipBombIconHtml()} ${escapeHtml(t('Flip'))} · ${escapeHtml(t('Extra {points}', { points: signedPoints(flipExtra) }))}</span>`]
+      : [];
+    const badges = [...analysisSpecialPointBadges(scores, par, playerCount, result, 'vegas'), ...flipBadges];
     return [{
       hole: holeIndex + 1,
       magnitude: Math.abs(result.delta),
-      html: `<details class="analysis-hole"><summary><span>${escapeHtml(t('Hole {value}', { value: holeIndex + 1 }))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><strong>${escapeHtml(winner)} ${signedPoints(Math.abs(result.delta))}</strong></summary><div class="calculation-steps">
+      html: `<details class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} ${signedPoints(Math.abs(result.delta))}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
         <p>${escapeHtml(t('Using {mode} scores: {scores}', { mode: t(state.scoreMode === 'net' ? 'Net' : 'Gross'), scores: result.activeValues.join(' · ') }))}</p>
         <p>${escapeHtml(`${t('Team A')}: ${result.aNumber.originalValue}${result.aNumber.flipped ? ` → ${result.aNumber.value}` : ''}`)}</p>
         <p>${escapeHtml(`${t('Team B')}: ${result.bNumber.originalValue}${result.bNumber.flipped ? ` → ${result.bNumber.value}` : ''}`)}</p>
-        <p>${escapeHtml(`${flipLabel} · ${t('Points balance: {points} = 0', { points: `${signedPoints(result.delta)} + ${signedPoints(-result.delta)}` })}`)}</p>
+        <p><strong>${escapeHtml(flipLabel)}</strong><br>${escapeHtml(t('Before flip {before}; after flip {after}; extra {extra}', { before: Math.abs(originalDelta), after: Math.abs(result.delta), extra: signedPoints(flipExtra) }))}</p>
       </div></details>`
     }];
   });
@@ -3884,6 +3976,7 @@ function renderGameAnalysis() {
   const playerCount = state.gameType === 'landlord' ? normalizeLandlordState(state.landlord, state.players.length).playerCount : 4;
   const points = state.gameType === 'landlord' ? total.landlordPoints.slice(0, playerCount) : [total.a, total.a, total.b, total.b];
   const special = analysisSpecialScores(course, playerCount);
+  const ruleImpact = analysisRuleImpact(course);
   const holes = analysisHoleRows(course, playerCount);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
   const pointBalance = state.gameType === 'landlord'
@@ -3905,7 +3998,7 @@ function renderGameAnalysis() {
       <span>${escapeHtml(roundListDate(game))} · ${total.complete}/18</span>
     </section>
     <section class="analysis-section">
-      <div class="analysis-section-title"><h3>${escapeHtml(t('Player totals'))}</h3><span>${escapeHtml(t('Points balance'))}: <strong class="${pointBalance === 0 ? 'point-positive' : 'point-negative'}">${signedPoints(pointBalance)}</strong></span></div>
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Total score'))}</h3><span>${escapeHtml(t('Points balance'))}: <strong class="${pointBalance === 0 ? 'point-positive' : 'point-negative'}">${signedPoints(pointBalance)}</strong></span></div>
       <div class="analysis-player-grid player-count-${playerCount}">${playerCards}</div>
     </section>
     <section class="analysis-section">
@@ -3914,7 +4007,8 @@ function renderGameAnalysis() {
         <span><small>${escapeHtml(t('Birdies'))}</small><strong>${special.birdies}</strong></span>
         <span><small>${escapeHtml(t('Eagles'))}</small><strong>${special.eagles}</strong></span>
         <span><small>${escapeHtml(t('Holes in one'))}</small><strong>${special.holesInOne}</strong></span>
-        <span><small>${escapeHtml(t('Biggest swing'))}</small><strong>${biggest ? `${t('Hole {value}', { value: biggest.hole })} · ${biggest.magnitude}` : '--'}</strong></span>
+        <span><small>${escapeHtml(t('Biggest swing'))}</small><strong>${biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--'}</strong></span>
+        <span><small>${escapeHtml(ruleImpact.label)}</small><strong>${escapeHtml(ruleImpact.value)}</strong></span>
       </div>
     </section>
     <section class="analysis-section analysis-hole-section">
@@ -4100,6 +4194,8 @@ function loadGame(gameId, editable = false, goToPlay = true, preferredHoleIndex 
   activeGameId = round.id;
   isEditing = editable;
   applyGameToState(round);
+  resultsScoreMode = state.scoreMode;
+  els.resultsAnalysisTab?.setAttribute('aria-selected', 'false');
   activePlayHoleIndex = preferredHoleIndex === null
     ? firstIncompleteHole()
     : Math.max(0, Math.min(17, Number(preferredHoleIndex) || 0));
@@ -4335,7 +4431,8 @@ async function finishCurrentGame() {
       lastSyncedAt: Date.now()
     });
     render();
-    setResultsPanel('scores');
+    resultsScoreMode = state.scoreMode;
+    setResultsPanel(state.scoreMode);
     switchView('leaderboard');
     return true;
   } catch (error) {
@@ -4591,14 +4688,14 @@ async function promptInstallApp() {
   await showMessage(t('Add to phone desktop'), t('Use your browser menu and choose Add to Home Screen.'));
 }
 
-function renderScoreStrip() {
+function renderScoreStrip(displayMode = state.scoreMode) {
   const course = currentCourse();
   const game = currentGame();
-  const total = totals();
+  const total = totals(displayMode);
   const parTotal = course.pars.reduce((a, b) => a + b, 0);
   if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live game' : 'Share final result');
   if (els.scoreStripCourse) els.scoreStripCourse.textContent = course.name;
-  if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')}`;
+  if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${displayMode === 'net' ? t('Net') : t('Gross')}`;
   if (els.scoreStripDate) els.scoreStripDate.textContent = formatTeeTime(game?.totals?.teeTime, game?.savedAt);
   els.scoreStrip.classList.toggle('landlord-mode', state.gameType === 'landlord');
   if (state.gameType === 'landlord') {
@@ -4615,7 +4712,16 @@ function renderScoreStrip() {
     applySignedClass(els.teamBTotal, 0);
     els.holesComplete.textContent = `${total.complete}/18`;
     els.coursePar.textContent = total.complete >= 18 ? t('Completed') : t('Playing');
+    if (els.landlordScoreStripRanking) {
+      const config = normalizeLandlordState(state.landlord, state.players.length);
+      els.landlordScoreStripRanking.hidden = false;
+      els.landlordScoreStripRanking.innerHTML = `<p>${escapeHtml(landlordSettingsSummary(state))}</p><div class="rank-chips player-count-${config.playerCount}">${playerDisplayIndexes(config.playerCount).map(index => `<span>${escapeHtml(state.players[index])} <strong class="${points[index] > 0 ? 'point-positive' : (points[index] < 0 ? 'point-negative' : '')}">${signedPoints(points[index])}</strong></span>`).join('')}</div>`;
+    }
     return;
+  }
+  if (els.landlordScoreStripRanking) {
+    els.landlordScoreStripRanking.hidden = true;
+    els.landlordScoreStripRanking.innerHTML = '';
   }
   els.teamATotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Team A')));
   els.teamBTotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Team B')));
@@ -4629,9 +4735,7 @@ function renderScoreStrip() {
   els.coursePar.textContent = total.complete >= 18 ? t('Completed') : t('Playing');
   els.totalPar.textContent = parTotal;
   els.playerTotals.forEach((cell, index) => {
-    cell.textContent = state.scoreMode === 'net'
-      ? `${total.playersGross[index]}/${total.playersNet[index]}`
-      : total.playersGross[index];
+    cell.textContent = displayMode === 'net' ? total.playersNet[index] : total.playersGross[index];
   });
   els.tableTeamATotal.textContent = signedPoints(total.a);
   els.tableTeamBTotal.textContent = signedPoints(total.b);
@@ -4651,7 +4755,7 @@ function renderScoreDetailMode() {
   }
 }
 
-function renderLandlordLeaderboard() {
+function renderLandlordLeaderboard(displayMode = state.scoreMode) {
   const active = state.gameType === 'landlord';
   const vegasScorecard = document.querySelector('#leaderboardView .scorecard');
   const commonActions = document.querySelector('#leaderboardView .leaderboard-common-actions');
@@ -4664,12 +4768,10 @@ function renderLandlordLeaderboard() {
     renderScoreDetailMode();
     return;
   }
-  for (let holeIndex = 0; holeIndex < 18; holeIndex += 1) {
-    if (landlordHoleResult(state, holeIndex)) autoLandlordMultiplierForHole(holeIndex);
-  }
-  const config = normalizeLandlordState(state.landlord, state.players.length);
+  const displayState = { ...state, scoreMode: displayMode };
+  const config = normalizeLandlordState(displayState.landlord, displayState.players.length);
   const displayIndexes = playerDisplayIndexes(config.playerCount);
-  const totalsValue = landlordTotals(state);
+  const totalsValue = landlordTotals(displayState);
   const course = currentCourse();
   const landlordCounts = Array.from({ length: config.playerCount }, () => 0);
   const frontGross = Array.from({ length: config.playerCount }, () => 0);
@@ -4677,7 +4779,7 @@ function renderLandlordLeaderboard() {
   const frontPoints = Array.from({ length: config.playerCount }, () => 0);
   let frontComplete = 0;
   const rows = state.scores.map((scores, holeIndex) => {
-    const result = landlordHoleResult(state, holeIndex);
+    const result = landlordHoleResult(displayState, holeIndex);
     const isComplete = Boolean(result);
     const landlordIndex = config.landlords[holeIndex];
     if (isComplete && landlordIndex >= 0 && landlordIndex < config.playerCount) landlordCounts[landlordIndex] += 1;
@@ -4693,10 +4795,10 @@ function renderLandlordLeaderboard() {
       const gross = parseScore(scores[playerIndex]);
       const net = result?.net?.[playerIndex];
       const points = result?.points?.[playerIndex] || 0;
+      const displayedScore = displayMode === 'net' ? net : gross;
       return `<td class="${playerIndex === landlordIndex ? 'landlord-cell' : ''}">
         ${playerIndex === landlordIndex && isComplete ? roleIconHtml(true, 'landlord-cell-marker') : ''}
-        <strong class="${grossScoreTone(gross, course.pars[holeIndex])}">${gross ?? '--'}</strong>
-        ${gross !== null && config.handicapEnabled ? `<small>${escapeHtml(t('Net'))} ${net ?? '--'}</small>` : ''}
+        <strong class="${displayMode === 'gross' ? grossScoreTone(gross, course.pars[holeIndex]) : ''}">${displayedScore ?? '--'}</strong>
         ${isComplete ? `<span class="${points > 0 ? 'point-positive' : (points < 0 ? 'point-negative' : '')}">${signedPoints(points)}</span>` : ''}
       </td>`;
     }).join('');
@@ -4708,13 +4810,12 @@ function renderLandlordLeaderboard() {
       ${scoreCells}
     </tr>`;
     if (holeIndex !== 8) return row;
-    const frontCells = displayIndexes.map(index => `<th><strong>${frontGross[index]}</strong>${config.handicapEnabled ? `<small>${escapeHtml(t('Net'))} ${frontNet[index]}</small>` : ''}<span class="${frontPoints[index] > 0 ? 'point-positive' : (frontPoints[index] < 0 ? 'point-negative' : '')}">${signedPoints(frontPoints[index])}</span></th>`).join('');
+    const frontCells = displayIndexes.map(index => `<th><strong>${displayMode === 'net' ? frontNet[index] : frontGross[index]}</strong><span class="${frontPoints[index] > 0 ? 'point-positive' : (frontPoints[index] < 0 ? 'point-negative' : '')}">${signedPoints(frontPoints[index])}</span></th>`).join('');
     return `${row}<tr class="nine-hole-subtotal"><th>${escapeHtml(document.documentElement.lang.startsWith('zh') ? '小计' : 'Subtotal')}</th><th>${course.pars.slice(0, 9).reduce((sum, par) => sum + par, 0)}</th><th>—</th><th>—</th>${frontCells}</tr>`;
   }).join('');
   const totalCells = displayIndexes.map(index => `
     <th>
-      <strong>${totalsValue.gross[index]}</strong>
-      ${config.handicapEnabled ? `<small>${escapeHtml(t('Net'))} ${totalsValue.net[index]}</small>` : ''}
+      <strong>${displayMode === 'net' ? totalsValue.net[index] : totalsValue.gross[index]}</strong>
       <small class="landlord-count-total">${roleIconHtml(true)} ${document.documentElement.lang.startsWith('zh') ? `${landlordCounts[index]}次` : `× ${landlordCounts[index]}`}</small>
       <span class="${totalsValue.points[index] > 0 ? 'point-positive' : (totalsValue.points[index] < 0 ? 'point-negative' : '')}">${signedPoints(totalsValue.points[index])}</span>
     </th>`).join('');
@@ -4744,13 +4845,13 @@ function renderLandlordLeaderboard() {
   renderScoreDetailMode();
 }
 
-function renderHoles() {
+function renderHoles(displayMode = state.scoreMode) {
   const course = currentCourse();
   els.scoreRows.innerHTML = '';
 
   state.scores.forEach((scores, index) => {
     const row = document.createElement('tr');
-    const result = scoreHole(scores, course.pars[index], index);
+    const result = scoreHole(scores, course.pars[index], index, displayMode);
     const holeValues = holeGrossAndNet(scores, index);
     row.innerHTML = `
       <td>${index + 1}</td>
@@ -4770,10 +4871,11 @@ function renderHoles() {
       const input = row.querySelector(`.score-${scoreIndex}`);
       const grossValue = scores[scoreIndex] || '';
       const netValue = holeValues.net[scoreIndex];
-      const grossTone = grossScoreTone(grossValue, course.pars[index]);
+      const displayedValue = displayMode === 'net' ? netValue : grossValue;
+      const grossTone = displayMode === 'gross' ? grossScoreTone(grossValue, course.pars[index]) : '';
       if (grossTone) input.classList.add(grossTone);
       input.innerHTML = grossValue
-        ? `<span>${grossValue}</span>${state.scoreMode === 'net' && netValue ? `<small>${t('Net')} ${netValue}</small>` : ''}`
+        ? `<span>${displayedValue}</span>`
         : '<span>--</span>';
       input.disabled = !isEditing;
       input.addEventListener('pointerdown', event => {
@@ -4811,9 +4913,10 @@ function renderHoles() {
     els.scoreRows.append(row);
     if (index === 8) {
       const front = state.scores.slice(0, 9).reduce((sum, holeScores, holeIndex) => {
-        const hole = scoreHole(holeScores, course.pars[holeIndex], holeIndex);
+        const hole = scoreHole(holeScores, course.pars[holeIndex], holeIndex, displayMode);
         const values = holeGrossAndNet(holeScores, holeIndex);
-        values.gross.forEach((value, playerIndex) => { sum.players[playerIndex] += value || 0; });
+        const displayedValues = displayMode === 'net' ? values.net : values.gross;
+        displayedValues.forEach((value, playerIndex) => { sum.players[playerIndex] += value || 0; });
         if (hole) { sum.a += hole.delta; sum.b -= hole.delta; }
         return sum;
       }, { players: [0, 0, 0, 0], a: 0, b: 0 });
@@ -4823,6 +4926,12 @@ function renderHoles() {
       els.scoreRows.append(subtotal);
     }
   });
+  const displayedTotal = totals(displayMode);
+  els.playerTotals.forEach((cell, index) => { cell.textContent = displayedTotal.players[index]; });
+  els.tableTeamATotal.textContent = signedPoints(displayedTotal.a);
+  els.tableTeamBTotal.textContent = signedPoints(displayedTotal.b);
+  applySignedClass(els.tableTeamATotal, displayedTotal.a);
+  applySignedClass(els.tableTeamBTotal, displayedTotal.b);
 }
 
 function renderCourses() {
@@ -6006,10 +6115,8 @@ function render() {
   if (!isEditing) closeScorePad();
   renderCourseSelect();
   renderInputs();
-  renderScoreStrip();
-  renderHoles();
-  renderLandlordLeaderboard();
-  renderGameAnalysis();
+  const analysisActive = els.resultsAnalysisTab?.getAttribute('aria-selected') === 'true';
+  setResultsPanel(analysisActive ? 'analysis' : (resultsScoreMode || state.scoreMode));
   renderPlayEntry();
   renderCourses();
   renderStart();
@@ -6235,7 +6342,8 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
   });
   els.shareRoundLink?.addEventListener('click', () => shareRound());
-  els.resultsScoreTab?.addEventListener('click', () => setResultsPanel('scores'));
+  els.resultsPrimaryScoreTab?.addEventListener('click', () => setResultsPanel(els.resultsPrimaryScoreTab.dataset.scoreMode));
+  els.resultsSecondaryScoreTab?.addEventListener('click', () => setResultsPanel(els.resultsSecondaryScoreTab.dataset.scoreMode));
   els.resultsAnalysisTab?.addEventListener('click', () => setResultsPanel('analysis'));
 
   els.rulesButton.addEventListener('click', () => {

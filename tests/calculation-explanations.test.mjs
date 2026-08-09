@@ -23,7 +23,8 @@ test('Las Vegas explanation and scorecard sharing consume the same scoreHole res
   assert.match(app, /originalValue: low \* 10 \+ high/);
   assert.match(app, /activeValues,/);
   assert.match(app, /function scoreVegasValues\(/);
-  assert.match(app, /return scoreVegasValues\(\{ gross, net, par, scoreMode: state\.scoreMode/);
+  assert.match(app, /function scoreHole\(scores, par, holeIndex, scoreMode = state\.scoreMode\)/);
+  assert.match(app, /return scoreVegasValues\(\{ gross, net, par, scoreMode, underParFlip: state\.underParFlip/);
   assert.match(app, /scoreRoundTotalsForMode[\s\S]*scoreVegasValues\(\{ gross, net, par, scoreMode: mode/);
   assert.match(css, /\.vegas-hole-result/);
 });

@@ -2497,7 +2497,7 @@ input:disabled {
 /* Results analysis reuses the scorecard's calm panels, green headers and signed-point colors. */
 .results-view-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin: 0 0 10px;
   padding: 4px;
@@ -2505,6 +2505,37 @@ input:disabled {
   border-radius: 12px;
   background: #e8efe7;
 }
+
+.score-strip.landlord-mode:not([hidden]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 14px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #0c6f50, #123f35);
+  box-shadow: 0 12px 28px rgba(20, 92, 72, 0.2);
+  backdrop-filter: none;
+}
+
+.score-strip.landlord-mode .vegas-event-main { grid-column: 1; }
+.score-strip.landlord-mode .vegas-score-pairs { display: none; }
+.score-strip.landlord-mode .share-round-link { grid-column: 2; grid-row: 1; align-self: center; }
+.score-strip.landlord-mode .vegas-event-copy h2,
+.score-strip.landlord-mode .vegas-event-copy p,
+.score-strip.landlord-mode .vegas-event-copy span,
+.score-strip.landlord-mode .match-meta span { color: #fff; }
+.landlord-score-strip-ranking { grid-column: 1 / -1; }
+.landlord-score-strip-ranking > p {
+  margin: 0 0 9px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 800;
+}
+.landlord-score-strip-ranking .rank-chips { margin: 0; }
+.landlord-score-strip-ranking .rank-chips span { background: #f7faf8; }
+.landlord-leaderboard .landlord-ranking { display: none; }
 
 .results-view-tabs button {
   min-height: 44px;
@@ -2620,6 +2651,31 @@ input:disabled {
   list-style-position: inside;
 }
 .analysis-hole summary strong { color: var(--green); font-size: 13px; }
+.analysis-hole.special-hole { border-left: 4px solid #c9892a; }
+.analysis-hole-result {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+.analysis-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.analysis-badge.good { color: #0c7043; background: #e4f5eb; }
+.analysis-badge.bad { color: #a43b36; background: #fff0ee; }
+.analysis-badge.bomb,
+.analysis-badge.flip { color: #fff; background: #b3453f; }
+.analysis-badge.multiplier { color: #7a4b0d; background: #fff0cc; }
+.analysis-badge .flip-bomb-icon { width: 17px; height: 17px; color: currentColor; }
+.analysis-badge .flip-bomb-icon svg { width: 17px; height: 17px; }
 .analysis-hole .calculation-steps { margin: 0 12px 12px; }
 .analysis-empty { margin: 0; padding: 18px; color: #62706a; text-align: center; }
 
@@ -2629,6 +2685,7 @@ input:disabled {
   .analysis-highlight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-player-grid.player-count-3 .analysis-player:last-child { grid-column: span 2; }
   .analysis-hole summary { align-items: flex-start; }
+  .analysis-hole-result { max-width: 64%; }
 }
 
 .share-card-status {

@@ -78,6 +78,6 @@ test('a simulated multi-hole Las Vegas round is zero-sum', () => {
 test('app wiring uses gross under-par detection and opposite signed team totals', () => {
   assert.match(app, /const flipA = underParFlip && bUnderPar && !aUnderPar/);
   assert.match(app, /const flipB = underParFlip && aUnderPar && !bUnderPar/);
-  assert.match(app, /scoreMode: state\.scoreMode, underParFlip: state\.underParFlip/);
+  assert.match(app, /scoreMode, underParFlip: state\.underParFlip/);
   assert.match(app, /sum\.a \+= result\.delta;\s*sum\.b -= result\.delta/);
 });

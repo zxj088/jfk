@@ -89,6 +89,7 @@
           </div>
         </div>
         <button class="share-round-link" id="shareRoundLink" type="button">Share live game</button>
+        <div class="landlord-score-strip-ranking" id="landlordScoreStripRanking" hidden></div>
       </section>
 
       <nav class="tabs" aria-label="Views">
@@ -142,7 +143,8 @@
 
       <section class="view" id="leaderboardView">
         <nav class="results-view-tabs" aria-label="Results views">
-          <button type="button" class="active" id="resultsScoreTab" aria-selected="true" aria-controls="resultsScorePanel">Scores</button>
+          <button type="button" class="active" id="resultsPrimaryScoreTab" aria-selected="true" aria-controls="resultsScorePanel">Gross</button>
+          <button type="button" id="resultsSecondaryScoreTab" aria-selected="false" aria-controls="resultsScorePanel">Net</button>
           <button type="button" id="resultsAnalysisTab" aria-selected="false" aria-controls="resultsAnalysisPanel">Analysis</button>
         </nav>
         <div id="resultsScorePanel">
