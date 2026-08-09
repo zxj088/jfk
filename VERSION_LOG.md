@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.4 - Larger home action labels
+
+Date: 2026-08-10
+
+Tag: `v6.5.4`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=211`
+
+What is new in this version:
+
+- New game, Watch live and Past scorecards now use the same 17-pixel title size as the History heading.
+- English mobile labels no longer shrink to 12 pixels.
+- The two-column mobile layout keeps wrapping available and remains free of horizontal overflow at 390 pixels.
+- PWA asset query version is `v211`.
+
+Verified with JavaScript syntax checking, 91 automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.3 - Clearer home-page priorities
 
 Date: 2026-08-09

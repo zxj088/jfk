@@ -681,12 +681,12 @@ body {
 
 @media (max-width: 430px) {
   .home-action strong {
-    font-size: 13px;
+    font-size: 17px;
     line-height: 1.12;
   }
 
   html[lang="en"] .home-action strong {
-    font-size: 12px;
+    font-size: 17px;
   }
 
   .landlord-ranking {
@@ -4214,7 +4214,7 @@ button,
   }
 
   html[lang="en"] .home-action strong {
-    font-size: 12px;
+    font-size: 17px;
   }
 }
 /* Unified scorecard table language: compact hole data and strong totals. */
@@ -4733,7 +4733,7 @@ button,
 
 button.primary,
 .home-action strong,
-.game-wizard-actions button { font-size: 16px; }
+.game-wizard-actions button { font-size: 17px; }
 
 @media (max-width: 430px) {
   .recent-course-choices { grid-template-columns: 1fr; }
