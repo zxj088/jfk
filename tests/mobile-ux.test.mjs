@@ -85,8 +85,8 @@ test('landlord setup offers all four tied-hole outcomes', () => {
   assert.match(html, /id="newLandlordTieOutcome"/);
   assert.match(html, /value="draw">No win or loss/);
   assert.match(html, /value="higher-handicap-landlord">Higher-handicap landlord wins/);
-  assert.match(html, /value="peasants">Peasants win/);
-  assert.match(html, /value="landlord">Landlord wins/);
+  assert.match(html, /value="peasants">Pack wins/);
+  assert.match(html, /value="landlord">Wolf wins/);
   assert.doesNotMatch(html, /id="newLandlordTieWins"/);
   assert.match(app, /tieOutcome:\s*els\.newLandlordTieOutcome\.value/);
 });

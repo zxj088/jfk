@@ -68,7 +68,7 @@ const LANDLORD_RULES_SECTIONS = [
   'If the landlord wins, the landlord continues on the next hole. If the peasants win, the peasant with the lowest Gross or Net score becomes the next landlord. If multiple winning peasants tie, choose the player with fewer previous turns as landlord; if still tied, rotate forward from the current landlord through the player order. The landlord can still be changed manually on the next hole.',
   'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is x1.',
   'Special-score multipliers use gross strokes and multiply together with the manually selected x1, x2, or x4.',
-  'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.',
+  'In Rotating Wolf mode, tap a player to change the Wolf. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.',
   'Tied hole: Choose whether nobody wins, an eligible higher-handicap landlord wins, the peasants win, or the landlord wins.'
 ];
 const COURSE_SEARCH_AREAS = [
@@ -2751,7 +2751,7 @@ function renderGameReview() {
   const rows = [
     [t('Course'), course?.name || '--'],
     [t('Tee time'), els.newGameTeeTime.value.replace('T', ' ') || '--'],
-    [t('Game type'), t(isLandlord ? 'Fight the Landlord' : 'Las Vegas')],
+    [t('Game type'), t(isLandlord ? 'Wolf & Pack' : 'Las Vegas')],
     [t('Scoring Mode'), t(els.newGameScoreMode.value === 'net' ? 'Net' : 'Gross')],
     [t('Players'), players.map((player, index) => `${player} (HCP ${handicaps[index]})`).join(' · ')]
   ];
@@ -3414,8 +3414,8 @@ function landlordSettingsParts(source = state) {
 
 function tieOutcomeLabel(value) {
   if (value === 'higher-handicap-landlord') return 'Higher-handicap landlord wins';
-  if (value === 'peasants') return 'Peasants win';
-  if (value === 'landlord') return 'Landlord wins';
+  if (value === 'peasants') return 'Pack wins';
+  if (value === 'landlord') return 'Wolf wins';
   return 'No win or loss';
 }
 
@@ -3508,7 +3508,7 @@ function renderLandlordActions() {
   }
   const playerResults = playerDisplayIndexes(config.playerCount).map(index => {
     const player = state.players[index];
-    const role = index === landlordIndex ? t('Landlord') : t('Peasant');
+    const role = index === landlordIndex ? t('Wolf') : t('Pack');
     const points = signedPoints(result.points[index]);
     return `<span class="${result.points[index] > 0 ? 'point-positive' : (result.points[index] < 0 ? 'point-negative' : '')}" aria-label="${escapeHtml(`${player} · ${role} ${points}`)}">${roleIconHtml(index === landlordIndex)} ${escapeHtml(player)} <strong>${points}</strong></span>`;
   }).join('');
@@ -3562,7 +3562,7 @@ function renderPlayEntry() {
   const holeValues = holeGrossAndNet(scores, activePlayHoleIndex);
 
   els.playEntryMode.textContent = state.gameType === 'landlord'
-    ? `${t('Fight the Landlord')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')} · ${landlordSettingsSummary(state)}`
+    ? `${t('Wolf & Pack')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')} · ${landlordSettingsSummary(state)}`
     : t('Score Entry');
   els.playEntryTitle.textContent = game ? roundListDate(game) : t('No games currently playing');
   els.playEntryCourse.textContent = course.name || t('Course');
@@ -3610,7 +3610,7 @@ function renderPlayEntry() {
       <button class="play-score-button" type="button"></button>
     `;
       const role = state.gameType === 'landlord' && displayedLandlordIndex >= 0
-        ? (scoreIndex === displayedLandlordIndex ? t('Landlord') : t('Peasant'))
+        ? (scoreIndex === displayedLandlordIndex ? t('Wolf') : t('Pack'))
         : '';
       row.querySelector('.play-player-copy strong').innerHTML = `${escapeHtml(player || t('Player'))}${role ? ` ${roleIconHtml(scoreIndex === displayedLandlordIndex, 'player-name-role-icon')}` : ''}`;
       const runningTotal = row.querySelector('.landlord-running-total');
@@ -4102,7 +4102,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const biggestValue = String(biggestItems.length);
   analysisHighlightGroups = new Map();
   const settings = state.gameType === 'landlord'
-    ? `${t('Fight the Landlord')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
+    ? `${t('Wolf & Pack')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
     : `${t('Las Vegas')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
   const landlordPlayerDetails = state.gameType === 'landlord' ? landlordPlayerAnalysisDetails(displayMode, playerCount) : [];
   const playerCards = playerDisplayIndexes(playerCount).map(index => {
@@ -4677,10 +4677,10 @@ function renderRulesEntry() {
   const activeGame = currentGame();
   const gameType = activeGame?.gameType;
   const label = gameType === 'landlord'
-    ? t('Fight the Landlord Rules')
+    ? t('Wolf & Pack Rules')
     : (gameType === 'vegas' ? t('Las Vegas Rule') : t('Golf Game Rules'));
   const accessibleLabel = gameType === 'landlord'
-    ? t('Show Fight the Landlord rules')
+    ? t('Show Wolf & Pack rules')
     : (gameType === 'vegas' ? t('Show Las Vegas rules') : t('Show golf game rules'));
   els.rulesLabel.textContent = label;
   els.rulesButton.setAttribute('aria-label', accessibleLabel);
@@ -4780,7 +4780,7 @@ async function showRulesDialog() {
   const isLandlord = gameType === 'landlord';
   await openAppDialog({
     eyebrow: t('Notice'),
-    title: t(isLandlord ? 'Fight the Landlord Rules' : 'Las Vegas Rules'),
+    title: t(isLandlord ? 'Wolf & Pack Rules' : 'Las Vegas Rules'),
     message: isLandlord ? landlordRules : t(LAS_VEGAS_RULES_TEXT),
     input: false,
     showOk: false,
@@ -4821,7 +4821,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
   const parTotal = course.pars.reduce((a, b) => a + b, 0);
   if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live game' : 'Share final result');
   if (els.scoreStripCourse) els.scoreStripCourse.textContent = course.name;
-  if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${displayMode === 'net' ? t('Net') : t('Gross')}`;
+  if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Wolf & Pack') : t('Las Vegas')} · ${displayMode === 'net' ? t('Net') : t('Gross')}`;
   if (els.scoreStripDate) els.scoreStripDate.textContent = formatTeeTime(game?.totals?.teeTime, game?.savedAt);
   els.scoreStrip.classList.toggle('landlord-mode', state.gameType === 'landlord');
   if (state.gameType === 'landlord') {
@@ -4833,7 +4833,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
     els.teamATotal.textContent = signedPoints(ranked[0]?.points || 0);
     els.teamBTotal.textContent = '';
     els.teamATotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Leader')));
-    els.teamBTotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Fight the Landlord')));
+    els.teamBTotal.closest('.team-total')?.querySelector('.label')?.replaceChildren(document.createTextNode(t('Wolf & Pack')));
     applySignedClass(els.teamATotal, ranked[0]?.points || 0);
     applySignedClass(els.teamBTotal, 0);
     els.holesComplete.textContent = `${total.complete}/18`;
@@ -4951,7 +4951,7 @@ function renderLandlordLeaderboard(displayMode = state.scoreMode) {
         <span class="course-emblem" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="M17 47V28h7V18h6v10h5V14h6v14h7v19M14 47h36M23 47V36h7v11M36 47V36h7v11M20 23h4M38 20h3"/></svg></span>
         <div class="landlord-event-copy">
           <h2>${escapeHtml(course.name)}</h2>
-          <p class="eyebrow">${escapeHtml(`${t('Fight the Landlord')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')}`)}</p>
+          <p class="eyebrow">${escapeHtml(`${t('Wolf & Pack')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')}`)}</p>
           <span>${escapeHtml(roundListDate(currentGame() || {}))}</span>
         </div>
         <div class="landlord-event-progress"><strong>${totalsValue.complete}/18</strong><span>${totalsValue.complete >= 18 ? escapeHtml(t('Completed')) : escapeHtml(t('Playing'))}</span></div>
@@ -4963,7 +4963,7 @@ function renderLandlordLeaderboard(displayMode = state.scoreMode) {
     </div>
     <div class="landlord-table-wrap">
       <table>
-        <thead><tr><th>${escapeHtml(t('Hole'))}</th><th>${escapeHtml(t('Par'))}</th><th>${escapeHtml(t('Index'))}</th><th>${escapeHtml(t('Landlord'))}</th>${displayIndexes.map(index => `<th>${escapeHtml(state.players[index])}</th>`).join('')}</tr></thead>
+        <thead><tr><th>${escapeHtml(t('Hole'))}</th><th>${escapeHtml(t('Par'))}</th><th>${escapeHtml(t('Index'))}</th><th>${escapeHtml(t('Wolf'))}</th>${displayIndexes.map(index => `<th>${escapeHtml(state.players[index])}</th>`).join('')}</tr></thead>
         <tbody>${rows}</tbody>
         <tfoot><tr><th>${escapeHtml(t('Total'))}</th><th>${course.pars.reduce((sum, par) => sum + par, 0)}</th><th>—</th><th>—</th>${totalCells}</tr></tfoot>
       </table>
@@ -5296,7 +5296,7 @@ function cancelHistoryRangeModal() {
 
 function roundTeamsLine(round) {
   const players = Array.isArray(round.players) ? round.players : [];
-  if (round.gameType === 'landlord') return `${t('Fight the Landlord')}: ${players.join(' · ')}`;
+  if (round.gameType === 'landlord') return `${t('Wolf & Pack')}: ${players.join(' · ')}`;
   const [a1 = 'Player 1', a2 = 'Player 2', b1 = 'Player 3', b2 = 'Player 4'] = players;
   return t('Team A ({a1}+{a2}) vs. Team B ({b1}+{b2})', { a1, a2, b1, b2 });
 }
@@ -5593,7 +5593,7 @@ async function createLandlordScorecardAsset(round) {
   ctx.fillRect(0, 0, logicalWidth, 310);
   drawScorecardCourseIcon(ctx, 70, 91, 42);
   drawScorecardText(ctx, normalized.courseName, 128, 54, { align: 'left', color: '#fff', font: 'bold 36px Arial, Microsoft YaHei, sans-serif', maxWidth: 440 });
-  drawScorecardText(ctx, t('Fight the Landlord'), 128, 101, { align: 'left', color: '#f2d37f', font: 'bold 25px Arial, Microsoft YaHei, sans-serif', maxWidth: 440 });
+  drawScorecardText(ctx, t('Wolf & Pack'), 128, 101, { align: 'left', color: '#f2d37f', font: 'bold 25px Arial, Microsoft YaHei, sans-serif', maxWidth: 440 });
   drawScorecardText(ctx, '18/18', 750, 70, { align: 'right', color: '#fff', font: 'bold 42px Arial, Microsoft YaHei, sans-serif' });
   drawScorecardText(ctx, t('Completed'), 750, 116, { align: 'right', color: '#dceee8', font: 'bold 19px Arial, Microsoft YaHei, sans-serif' });
   drawScorecardText(ctx, `${roundListDate(normalized)} · ${roundModeLine(normalized)}`, 128, 143, { align: 'left', color: '#dceee8', font: '20px Arial, Microsoft YaHei, sans-serif', maxWidth: 500 });
@@ -5679,7 +5679,7 @@ async function createLandlordScorecardAsset(round) {
   const fixedColumns = [32, 34, 34, 70];
   const playerWidth = (contentWidth - fixedColumns.reduce((sum, value) => sum + value, 0)) / playerCount;
   const columns = [...fixedColumns, ...Array.from({ length: playerCount }, () => playerWidth)];
-  const headers = [t('Hole'), t('Par'), t('Index'), t('Landlord'), ...normalized.players.slice(0, playerCount)];
+  const headers = [t('Hole'), t('Par'), t('Index'), t('Wolf'), ...normalized.players.slice(0, playerCount)];
   let x = margin;
   headers.forEach((header, index) => {
     ctx.fillStyle = '#315e51';
@@ -6163,7 +6163,7 @@ function renderGameList(container, rounds, emptyText, status) {
     row.querySelector('.playing-icon').hidden = false;
     row.querySelector('.playing-icon').classList.toggle('history-status-icon', status === 'history');
     row.querySelector('.game-main').textContent = round.courseName || t('Course');
-    row.querySelector('.game-meta').textContent = `${roundListDate(round)} · ${round.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${roundModeLine(round)}`;
+    row.querySelector('.game-meta').textContent = `${roundListDate(round)} · ${round.gameType === 'landlord' ? t('Wolf & Pack') : t('Las Vegas')} · ${roundModeLine(round)}`;
     row.querySelector('.game-score').innerHTML = roundScoreSummaryHtml(round);
     const destination = window.SIMPLE_GOLF_ROUND_ACCESS.openDestination(round, status, clientId);
     const destinationText = status === 'history'
@@ -6221,7 +6221,7 @@ function renderStart() {
     els.rematchCard.hidden = playing.length > 0 || !latestCompleted;
     if (latestCompleted) {
       const normalized = normalizeRound(latestCompleted);
-      els.rematchTitle.textContent = `${normalized.courseName || normalized.name} · ${t(normalized.gameType === 'landlord' ? 'Landlord' : 'Las Vegas')} · ${t(normalized.scoreMode === 'net' ? 'Net' : 'Gross')}`;
+      els.rematchTitle.textContent = `${normalized.courseName || normalized.name} · ${t(normalized.gameType === 'landlord' ? 'Wolf & Pack' : 'Las Vegas')} · ${t(normalized.scoreMode === 'net' ? 'Net' : 'Gross')}`;
       els.rematchPlayers.textContent = normalized.players.join(' · ');
     }
   }
