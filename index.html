@@ -51,7 +51,7 @@
       <div class="brand-mark"><img src="./assets/jfk-icon.svg" alt="" aria-hidden="true"></div>
       <div class="brand-copy">
         <h1 id="appTitle">Simple Golf Scorecard</h1>
-        <p class="header-status" id="headerStatus"><span class="header-status-check" aria-hidden="true">✓</span><span id="headerStatusText">No sign-in · Ready to play</span></p>
+        <p class="header-status" id="headerStatus"><span class="header-status-check" aria-hidden="true">✓</span><span id="headerStatusText">No sign-in · Ready</span></p>
       </div>
       <button id="languageButton" class="header-language-button" type="button" aria-label="Switch to Chinese" title="Switch to Chinese"><span aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></span></button>
       <button class="top-menu-button" id="topMenuButton" type="button" aria-label="Open menu" title="Open menu" aria-expanded="false" aria-controls="topActions"><span></span><span></span><span></span></button>
@@ -88,7 +88,7 @@
             <strong id="teamBTotal">0</strong>
           </div>
         </div>
-        <button class="share-round-link" id="shareRoundLink" type="button">Share live game</button>
+        <button class="share-round-link" id="shareRoundLink" type="button">Share live</button>
         <div class="landlord-score-strip-ranking" id="landlordScoreStripRanking" hidden></div>
       </section>
 
@@ -144,12 +144,12 @@
       <section class="view" id="leaderboardView">
         <div class="results-controls">
           <nav class="results-view-tabs" aria-label="Results views">
-            <button type="button" class="active" id="resultsScoreTab" aria-selected="true" aria-controls="resultsScorePanel">Scores</button>
+            <button type="button" class="active" id="resultsScoreTab" aria-selected="true" aria-controls="resultsScorePanel">Scorecard</button>
             <button type="button" id="resultsAnalysisTab" aria-selected="false" aria-controls="resultsAnalysisPanel">Analysis</button>
           </nav>
           <label class="results-mode-control" for="resultsScoreModeSelect">
-            <span>Scoring basis</span>
-            <select id="resultsScoreModeSelect" aria-label="Scoring basis"></select>
+            <span>Score by</span>
+            <select id="resultsScoreModeSelect" aria-label="Score by"></select>
           </label>
         </div>
         <p class="results-reference-notice" id="resultsReferenceNotice" hidden></p>
@@ -254,20 +254,20 @@
         </section>
         <section class="rematch-card" id="rematchCard" hidden>
           <div>
-            <small>Last group game</small>
+            <small>Last game</small>
             <strong id="rematchTitle">Course · Game</strong>
             <span id="rematchPlayers">Players</span>
           </div>
-          <button id="rematchButton" type="button">Play again with same setup</button>
+          <button id="rematchButton" type="button">Play again</button>
         </section>
         <section class="home-actions" aria-label="Main actions">
           <button class="home-action home-action-primary" id="newGame" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9998;</span>
-            <span><strong>Start a game</strong><small>Set up Las Vegas or Wolf/Pack</small></span>
+            <span><strong>New game</strong><small>Choose game and players</small></span>
           </button>
           <button class="home-action" id="watchGames" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9673;</span>
-            <span><strong>Watch live</strong><small>Follow live group-game points</small></span>
+            <span><strong>Watch live</strong><small>Live games</small></span>
           </button>
           <button class="home-action" id="viewScorecards" type="button">
             <span class="home-action-icon" aria-hidden="true">&#9776;</span>
@@ -410,7 +410,7 @@
     <form class="course-form game-form" id="gameForm">
       <div class="modal-head">
         <div>
-          <p class="eyebrow">Game Setup</p>
+          <p class="eyebrow">New game</p>
           <h2>New Game</h2>
         </div>
         <button class="icon-button" id="cancelGame" type="button" aria-label="Close new game" title="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -419,7 +419,7 @@
       <div class="game-wizard-progress" id="gameWizardProgress" aria-label="Game setup progress"></div>
 
       <section class="game-wizard-step" data-game-step="1">
-        <h3>1. Select course</h3>
+        <h3>1. Course</h3>
         <div class="recent-course-block" id="recentCourseBlock" hidden>
           <strong>Recent courses</strong>
           <div class="recent-course-choices" id="recentCourseChoices"></div>
@@ -446,7 +446,7 @@
       </section>
 
       <section class="game-wizard-step" data-game-step="3" hidden>
-        <h3>3. Players and handicaps</h3>
+        <h3>3. Players &amp; handicaps</h3>
         <div class="teams-grid">
         <section class="team-card team-a">
           <h3>Team A</h3>
@@ -472,7 +472,7 @@
         </section>
         </div>
         <label class="fixed-landlord-player landlord-setup" hidden>
-          Fixed Wolf
+          Fixed
           <select id="newFixedLandlordPlayer"></select>
         </label>
       </section>
@@ -510,7 +510,7 @@
               <div class="field-label-row">
                 <label for="newGameScoreMode">Scoring Mode</label>
                 <details class="hint-popover text-hint-popover">
-                  <summary aria-label="About scoring mode" title="About scoring mode">Scoring help</summary>
+                <summary aria-label="About scoring mode" title="About scoring mode">How scoring works</summary>
                   <p>Gross uses actual strokes. Net subtracts handicap strokes.</p>
                 </details>
               </div>
@@ -544,23 +544,23 @@
                 </details>
               </div>
               <div class="choice-segments" data-select-target="newLandlordMode" role="group" aria-label="Wolf selection">
-                <button type="button" data-value="rotating">Rotating Wolf</button>
-                <button type="button" data-value="fixed">Fixed Wolf</button>
+                <button type="button" data-value="rotating">Rotating</button>
+                <button type="button" data-value="fixed">Fixed</button>
               </div>
               <select class="segmented-source visually-hidden" id="newLandlordMode" tabindex="-1" aria-hidden="true">
-                <option value="rotating">Rotating Wolf</option>
-                <option value="fixed">Fixed Wolf</option>
+                <option value="rotating">Rotating</option>
+                <option value="fixed">Fixed</option>
               </select>
             </div>
             <div class="field-control landlord-setup landlord-comparison-control" hidden>
-              <span class="field-control-label">How many Pack scores?</span>
-              <div class="choice-segments pack-count-segments" id="bestPackCountSegments" data-select-target="newLandlordBestPeasantCount" role="group" aria-label="How many Pack scores?"></div>
+              <span class="field-control-label">Pack scores used</span>
+              <div class="choice-segments pack-count-segments" id="bestPackCountSegments" data-select-target="newLandlordBestPeasantCount" role="group" aria-label="Pack scores used"></div>
               <select class="segmented-source visually-hidden" id="newLandlordBestPeasantCount" tabindex="-1" aria-hidden="true"></select>
               <div class="comparison-explainer" id="landlordComparisonExample"></div>
             </div>
             <div class="field-control landlord-setup landlord-tie-option" hidden>
               <label class="tie-outcome-label" for="newLandlordTieOutcome">
-                <span>How to score a tie</span>
+                <span>Tie rule</span>
                 <select id="newLandlordTieOutcome">
                   <option value="draw">No win or loss</option>
                   <option value="higher-handicap-landlord">Higher-handicap landlord wins</option>
@@ -574,7 +574,7 @@
       </section>
 
       <section class="game-wizard-step" data-game-step="4" hidden>
-        <h3>4. Review and confirm</h3>
+        <h3>4. Review</h3>
         <div class="game-review" id="gameReview"></div>
         <div class="field-control">
           <div class="field-label-row">

@@ -1353,7 +1353,7 @@ function renderScoringDeviceBar() {
   const lock = editLock(round);
   const lockLive = Boolean(lock && Number(lock.expiresAt || 0) > Date.now());
   if (finished) {
-    els.scoringDeviceStatus.textContent = t('Completed game · locked');
+  els.scoringDeviceStatus.textContent = t('Complete · Locked');
   } else if (isEditing && hasCurrentEditLock(round)) {
     els.scoringDeviceStatus.textContent = t('Scored by {device}', { device: editLockDevice(round) });
   } else if (lockLive) {
@@ -1498,7 +1498,7 @@ async function shareRound(round = currentGame()) {
   if (!round?.id) return;
   const finished = gameStatus(round) !== 'playing';
   const shareData = {
-    title: `${round.courseName || round.name} · ${t(finished ? 'Share final result' : 'Share live game')}`,
+    title: `${round.courseName || round.name} · ${t(finished ? 'Share result' : 'Share live')}`,
     text: t(finished ? 'View the final group-game result and hole-by-hole points.' : 'Follow the live group-game points—no account required.'),
     url: sharedRoundUrl(round.id)
   };
@@ -3833,8 +3833,8 @@ function configureResultsControls() {
     const option = document.createElement('option');
     option.value = mode;
     option.textContent = t(mode === officialMode
-      ? (mode === 'net' ? 'Net (game setting)' : 'Gross (game setting)')
-      : (mode === 'net' ? 'Net (reference)' : 'Gross (reference)'));
+      ? (mode === 'net' ? 'Net · Official' : 'Gross · Official')
+      : (mode === 'net' ? 'Net · Reference' : 'Gross · Reference'));
     return option;
   }));
   els.resultsScoreModeSelect.value = resultsScoreMode;
@@ -3905,7 +3905,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
       return summary;
     }, { count: 0, max: 1, hole: 0, items: [] });
     return {
-      label: t('Multiplied holes'),
+      label: t('Multiplier holes'),
       value: String(multiplied.count),
       hole: multiplied.hole || 0,
       items: multiplied.items
@@ -3921,7 +3921,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(extraPoints) }), points: extraPoints });
     return summary;
   }, { count: 0, extra: 0, items: [] });
-  return { label: t('Flipped holes'), value: String(flipped.count), hole: 0, items: flipped.items };
+  return { label: t('Flip holes'), value: String(flipped.count), hole: 0, items: flipped.items };
 }
 
 function analysisHighlightCard(group, label, value, items = []) {
@@ -3977,12 +3977,12 @@ function landlordPlayerAnalysisDetails(displayMode, playerCount) {
     return {
       label: state.players[playerIndex],
       stats: [
-        { label: t('Times as Wolf'), value: String(summary.landlordCount) },
-        { label: t('Times as Pack'), value: String(summary.peasantCount) },
-        { label: t('Wolf total points'), value: signedPoints(summary.landlordPoints), points: summary.landlordPoints },
-        { label: t('Pack total points'), value: signedPoints(summary.peasantPoints), points: summary.peasantPoints }
+        { label: t('Wolf holes'), value: String(summary.landlordCount) },
+        { label: t('Pack holes'), value: String(summary.peasantCount) },
+        { label: t('As Wolf'), value: signedPoints(summary.landlordPoints), points: summary.landlordPoints },
+        { label: t('As Pack'), value: signedPoints(summary.peasantPoints), points: summary.peasantPoints }
       ],
-      listLabel: t('Biggest swing holes'),
+      listLabel: t('Biggest swings'),
       items: summary.items
     };
   });
@@ -4137,7 +4137,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
       </div>
     </section>
     <section class="analysis-section analysis-hole-section">
-      <div class="analysis-section-title"><h3>${escapeHtml(t('Hole-by-hole analysis'))}</h3><span>${holes.length}/18</span></div>
+      <div class="analysis-section-title"><h3>${escapeHtml(t('Hole details'))}</h3><span>${holes.length}/18</span></div>
       ${holes.length ? holes.map(item => item.html).join('') : `<p class="analysis-empty">${escapeHtml(t('Complete a hole to see its analysis.'))}</p>`}
     </section>`;
 }
@@ -4689,15 +4689,15 @@ function renderRulesEntry() {
 
 function renderHeaderStatus() {
   const game = currentGame();
-  let label = t('No sign-in · Ready to play');
+  let label = t('No sign-in · Ready');
   let status = 'ready';
   if (currentView === 'start') {
-    label = t('No sign-in · Ready to play');
+    label = t('No sign-in · Ready');
   } else if (game && gameStatus(game) !== 'playing') {
-    label = t('Game complete · Locked');
+    label = t('Complete · Locked');
     status = 'complete';
   } else if (game && isEditing) {
-    label = t('Scoring in progress');
+    label = t('Scoring');
     status = 'scoring';
   } else if (game) {
     label = t('Watching live');
@@ -4819,7 +4819,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
   const game = currentGame();
   const total = totals(displayMode);
   const parTotal = course.pars.reduce((a, b) => a + b, 0);
-  if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live game' : 'Share final result');
+  if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live' : 'Share result');
   if (els.scoreStripCourse) els.scoreStripCourse.textContent = course.name;
   if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Wolf & Pack') : t('Las Vegas')} · ${displayMode === 'net' ? t('Net') : t('Gross')}`;
   if (els.scoreStripDate) els.scoreStripDate.textContent = formatTeeTime(game?.totals?.teeTime, game?.savedAt);

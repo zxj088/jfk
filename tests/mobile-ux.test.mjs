@@ -73,7 +73,7 @@ test('game-rule setup uses clear segmented choices without changing stored selec
 
 test('game-rule setup explains Wolf comparison and keeps Las Vegas at four players', () => {
   assert.match(html, /id="landlordComparisonExample"/);
-  assert.match(html, /How to score a tie/);
+  assert.match(html, /Tie rule/);
   assert.match(app, /els\.newLandlordPlayerCount\.value = '4'/);
   assert.match(app, /Wolf: 5 strokes × \{count\} players = \{total\}/);
   assert.match(app, /Pack: add the best \{count\} player scores/);
