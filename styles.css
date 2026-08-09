@@ -2680,6 +2680,20 @@ input:disabled {
   text-align: center;
 }
 
+.analysis-player-detail {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.analysis-player-detail:hover,
+.analysis-player-detail:focus-visible {
+  border-color: var(--green);
+  background: #edf7f1;
+  outline: 2px solid color-mix(in srgb, var(--green) 25%, transparent);
+  outline-offset: 1px;
+}
+
 .analysis-highlight-link {
   width: 100%;
   color: inherit;
@@ -2734,6 +2748,21 @@ input:disabled {
 .analysis-highlight-list button strong { color: var(--green); font-size: 16px; }
 .analysis-highlight-list button span { color: #42564f; font-weight: 800; }
 .analysis-highlight-empty { margin: 8px 0; padding: 18px; color: var(--muted); text-align: center; }
+.analysis-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.analysis-detail-stats > span {
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f7faf8;
+  text-align: center;
+}
+.analysis-detail-stats small { display: block; color: var(--muted); font-size: 12px; }
+.analysis-detail-stats strong { display: block; margin-top: 4px; color: var(--green); font-size: 20px; }
+.analysis-detail-list-title { margin: 8px 2px 0; font-size: 15px; }
 
 .analysis-player span,
 .analysis-player small,

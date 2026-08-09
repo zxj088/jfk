@@ -64,7 +64,7 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.match(app, /function analysisSpecialPointBadges/);
   assert.match(app, /gameType === 'vegas' && !result\.aNumber\.flipped && !result\.bNumber\.flipped/);
   assert.match(app, /gameType === 'landlord' && result\.specialMultiplier <= 1/);
-  assert.match(app, /localizedHoleLabel\(multiplied\.hole\).*x\$\{multiplied\.max\}/);
+  assert.match(app, /Multiplied holes'\),[\s\S]*value: String\(multiplied\.count\)/);
   assert.match(app, /analysis-badge bomb[\s\S]*flipBombIconHtml/);
   assert.match(app, /analysis-badge flip[\s\S]*Extra \{points\}/);
   assert.match(css, /\.analysis-badge\.good[\s\S]*\.analysis-badge\.bad[\s\S]*\.analysis-badge\.bomb/);
@@ -78,7 +78,7 @@ test('highlight cards open detailed lists whose items jump to matching hole anal
   assert.match(app, /id="analysis-hole-\$\{holeIndex \+ 1\}"/);
   assert.match(app, /const biggestItems = biggest \? holes\.filter\(item => item\.magnitude === biggest\.magnitude\)/);
   assert.match(app, /const biggestValue = String\(biggestItems\.length\)/);
-  assert.match(app, /multiplied\.count > 1 \? t\('Multiple holes'\)/);
+  assert.match(app, /Multiplied holes'\),[\s\S]*value: String\(multiplied\.count\)/);
   assert.match(app, /Flipped holes'\), value: String\(flipped\.count\)/);
   assert.match(i18n, /'Multiple holes': '多个洞'/);
   assert.match(app, /analysisHighlightCard\('rule-impact', ruleImpact\.label, ruleImpact\.value, ruleImpact\.items\)/);
@@ -89,4 +89,15 @@ test('highlight cards open detailed lists whose items jump to matching hole anal
   assert.match(css, /\.analysis-highlight-link[\s\S]*cursor: pointer/);
   assert.match(css, /\.analysis-highlight-link:disabled[\s\S]*cursor: default/);
   assert.match(css, /\.analysis-hole\.analysis-hole-target[\s\S]*@keyframes analysis-hole-highlight/);
+});
+
+test('landlord player totals open role and biggest-swing details', () => {
+  assert.match(app, /function landlordPlayerAnalysisDetails/);
+  assert.match(app, /landlordCount[\s\S]*peasantCount[\s\S]*landlordPoints[\s\S]*peasantPoints/);
+  assert.match(app, /magnitude > resultSummary\.maxMagnitude[\s\S]*magnitude === resultSummary\.maxMagnitude/);
+  assert.match(app, /class="analysis-player analysis-player-detail" data-analysis-highlight/);
+  assert.match(app, /data\.stats\?\.length[\s\S]*analysis-detail-stats/);
+  assert.match(i18n, /'Times as Wolf': '当地主次数'/);
+  assert.match(i18n, /'Times as Pack': '当农民次数'/);
+  assert.match(css, /\.analysis-player-detail[\s\S]*cursor: pointer/);
 });

@@ -3901,7 +3901,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     }, { count: 0, max: 1, hole: 0, items: [] });
     return {
       label: t('Multiplied holes'),
-      value: !multiplied.count ? '0' : (multiplied.count > 1 ? t('Multiple holes') : `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}`),
+      value: String(multiplied.count),
       hole: multiplied.hole || 0,
       items: multiplied.items
     };
@@ -3933,11 +3933,53 @@ function openAnalysisHighlightModal(group) {
   if (!data || !els.analysisHighlightModal) return;
   els.analysisHighlightEyebrow.textContent = t('Highlights');
   els.analysisHighlightTitle.textContent = data.label;
-  els.analysisHighlightList.innerHTML = data.items.length
+  const stats = data.stats?.length ? `<div class="analysis-detail-stats">${data.stats.map(item => `<span><small>${escapeHtml(item.label)}</small><strong>${escapeHtml(item.value)}</strong></span>`).join('')}</div>` : '';
+  const listLabel = data.listLabel ? `<h3 class="analysis-detail-list-title">${escapeHtml(data.listLabel)}</h3>` : '';
+  const items = data.items.length
     ? data.items.map(item => `<button type="button" data-analysis-hole="${item.hole}"><strong>${escapeHtml(localizedHoleLabel(item.hole))}</strong><span>${escapeHtml(item.detail)}</span></button>`).join('')
     : `<p class="analysis-highlight-empty">${escapeHtml(t('No matching holes.'))}</p>`;
+  els.analysisHighlightList.innerHTML = `${stats}${listLabel}${items}`;
   els.analysisHighlightClose.textContent = t('Close');
   els.analysisHighlightModal.hidden = false;
+}
+
+function landlordPlayerAnalysisDetails(displayMode, playerCount) {
+  const displayState = { ...state, scoreMode: displayMode };
+  const config = normalizeLandlordState(state.landlord, state.players.length);
+  return Array.from({ length: playerCount }, (_, playerIndex) => {
+    const summary = state.scores.reduce((resultSummary, scores, holeIndex) => {
+      const result = landlordHoleResult(displayState, holeIndex);
+      if (!result) return resultSummary;
+      const isLandlord = config.landlords[holeIndex] === playerIndex;
+      const points = Number(result.points[playerIndex] || 0);
+      if (isLandlord) {
+        resultSummary.landlordCount += 1;
+        resultSummary.landlordPoints += points;
+      } else {
+        resultSummary.peasantCount += 1;
+        resultSummary.peasantPoints += points;
+      }
+      const magnitude = Math.abs(points);
+      if (magnitude > resultSummary.maxMagnitude) {
+        resultSummary.maxMagnitude = magnitude;
+        resultSummary.items = [{ hole: holeIndex + 1, detail: signedPoints(points) }];
+      } else if (magnitude === resultSummary.maxMagnitude) {
+        resultSummary.items.push({ hole: holeIndex + 1, detail: signedPoints(points) });
+      }
+      return resultSummary;
+    }, { landlordCount: 0, peasantCount: 0, landlordPoints: 0, peasantPoints: 0, maxMagnitude: -1, items: [] });
+    return {
+      label: state.players[playerIndex],
+      stats: [
+        { label: t('Times as Wolf'), value: String(summary.landlordCount) },
+        { label: t('Times as Pack'), value: String(summary.peasantCount) },
+        { label: t('Wolf total points'), value: signedPoints(summary.landlordPoints) },
+        { label: t('Pack total points'), value: signedPoints(summary.peasantPoints) }
+      ],
+      listLabel: t('Biggest swing holes'),
+      items: summary.items
+    };
+  });
 }
 
 function openAnalysisHole(hole) {
@@ -4059,11 +4101,16 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const settings = state.gameType === 'landlord'
     ? `${t('Fight the Landlord')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
     : `${t('Las Vegas')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
-  const playerCards = playerDisplayIndexes(playerCount).map(index => `<article class="analysis-player">
-    <span>${escapeHtml(state.players[index])}</span>
-    <strong class="${points[index] > 0 ? 'point-positive' : (points[index] < 0 ? 'point-negative' : '')}">${signedPoints(points[index])}</strong>
-    <small>${escapeHtml(t(displayMode === 'net' ? 'Net' : 'Gross'))} ${displayMode === 'net' ? total.playersNet[index] : total.playersGross[index]}</small>
-  </article>`).join('');
+  const landlordPlayerDetails = state.gameType === 'landlord' ? landlordPlayerAnalysisDetails(displayMode, playerCount) : [];
+  const playerCards = playerDisplayIndexes(playerCount).map(index => {
+    const content = `<span>${escapeHtml(state.players[index])}</span>
+      <strong class="${points[index] > 0 ? 'point-positive' : (points[index] < 0 ? 'point-negative' : '')}">${signedPoints(points[index])}</strong>
+      <small>${escapeHtml(t(displayMode === 'net' ? 'Net' : 'Gross'))} ${displayMode === 'net' ? total.playersNet[index] : total.playersGross[index]}</small>`;
+    if (state.gameType !== 'landlord') return `<article class="analysis-player">${content}</article>`;
+    const group = `player-${index}`;
+    analysisHighlightGroups.set(group, landlordPlayerDetails[index]);
+    return `<button type="button" class="analysis-player analysis-player-detail" data-analysis-highlight="${group}" aria-label="${escapeHtml(`${state.players[index]}: ${signedPoints(points[index])}`)}">${content}</button>`;
+  }).join('');
   els.resultsAnalysisPanel.innerHTML = `
     <section class="analysis-summary-card">
       <p class="eyebrow">${escapeHtml(t('Game summary'))}</p>
