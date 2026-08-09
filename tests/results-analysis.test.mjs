@@ -9,12 +9,16 @@ const [html, app, css, i18n] = await Promise.all([
   readFile(new URL('../i18n.js', import.meta.url), 'utf8')
 ]);
 
-test('results page offers matching score and analysis tabs without the PNG share entry', () => {
-  assert.match(html, /id="resultsPrimaryScoreTab"[\s\S]*id="resultsSecondaryScoreTab"[\s\S]*id="resultsAnalysisTab"/);
+test('results page offers score and analysis tabs with a scoring-basis selector', () => {
+  assert.match(html, /id="resultsScoreTab"[\s\S]*id="resultsAnalysisTab"/);
+  assert.match(html, /id="resultsScoreModeSelect"/);
   assert.match(html, /id="resultsScorePanel"[\s\S]*id="resultsAnalysisPanel"/);
   assert.doesNotMatch(html, /id="shareCurrentScorecard"/);
   assert.match(css, /\.results-view-tabs button\.active[\s\S]*background: var\(--green\)/);
   assert.match(css, /\.analysis-section-title[\s\S]*background: var\(--green\)/);
+  assert.match(i18n, /'Net \(game setting\)': '净杆（比赛设定）'/);
+  assert.match(i18n, /'Gross \(reference\)': '总杆（仅供参考）'/);
+  assert.match(i18n, /'Special scores, flips and bombs are always determined by actual gross strokes\.': '特殊成绩、翻转和炸弹始终按实际总杆判定。'/);
 });
 
 test('analysis labels remain fully localized and special scores always use gross strokes', () => {
@@ -29,21 +33,27 @@ test('analysis labels remain fully localized and special scores always use gross
 });
 
 test('analysis reuses scoring results and finishing opens the locked score page', () => {
-  assert.match(app, /function analysisHoleRows[\s\S]*landlordHoleResult\(state, holeIndex\)/);
-  assert.match(app, /function analysisHoleRows[\s\S]*scoreHole\(scores, par, holeIndex\)/);
+  assert.match(app, /function analysisHoleRows[\s\S]*landlordHoleResult\(displayState, holeIndex\)/);
+  assert.match(app, /function analysisHoleRows[\s\S]*scoreHole\(scores, par, holeIndex, displayMode\)/);
   assert.match(app, /function renderGameAnalysis[\s\S]*Points balance/);
   assert.doesNotMatch(app, /checkboxLabel: t\('Share game scoring card'\)/);
-  assert.match(app, /render\(\);\s*resultsScoreMode = state\.scoreMode;\s*setResultsPanel\(state\.scoreMode\);\s*switchView\('leaderboard'\);/);
+  assert.match(app, /render\(\);\s*resultsScoreMode = state\.scoreMode;\s*setResultsPanel\('scores'\);\s*switchView\('leaderboard'\);/);
 });
 
-test('gross and net tabs recalculate only their own displayed scores and points', () => {
-  assert.match(app, /function configureResultsTabs\(\)[\s\S]*primaryMode = state\.scoreMode === 'net'/);
+test('gross and net selector recalculates scores and analysis without changing the saved game', () => {
+  assert.match(app, /function configureResultsControls\(\)[\s\S]*officialMode = state\.scoreMode === 'net'/);
+  assert.match(app, /Net \(game setting\)[\s\S]*Gross \(reference\)/);
   assert.match(app, /renderHoles\(resultsScoreMode\)/);
   assert.match(app, /renderLandlordLeaderboard\(resultsScoreMode\)/);
   assert.match(app, /renderScoreStrip\(resultsScoreMode\)/);
+  assert.match(app, /renderGameAnalysis\(resultsScoreMode\)/);
   assert.match(app, /function totals\(scoreMode = state\.scoreMode\)/);
   assert.match(app, /function renderHoles\(displayMode = state\.scoreMode\)/);
   assert.match(app, /displayMode === 'net' \? netValue : grossValue/);
+  assert.match(app, /const grossTone = grossScoreTone\(grossValue, course\.pars\[index\]\)/);
+  assert.doesNotMatch(app, /displayMode === 'net'[^;]+grossScoreTone/);
+  const selectorListener = app.slice(app.indexOf("els.resultsScoreModeSelect?.addEventListener('change'"), app.indexOf("els.rulesButton.addEventListener"));
+  assert.doesNotMatch(selectorListener, /persistActiveGame|scheduleAutoSync|saveState|upsertCloudRound/);
 });
 
 test('analysis localizes hole labels and explains multipliers or flip extras without point-balance rows', () => {

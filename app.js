@@ -536,8 +536,9 @@ const els = {
   aboutButton: document.querySelector('#aboutButton'),
   shareRoundLink: document.querySelector('#shareRoundLink'),
   landlordScoreStripRanking: document.querySelector('#landlordScoreStripRanking'),
-  resultsPrimaryScoreTab: document.querySelector('#resultsPrimaryScoreTab'),
-  resultsSecondaryScoreTab: document.querySelector('#resultsSecondaryScoreTab'),
+  resultsScoreTab: document.querySelector('#resultsScoreTab'),
+  resultsScoreModeSelect: document.querySelector('#resultsScoreModeSelect'),
+  resultsReferenceNotice: document.querySelector('#resultsReferenceNotice'),
   resultsAnalysisTab: document.querySelector('#resultsAnalysisTab'),
   resultsScorePanel: document.querySelector('#resultsScorePanel'),
   resultsAnalysisPanel: document.querySelector('#resultsAnalysisPanel'),
@@ -3812,32 +3813,41 @@ function totals(scoreMode = state.scoreMode) {
   }, { a: 0, b: 0, complete: 0, players: [0, 0, 0, 0], playersGross: [0, 0, 0, 0], playersNet: [0, 0, 0, 0] });
 }
 
-function configureResultsTabs() {
-  const primaryMode = state.scoreMode === 'net' ? 'net' : 'gross';
-  const secondaryMode = primaryMode === 'net' ? 'gross' : 'net';
-  if (!resultsScoreMode) resultsScoreMode = primaryMode;
-  els.resultsPrimaryScoreTab.dataset.scoreMode = primaryMode;
-  els.resultsSecondaryScoreTab.dataset.scoreMode = secondaryMode;
-  els.resultsPrimaryScoreTab.textContent = t(primaryMode === 'net' ? 'Net' : 'Gross');
-  els.resultsSecondaryScoreTab.textContent = t(secondaryMode === 'net' ? 'Net' : 'Gross');
+function configureResultsControls() {
+  const officialMode = state.scoreMode === 'net' ? 'net' : 'gross';
+  const referenceMode = officialMode === 'net' ? 'gross' : 'net';
+  if (!['gross', 'net'].includes(resultsScoreMode)) resultsScoreMode = officialMode;
+  els.resultsScoreModeSelect.replaceChildren(...[officialMode, referenceMode].map(mode => {
+    const option = document.createElement('option');
+    option.value = mode;
+    option.textContent = t(mode === officialMode
+      ? (mode === 'net' ? 'Net (game setting)' : 'Gross (game setting)')
+      : (mode === 'net' ? 'Net (reference)' : 'Gross (reference)'));
+    return option;
+  }));
+  els.resultsScoreModeSelect.value = resultsScoreMode;
+  const referenceView = resultsScoreMode !== officialMode;
+  els.resultsReferenceNotice.hidden = !referenceView;
+  els.resultsReferenceNotice.textContent = referenceView
+    ? t('{view} reference view. This game is officially scored as {official}.', {
+        view: t(resultsScoreMode === 'net' ? 'Net' : 'Gross'),
+        official: t(officialMode === 'net' ? 'Net' : 'Gross')
+      })
+    : '';
 }
 
-function setResultsPanel(panel = '') {
-  configureResultsTabs();
+function setResultsPanel(panel = 'scores') {
+  configureResultsControls();
   const analysisActive = panel === 'analysis';
-  if (!analysisActive && ['gross', 'net'].includes(panel)) resultsScoreMode = panel;
   els.resultsScorePanel.hidden = analysisActive;
   els.resultsAnalysisPanel.hidden = !analysisActive;
-  [els.resultsPrimaryScoreTab, els.resultsSecondaryScoreTab].forEach(button => {
-    const active = !analysisActive && button.dataset.scoreMode === resultsScoreMode;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-selected', String(active));
-  });
+  els.resultsScoreTab.classList.toggle('active', !analysisActive);
+  els.resultsScoreTab.setAttribute('aria-selected', String(!analysisActive));
   els.resultsAnalysisTab.classList.toggle('active', analysisActive);
   els.resultsAnalysisTab.setAttribute('aria-selected', String(analysisActive));
   if (analysisActive) {
-    renderScoreStrip(state.scoreMode);
-    renderGameAnalysis();
+    renderScoreStrip(resultsScoreMode);
+    renderGameAnalysis(resultsScoreMode);
   } else {
     renderScoreStrip(resultsScoreMode);
     renderHoles(resultsScoreMode);
@@ -3863,10 +3873,11 @@ function localizedHoleLabel(hole) {
   return document.documentElement.lang.startsWith('zh') ? `第${hole}洞` : t('Hole {value}', { value: hole });
 }
 
-function analysisRuleImpact(course) {
+function analysisRuleImpact(course, displayMode = state.scoreMode) {
   if (state.gameType === 'landlord') {
+    const displayState = { ...state, scoreMode: displayMode };
     const multiplied = state.scores.reduce((summary, scores, holeIndex) => {
-      const result = landlordHoleResult(state, holeIndex);
+      const result = landlordHoleResult(displayState, holeIndex);
       if (result?.multiplier > 1) {
         summary.count += 1;
         if (result.multiplier > summary.max) {
@@ -3879,7 +3890,7 @@ function analysisRuleImpact(course) {
     return { label: t('Multiplied holes'), value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0' };
   }
   const flipped = state.scores.reduce((summary, scores, holeIndex) => {
-    const result = scoreHole(scores, Number(course.pars[holeIndex] || 4), holeIndex, state.scoreMode);
+    const result = scoreHole(scores, Number(course.pars[holeIndex] || 4), holeIndex, displayMode);
     if (!result || (!result.aNumber.flipped && !result.bNumber.flipped)) return summary;
     const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
     summary.count += 1;
@@ -3919,11 +3930,12 @@ function analysisSpecialPointBadges(scores, par, playerCount, result, gameType) 
   });
 }
 
-function analysisHoleRows(course, playerCount) {
+function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
+  const displayState = { ...state, scoreMode: displayMode };
   return state.scores.flatMap((scores, holeIndex) => {
     const par = Number(course.pars[holeIndex] || 4);
     if (state.gameType === 'landlord') {
-      const result = landlordHoleResult(state, holeIndex);
+      const result = landlordHoleResult(displayState, holeIndex);
       if (!result) return [];
       const config = normalizeLandlordState(state.landlord, state.players.length);
       const landlordIndex = config.landlords[holeIndex];
@@ -3944,7 +3956,7 @@ function analysisHoleRows(course, playerCount) {
         </div></details>`
       }];
     }
-    const result = scoreHole(scores, par, holeIndex);
+    const result = scoreHole(scores, par, holeIndex, displayMode);
     if (!result) return [];
     const winner = result.delta === 0 ? t('Tie') : t('Team {team}', { team: result.delta > 0 ? 'A' : 'B' });
     const flipLabel = result.aNumber.flipped || result.bNumber.flipped ? t('Flip') : t('Without flip');
@@ -3967,7 +3979,7 @@ function analysisHoleRows(course, playerCount) {
   });
 }
 
-function renderGameAnalysis() {
+function renderGameAnalysis(displayMode = state.scoreMode) {
   if (!els.resultsAnalysisPanel) return;
   const game = currentGame();
   if (!game) {
@@ -3975,23 +3987,23 @@ function renderGameAnalysis() {
     return;
   }
   const course = currentCourse();
-  const total = totals();
+  const total = totals(displayMode);
   const playerCount = state.gameType === 'landlord' ? normalizeLandlordState(state.landlord, state.players.length).playerCount : 4;
   const points = state.gameType === 'landlord' ? total.landlordPoints.slice(0, playerCount) : [total.a, total.a, total.b, total.b];
   const special = analysisSpecialScores(course, playerCount);
-  const ruleImpact = analysisRuleImpact(course);
-  const holes = analysisHoleRows(course, playerCount);
+  const ruleImpact = analysisRuleImpact(course, displayMode);
+  const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
   const pointBalance = state.gameType === 'landlord'
     ? points.reduce((sum, value) => sum + value, 0)
     : total.a + total.b;
   const settings = state.gameType === 'landlord'
-    ? `${t('Fight the Landlord')} · ${t(state.scoreMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
-    : `${t('Las Vegas')} · ${t(state.scoreMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
+    ? `${t('Fight the Landlord')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${landlordSettingsSummary(state)}`
+    : `${t('Las Vegas')} · ${t(displayMode === 'net' ? 'Net' : 'Gross')} · ${t(state.underParFlip ? 'Under Par Flip On' : 'Under Par Flip Off')}`;
   const playerCards = playerDisplayIndexes(playerCount).map(index => `<article class="analysis-player">
     <span>${escapeHtml(state.players[index])}</span>
     <strong class="${points[index] > 0 ? 'point-positive' : (points[index] < 0 ? 'point-negative' : '')}">${signedPoints(points[index])}</strong>
-    <small>${escapeHtml(t('Gross'))} ${total.playersGross[index]}${state.scoreMode === 'net' ? ` · ${escapeHtml(t('Net'))} ${total.playersNet[index]}` : ''}</small>
+    <small>${escapeHtml(t(displayMode === 'net' ? 'Net' : 'Gross'))} ${displayMode === 'net' ? total.playersNet[index] : total.playersGross[index]}</small>
   </article>`).join('');
   els.resultsAnalysisPanel.innerHTML = `
     <section class="analysis-summary-card">
@@ -3999,6 +4011,7 @@ function renderGameAnalysis() {
       <h2>${escapeHtml(course.name)}</h2>
       <p>${escapeHtml(settings)}</p>
       <span>${escapeHtml(roundListDate(game))} · ${total.complete}/18</span>
+      ${displayMode === 'net' ? `<small class="analysis-gross-rule-note">${escapeHtml(t('Special scores, flips and bombs are always determined by actual gross strokes.'))}</small>` : ''}
     </section>
     <section class="analysis-section">
       <div class="analysis-section-title"><h3>${escapeHtml(t('Total score'))}</h3><span>${escapeHtml(t('Points balance'))}: <strong class="${pointBalance === 0 ? 'point-positive' : 'point-negative'}">${signedPoints(pointBalance)}</strong></span></div>
@@ -4435,7 +4448,7 @@ async function finishCurrentGame() {
     });
     render();
     resultsScoreMode = state.scoreMode;
-    setResultsPanel(state.scoreMode);
+    setResultsPanel('scores');
     switchView('leaderboard');
     return true;
   } catch (error) {
@@ -4801,7 +4814,7 @@ function renderLandlordLeaderboard(displayMode = state.scoreMode) {
       const displayedScore = displayMode === 'net' ? net : gross;
       return `<td class="${playerIndex === landlordIndex ? 'landlord-cell' : ''}">
         ${playerIndex === landlordIndex && isComplete ? roleIconHtml(true, 'landlord-cell-marker') : ''}
-        <strong class="${displayMode === 'gross' ? grossScoreTone(gross, course.pars[holeIndex]) : ''}">${displayedScore ?? '--'}</strong>
+        <strong class="${grossScoreTone(gross, course.pars[holeIndex])}">${displayedScore ?? '--'}</strong>
         ${isComplete ? `<span class="${points > 0 ? 'point-positive' : (points < 0 ? 'point-negative' : '')}">${signedPoints(points)}</span>` : ''}
       </td>`;
     }).join('');
@@ -4875,7 +4888,7 @@ function renderHoles(displayMode = state.scoreMode) {
       const grossValue = scores[scoreIndex] || '';
       const netValue = holeValues.net[scoreIndex];
       const displayedValue = displayMode === 'net' ? netValue : grossValue;
-      const grossTone = displayMode === 'gross' ? grossScoreTone(grossValue, course.pars[index]) : '';
+      const grossTone = grossScoreTone(grossValue, course.pars[index]);
       if (grossTone) input.classList.add(grossTone);
       input.innerHTML = grossValue
         ? `<span>${displayedValue}</span>`
@@ -6119,7 +6132,7 @@ function render() {
   renderCourseSelect();
   renderInputs();
   const analysisActive = els.resultsAnalysisTab?.getAttribute('aria-selected') === 'true';
-  setResultsPanel(analysisActive ? 'analysis' : (resultsScoreMode || state.scoreMode));
+  setResultsPanel(analysisActive ? 'analysis' : 'scores');
   renderPlayEntry();
   renderCourses();
   renderStart();
@@ -6345,9 +6358,12 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
   });
   els.shareRoundLink?.addEventListener('click', () => shareRound());
-  els.resultsPrimaryScoreTab?.addEventListener('click', () => setResultsPanel(els.resultsPrimaryScoreTab.dataset.scoreMode));
-  els.resultsSecondaryScoreTab?.addEventListener('click', () => setResultsPanel(els.resultsSecondaryScoreTab.dataset.scoreMode));
+  els.resultsScoreTab?.addEventListener('click', () => setResultsPanel('scores'));
   els.resultsAnalysisTab?.addEventListener('click', () => setResultsPanel('analysis'));
+  els.resultsScoreModeSelect?.addEventListener('change', () => {
+    resultsScoreMode = els.resultsScoreModeSelect.value === 'net' ? 'net' : 'gross';
+    setResultsPanel(els.resultsAnalysisTab.getAttribute('aria-selected') === 'true' ? 'analysis' : 'scores');
+  });
 
   els.rulesButton.addEventListener('click', () => {
     els.topActions?.classList.remove('open');
