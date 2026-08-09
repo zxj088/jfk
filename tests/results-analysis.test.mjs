@@ -101,5 +101,7 @@ test('landlord player totals open role and biggest-swing details', () => {
   assert.match(app, /data\.stats\?\.length[\s\S]*analysis-detail-stats/);
   assert.match(i18n, /'Times as Wolf': '当地主次数'/);
   assert.match(i18n, /'Times as Pack': '当农民次数'/);
+  assert.match(i18n, /'Wolf total points': '当地主总输赢'/);
+  assert.match(i18n, /'Pack total points': '当农民总输赢'/);
   assert.match(css, /\.analysis-player-detail[\s\S]*cursor: pointer/);
 });
