@@ -419,6 +419,29 @@ body {
 .home-positioning p { margin: 0; line-height: 1.45; }
 .home-positioning small { color: var(--muted); font-size: 13px; }
 
+.rematch-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+  border-left: 4px solid var(--gold);
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.rematch-card[hidden] { display: none; }
+.rematch-card > div { display: grid; gap: 3px; min-width: 0; }
+.rematch-card small, .rematch-card span { color: var(--muted); }
+.rematch-card strong, .rematch-card span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .rematch-card { grid-template-columns: 1fr; }
+  .rematch-card button { width: 100%; }
+}
+
 .home-action {
   border: 0;
   border-radius: 14px;

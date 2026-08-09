@@ -22,6 +22,16 @@ test('homepage lists multiple rounds instead of silently opening the first', () 
   assert.match(app, /els\.historySection\?\.scrollIntoView/);
 });
 
+test('the latest completed game can prefill a clean rematch through the existing wizard', () => {
+  assert.match(html, /id="rematchCard" hidden/);
+  assert.match(html, /id="rematchButton"/);
+  assert.match(app, /function openRematchModal\(round\)/);
+  assert.match(app, /els\.newGameCode\.value = ''/);
+  assert.match(app, /showGameWizardStep\(4\)/);
+  assert.match(app, /ensureRoundFullyLoaded\(summary\.id\)/);
+  assert.match(app, /els\.rematchCard\.hidden = playing\.length > 0 \|\| !latestCompleted/);
+});
+
 test('history filters are collapsible and long history starts with three cards', () => {
   assert.match(html, /id="historyFilterToggle"[^>]*aria-expanded="false"/);
   assert.match(html, /id="historyFilters" hidden/);

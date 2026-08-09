@@ -640,6 +640,10 @@ const els = {
   historyFilterToggle: document.querySelector('#historyFilterToggle'),
   historyFilters: document.querySelector('#historyFilters'),
   historyShowMore: document.querySelector('#historyShowMore'),
+  rematchCard: document.querySelector('#rematchCard'),
+  rematchTitle: document.querySelector('#rematchTitle'),
+  rematchPlayers: document.querySelector('#rematchPlayers'),
+  rematchButton: document.querySelector('#rematchButton'),
   historyRangeModal: document.querySelector('#historyRangeModal'),
   historyRangeForm: document.querySelector('#historyRangeForm'),
   historyRangeFrom: document.querySelector('#historyRangeFrom'),
@@ -2898,6 +2902,53 @@ function openEditGameInfoModal(round) {
   els.gameModal.hidden = false;
   els.gameForm.dataset.dirty = 'false';
   els.newGameCountry.focus();
+}
+
+function openRematchModal(round) {
+  const normalized = normalizeRound(round);
+  openGameModal();
+  const course = allCourses().find(item => item.id === normalized.courseId);
+  if (course) {
+    const area = areaForCourse(course);
+    setNewGameArea(area.country, area.region);
+    renderNewGameCourses(normalized.courseId);
+  }
+  els.newGameBirdieFlip.checked = normalized.underParFlip;
+  els.newGameScoreMode.value = normalized.scoreMode;
+  els.newGameType.value = normalized.gameType;
+  els.newLandlordPlayerCount.value = String(normalized.landlord.playerCount);
+  els.newLandlordPlayerCount.dataset.landlordValue = String(normalized.landlord.playerCount);
+  els.newLandlordBestPeasantCount.value = String(normalized.landlord.bestPeasantCount);
+  els.newLandlordTieOutcome.value = normalized.landlord.tieOutcome;
+  els.newLandlordMode.value = normalized.landlord.selectionMode;
+  els.newGameTeeTime.value = dateTimeInputValue(new Date());
+  [els.newPlayerA1, els.newPlayerA2, els.newPlayerB1, els.newPlayerB2].forEach((input, index) => {
+    input.value = normalized.players[index] || '';
+  });
+  [els.newHandicapA1, els.newHandicapA2, els.newHandicapB1, els.newHandicapB2].forEach((input, index) => {
+    input.value = String(normalized.handicaps[index] || 0);
+  });
+  els.newGameCode.value = '';
+  renderPlayerHistoryOptions();
+  updateGameTypeFields();
+  els.newFixedLandlordPlayer.value = String(normalized.landlord.fixedLandlordIndex);
+  showGameWizardStep(4);
+  els.gameForm.dataset.dirty = 'false';
+}
+
+async function rematchLatestGame() {
+  const summary = savedRounds.find(round => gameStatus(round) !== 'playing');
+  if (!summary) return;
+  els.rematchButton.disabled = true;
+  try {
+    const round = await ensureRoundFullyLoaded(summary.id);
+    if (!round) throw new Error('Previous round unavailable');
+    openRematchModal(round);
+  } catch {
+    await showMessage(t('New Game'), t('Could not load the previous game.'));
+  } finally {
+    els.rematchButton.disabled = false;
+  }
 }
 
 function closeGameModal() {
@@ -5728,6 +5779,15 @@ function renderStart() {
   const history = savedRounds.filter(round => gameStatus(round) !== 'playing');
   const homePositioning = document.querySelector('#homePositioning');
   if (homePositioning) homePositioning.hidden = playing.length > 0 || history.length > 0;
+  const latestCompleted = history[0];
+  if (els.rematchCard) {
+    els.rematchCard.hidden = playing.length > 0 || !latestCompleted;
+    if (latestCompleted) {
+      const normalized = normalizeRound(latestCompleted);
+      els.rematchTitle.textContent = `${normalized.courseName || normalized.name} · ${t(normalized.gameType === 'landlord' ? 'Landlord' : 'Las Vegas')} · ${t(normalized.scoreMode === 'net' ? 'Net' : 'Gross')}`;
+      els.rematchPlayers.textContent = normalized.players.join(' · ');
+    }
+  }
   if (els.playingSection) els.playingSection.hidden = playing.length === 0;
   renderGameList(els.playingList, playing, t('No games currently playing'), 'playing');
   const filteredHistory = filteredHistoryRounds(history);
@@ -6254,6 +6314,7 @@ function addListeners() {
   });
 
   els.newGame.addEventListener('click', openGameModal);
+  els.rematchButton?.addEventListener('click', rematchLatestGame);
   els.watchGames.addEventListener('click', () => performMainAction('watch'));
   els.viewScorecards.addEventListener('click', () => performMainAction('history'));
   els.newGameCountry.addEventListener('change', () => {
