@@ -2593,6 +2593,12 @@ function closeCourseModal() {
 
 function updateGameTypeFields() {
   const isLandlord = els.newGameType.value === 'landlord';
+  if (isLandlord) {
+    els.newLandlordPlayerCount.value = els.newLandlordPlayerCount.dataset.landlordValue || els.newLandlordPlayerCount.value || '3';
+  } else {
+    els.newLandlordPlayerCount.dataset.landlordValue = els.newLandlordPlayerCount.value || '3';
+    els.newLandlordPlayerCount.value = '4';
+  }
   document.querySelector('.teams-grid')?.classList.toggle('landlord-mode', isLandlord);
   document.querySelectorAll('.teams-grid .team-card > h3').forEach(heading => { heading.hidden = isLandlord; });
   document.querySelectorAll('.landlord-setup').forEach(element => { element.hidden = !isLandlord; });
@@ -2607,6 +2613,28 @@ function updateGameTypeFields() {
   const fixedMode = isLandlord && els.newLandlordMode?.value === 'fixed';
   document.querySelector('.fixed-landlord-player')?.toggleAttribute('hidden', !fixedMode);
   renderFixedLandlordPlayers();
+  document.querySelector('.vegas-player-note')?.toggleAttribute('hidden', isLandlord);
+  document.querySelectorAll('[data-select-target="newLandlordPlayerCount"] button').forEach(button => {
+    button.disabled = !isLandlord;
+    button.hidden = !isLandlord && button.dataset.value !== '4';
+  });
+  syncSegmentedControls();
+}
+
+function syncSegmentedControls(root = document) {
+  const groups = [
+    ...(root.matches?.('[data-select-target]') ? [root] : []),
+    ...root.querySelectorAll('[data-select-target]')
+  ];
+  groups.forEach(group => {
+    const select = document.getElementById(group.dataset.selectTarget);
+    if (!select) return;
+    group.querySelectorAll('button[data-value]').forEach(button => {
+      const selected = button.dataset.value === select.value;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  });
 }
 
 function renderBestPeasantCountOptions(playerCount) {
@@ -2623,6 +2651,18 @@ function renderBestPeasantCountOptions(playerCount) {
   }).join('');
   els.newLandlordBestPeasantCount.value = String(selected);
   els.newLandlordBestPeasantCount.dataset.maxCount = String(maxCount);
+  const countSegments = document.querySelector('#bestPackCountSegments');
+  if (countSegments) countSegments.innerHTML = Array.from({ length: maxCount }, (_, index) => {
+    const value = index + 1;
+    return `<button type="button" data-value="${value}">${t('{count} Pack player scores', { count: value })}</button>`;
+  }).join('');
+  const example = document.querySelector('#landlordComparisonExample');
+  if (example) example.innerHTML = `
+    <span>${escapeHtml(t('Wolf: 5 strokes × {count} players = {total}', { count: selected, total: 5 * selected }))}</span>
+    <span>${escapeHtml(t('Pack: add the best {count} player scores', { count: selected }))}</span>
+    <strong>${escapeHtml(t('The side with fewer strokes wins'))}</strong>
+  `;
+  syncSegmentedControls(countSegments || document);
 }
 
 function gameFormPlayers() {
@@ -2670,7 +2710,7 @@ function showGameWizardStep(step) {
   document.querySelectorAll('[data-game-step]').forEach(section => {
     section.hidden = Number(section.dataset.gameStep) !== gameWizardStep;
   });
-  const labels = [t('Course'), t('Game type'), t('Players'), t('Review')];
+  const labels = [t('Course'), t('Game rules'), t('Players and handicaps'), t('Review')];
   if (els.gameWizardProgress) els.gameWizardProgress.innerHTML = labels.map((label, index) => `<span class="${index + 1 === gameWizardStep ? 'active' : (index + 1 < gameWizardStep ? 'done' : '')}">${index + 1}<small>${escapeHtml(label)}</small></span>`).join('');
   els.gameWizardBack.hidden = gameWizardStep === 1;
   els.gameWizardNext.hidden = gameWizardStep === 4;
@@ -2796,6 +2836,7 @@ function openGameModal() {
   els.newGameType.value = 'vegas';
   els.newGameType.disabled = false;
   els.newLandlordPlayerCount.value = '3';
+  els.newLandlordPlayerCount.dataset.landlordValue = '3';
   els.newLandlordBestPeasantCount.value = '2';
   els.newLandlordTieOutcome.value = 'draw';
   els.newLandlordMode.value = 'rotating';
@@ -2834,6 +2875,7 @@ function openEditGameInfoModal(round) {
   els.newGameType.value = normalized.gameType;
   els.newGameType.disabled = true;
   els.newLandlordPlayerCount.value = String(normalized.landlord.playerCount);
+  els.newLandlordPlayerCount.dataset.landlordValue = String(normalized.landlord.playerCount);
   els.newLandlordBestPeasantCount.value = String(normalized.landlord.bestPeasantCount);
   els.newLandlordTieOutcome.value = normalized.landlord.tieOutcome;
   els.newLandlordMode.value = normalized.landlord.selectionMode;
@@ -5946,7 +5988,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.1.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.2.')
     );
   });
 
@@ -6218,8 +6260,24 @@ function addListeners() {
   });
   els.newGameRegion.addEventListener('change', () => renderNewGameCourses(''));
   els.newGameType.addEventListener('change', updateGameTypeFields);
-  els.newLandlordPlayerCount.addEventListener('change', updateGameTypeFields);
+  els.newLandlordPlayerCount.addEventListener('change', () => {
+    els.newLandlordPlayerCount.dataset.landlordValue = els.newLandlordPlayerCount.value;
+    updateGameTypeFields();
+  });
   els.newLandlordMode.addEventListener('change', updateGameTypeFields);
+  els.newLandlordBestPeasantCount.addEventListener('change', () => {
+    renderBestPeasantCountOptions(Number(els.newLandlordPlayerCount.value || 3));
+  });
+  els.gameForm.addEventListener('click', event => {
+    const button = event.target.closest('[data-select-target] button[data-value]');
+    if (!button || button.disabled) return;
+    const group = button.closest('[data-select-target]');
+    const select = document.getElementById(group.dataset.selectTarget);
+    if (!select || select.value === button.dataset.value) return;
+    select.value = button.dataset.value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    syncSegmentedControls(group);
+  });
   els.gameWizardBack.addEventListener('click', () => showGameWizardStep(gameWizardStep - 1));
   els.gameWizardNext.addEventListener('click', () => {
     if (validateGameWizardStep()) showGameWizardStep(gameWizardStep + 1);
@@ -6501,12 +6559,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=204', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=205', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v204';
+    const reloadKey = 'jfk.simpleGolfSwReload.v205';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

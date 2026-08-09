@@ -15,7 +15,7 @@ test('mobile score display defaults to simple and retains a full-detail control'
   assert.match(html, /id="scoreDetailToggle"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=204/);
+  assert.match(html, /mobile-ux\.css\?v=205/);
 });
 
 test('the play-page action uses explicit takeover and finish states', () => {
@@ -35,7 +35,7 @@ test('new game setup exposes recent courses and protects dirty forms from Escape
 
 test('mobile setup uses a three-course row and compact help popovers', () => {
   assert.match(mobileCss, /\.recent-course-choices\s*\{\s*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
-  assert.match(html, /class="hint-popover"[\s\S]*About scoring mode/);
+  assert.match(html, /class="hint-popover[^\"]*"[\s\S]*About scoring mode/);
   assert.match(html, /About under par flip/);
   assert.match(html, /About edit code/);
 });
@@ -54,6 +54,29 @@ test('landlord setup selects how many best Pack scores are compared', () => {
   assert.doesNotMatch(html, /id="newLandlordMaxPoints"/);
   assert.match(app, /bestPeasantCount:\s*els\.newLandlordBestPeasantCount\.value/);
   assert.match(app, /renderBestPeasantCountOptions\(playerCount\)/);
+});
+
+test('game-rule setup uses clear segmented choices without changing stored select values', () => {
+  assert.match(html, /data-select-target="newGameType"/);
+  assert.match(html, /data-select-target="newLandlordPlayerCount"/);
+  assert.match(html, /data-select-target="newGameScoreMode"/);
+  assert.match(html, /data-select-target="newLandlordMode"/);
+  assert.match(html, /id="newGameType"[^>]*aria-hidden="true"/);
+  assert.match(app, /function syncSegmentedControls/);
+  assert.match(app, /root\.matches\?\.\('\[data-select-target\]'\)/);
+  assert.match(app, /select\.dispatchEvent\(new Event\('change', \{ bubbles: true \}\)\)/);
+  assert.match(css, /\.choice-segments button\.active/);
+  assert.match(css, /\.comparison-explainer\s*\{[\s\S]*font-size:\s*11\.5px/);
+});
+
+test('game-rule setup explains Wolf comparison and keeps Las Vegas at four players', () => {
+  assert.match(html, /id="landlordComparisonExample"/);
+  assert.match(html, /How to score a tie/);
+  assert.match(app, /els\.newLandlordPlayerCount\.value = '4'/);
+  assert.match(app, /Wolf: 5 strokes × \{count\} players = \{total\}/);
+  assert.match(app, /Pack: add the best \{count\} player scores/);
+  assert.match(app, /The side with fewer strokes wins/);
+  assert.match(app, /\[t\('Course'\), t\('Game rules'\), t\('Players and handicaps'\), t\('Review'\)\]/);
 });
 
 test('landlord setup offers all four tied-hole outcomes', () => {

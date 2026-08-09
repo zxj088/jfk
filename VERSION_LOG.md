@@ -4,6 +4,27 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.3.2 - Clearer game-rule setup
+
+Date: 2026-08-09
+
+Tag: `v6.3.2`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=205`
+
+What is new in this version:
+
+- Game type, player count, scoring mode, and Wolf selection use clear segmented choices with immediate selected-state feedback.
+- Las Vegas clearly remains a four-player game, while Wolf & Pack supports three or four players.
+- Wolf & Pack comparison asks how many Pack scores to use and explains the Wolf total, Pack total, and winning condition in three concise lines.
+- Game-rule sections use a calmer compact visual hierarchy and sticky wizard actions on phones.
+- Added simulated scoring coverage for Wolf & Pack and Las Vegas, including gross/net scoring, flips, ties, multipliers, cumulative results, and zero-sum checks.
+- PWA asset query version is `v205`.
+
+Verified with JavaScript syntax checking, 77 automated tests, the production build, and 366px/390px interaction checks without horizontal scrolling or console errors.
+
 ### v6.3.1 - Clearer home page
 
 Date: 2026-08-08
