@@ -32,6 +32,7 @@ let activeOverlay = null;
 let overlayReturnFocus = null;
 let scoreDetailMode = 'full';
 let resultsScoreMode = '';
+let analysisHighlightGroups = new Map();
 let cloudRefreshPromise = null;
 let lastRoundIndexSyncAt = 0;
 let lastEditLockSyncAt = 0;
@@ -542,6 +543,11 @@ const els = {
   resultsAnalysisTab: document.querySelector('#resultsAnalysisTab'),
   resultsScorePanel: document.querySelector('#resultsScorePanel'),
   resultsAnalysisPanel: document.querySelector('#resultsAnalysisPanel'),
+  analysisHighlightModal: document.querySelector('#analysisHighlightModal'),
+  analysisHighlightEyebrow: document.querySelector('#analysisHighlightEyebrow'),
+  analysisHighlightTitle: document.querySelector('#analysisHighlightTitle'),
+  analysisHighlightList: document.querySelector('#analysisHighlightList'),
+  analysisHighlightClose: document.querySelector('#analysisHighlightClose'),
   courseSelect: document.querySelector('#courseSelect'),
   birdieFlip: document.querySelector('#birdieFlip'),
   scoreMode: document.querySelector('#scoreMode'),
@@ -3858,15 +3864,16 @@ function setResultsPanel(panel = 'scores') {
 function analysisSpecialScores(course, playerCount) {
   return state.scores.reduce((summary, scores, holeIndex) => {
     const par = Number(course.pars[holeIndex] || 4);
-    scores.slice(0, playerCount).forEach(rawScore => {
+    scores.slice(0, playerCount).forEach((rawScore, playerIndex) => {
       const score = parseScore(rawScore);
       if (score === null) return;
-      if (score === 1) summary.holesInOne += 1;
-      else if (par - score >= 2) summary.eagles += 1;
-      else if (par - score === 1) summary.birdies += 1;
+      const item = { hole: holeIndex + 1, detail: `${state.players[playerIndex]} · ${score}` };
+      if (score === 1) summary.holesInOne.push(item);
+      else if (par - score >= 2) summary.eagles.push(item);
+      else if (par - score === 1) summary.birdies.push(item);
     });
     return summary;
-  }, { birdies: 0, eagles: 0, holesInOne: 0 });
+  }, { birdies: [], eagles: [], holesInOne: [] });
 }
 
 function localizedHoleLabel(hole) {
@@ -3880,17 +3887,22 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
       const result = landlordHoleResult(displayState, holeIndex);
       if (result?.multiplier > 1) {
         summary.count += 1;
+        const multiplierParts = [`x${result.multiplier}`];
+        if (result.manualMultiplier > 1) multiplierParts.push(`${t('Manual')} x${result.manualMultiplier}`);
+        if (result.specialMultiplier > 1) multiplierParts.push(t('Bomb x{value}', { value: result.specialMultiplier }));
+        summary.items.push({ hole: holeIndex + 1, detail: multiplierParts.join(' · ') });
         if (result.multiplier > summary.max) {
           summary.max = result.multiplier;
           summary.hole = holeIndex + 1;
         }
       }
       return summary;
-    }, { count: 0, max: 1, hole: 0 });
+    }, { count: 0, max: 1, hole: 0, items: [] });
     return {
       label: t('Multiplied holes'),
       value: multiplied.count ? `${localizedHoleLabel(multiplied.hole)} · x${multiplied.max}` : '0',
-      hole: multiplied.hole || 0
+      hole: multiplied.hole || 0,
+      items: multiplied.items
     };
   }
   const flipped = state.scores.reduce((summary, scores, holeIndex) => {
@@ -3899,15 +3911,40 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
     summary.count += 1;
     summary.extra += Math.abs(result.delta) - Math.abs(originalDelta);
+    summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(Math.abs(result.delta) - Math.abs(originalDelta)) }) });
     return summary;
-  }, { count: 0, extra: 0 });
-  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}`, hole: 0 };
+  }, { count: 0, extra: 0, items: [] });
+  return { label: t('Flipped holes'), value: `${flipped.count} · ${t('Extra {points}', { points: signedPoints(flipped.extra) })}`, hole: 0, items: flipped.items };
 }
 
-function analysisHighlightCard(label, value, hole = 0) {
+function analysisHighlightCard(group, label, value, items = []) {
+  analysisHighlightGroups.set(group, { label, items });
   const content = `<small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong>`;
-  if (!hole) return `<span>${content}</span>`;
-  return `<button type="button" class="analysis-highlight-link" data-analysis-hole="${hole}" aria-label="${escapeHtml(`${label}: ${value}`)}">${content}</button>`;
+  return `<button type="button" class="analysis-highlight-link" data-analysis-highlight="${escapeHtml(group)}" aria-label="${escapeHtml(`${label}: ${value}`)}"${items.length ? '' : ' disabled'}>${content}</button>`;
+}
+
+function closeAnalysisHighlightModal() {
+  if (els.analysisHighlightModal) els.analysisHighlightModal.hidden = true;
+}
+
+function openAnalysisHighlightModal(group) {
+  const data = analysisHighlightGroups.get(group);
+  if (!data || !els.analysisHighlightModal) return;
+  els.analysisHighlightEyebrow.textContent = t('Highlights');
+  els.analysisHighlightTitle.textContent = data.label;
+  els.analysisHighlightList.innerHTML = data.items.length
+    ? data.items.map(item => `<button type="button" data-analysis-hole="${item.hole}"><strong>${escapeHtml(localizedHoleLabel(item.hole))}</strong><span>${escapeHtml(item.detail)}</span></button>`).join('')
+    : `<p class="analysis-highlight-empty">${escapeHtml(t('No matching holes.'))}</p>`;
+  els.analysisHighlightClose.textContent = t('Close');
+  els.analysisHighlightModal.hidden = false;
+}
+
+function openAnalysisHole(hole) {
+  const details = els.resultsAnalysisPanel.querySelector(`#analysis-hole-${hole}`);
+  if (!details) return;
+  details.open = true;
+  details.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  details.querySelector('summary')?.focus({ preventScroll: true });
 }
 
 function analysisSpecialPointBadges(scores, par, playerCount, result, gameType) {
@@ -4004,6 +4041,8 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const ruleImpact = analysisRuleImpact(course, displayMode);
   const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
+  const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude) })) : [];
+  analysisHighlightGroups = new Map();
   const pointBalance = state.gameType === 'landlord'
     ? points.reduce((sum, value) => sum + value, 0)
     : total.a + total.b;
@@ -4030,11 +4069,11 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
     <section class="analysis-section">
       <div class="analysis-section-title"><h3>${escapeHtml(t('Highlights'))}</h3></div>
       <div class="analysis-highlight-grid">
-        ${analysisHighlightCard(t('Birdies'), String(special.birdies))}
-        ${analysisHighlightCard(t('Eagles'), String(special.eagles))}
-        ${analysisHighlightCard(t('Holes in one'), String(special.holesInOne))}
-        ${analysisHighlightCard(t('Biggest swing'), biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--', biggest?.hole)}
-        ${analysisHighlightCard(ruleImpact.label, ruleImpact.value, ruleImpact.hole)}
+        ${analysisHighlightCard('birdies', t('Birdies'), String(special.birdies.length), special.birdies)}
+        ${analysisHighlightCard('eagles', t('Eagles'), String(special.eagles.length), special.eagles)}
+        ${analysisHighlightCard('holes-in-one', t('Holes in one'), String(special.holesInOne.length), special.holesInOne)}
+        ${analysisHighlightCard('biggest-swing', t('Biggest swing'), biggest ? `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}` : '--', biggestItems)}
+        ${analysisHighlightCard('rule-impact', ruleImpact.label, ruleImpact.value, ruleImpact.items)}
       </div>
     </section>
     <section class="analysis-section analysis-hole-section">
@@ -4654,6 +4693,7 @@ function setupOverlayAccessibility() {
       else if (activeOverlay === els.courseSearchModal) closeCourseSearchModal();
       else if (activeOverlay === els.scorePad) closeScorePad();
       else if (activeOverlay === els.shareCardModal) closeShareCard();
+      else if (activeOverlay === els.analysisHighlightModal) closeAnalysisHighlightModal();
       else if (activeOverlay === els.historyRangeModal) cancelHistoryRangeModal();
       else if (activeOverlay === els.appDialog) closeAppDialog(null);
       return;
@@ -6375,15 +6415,18 @@ function addListeners() {
     setResultsPanel(els.resultsAnalysisTab.getAttribute('aria-selected') === 'true' ? 'analysis' : 'scores');
   });
   els.resultsAnalysisPanel?.addEventListener('click', event => {
+    const trigger = event.target.closest('[data-analysis-highlight]');
+    if (!trigger) return;
+    openAnalysisHighlightModal(trigger.dataset.analysisHighlight);
+  });
+  els.analysisHighlightList?.addEventListener('click', event => {
     const trigger = event.target.closest('[data-analysis-hole]');
     if (!trigger) return;
     const hole = Number(trigger.dataset.analysisHole);
-    const details = els.resultsAnalysisPanel.querySelector(`#analysis-hole-${hole}`);
-    if (!details) return;
-    details.open = true;
-    details.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    details.querySelector('summary')?.focus({ preventScroll: true });
+    closeAnalysisHighlightModal();
+    window.setTimeout(() => openAnalysisHole(hole), 0);
   });
+  els.analysisHighlightClose?.addEventListener('click', closeAnalysisHighlightModal);
 
   els.rulesButton.addEventListener('click', () => {
     els.topActions?.classList.remove('open');

@@ -2694,6 +2694,46 @@ input:disabled {
   outline: 2px solid color-mix(in srgb, var(--green) 25%, transparent);
   outline-offset: 1px;
 }
+.analysis-highlight-link:disabled {
+  border-color: #e4e8e6;
+  color: #89938f;
+  background: #eef1ef;
+  cursor: default;
+  opacity: 0.72;
+}
+.analysis-highlight-link:disabled:hover {
+  border-color: #e4e8e6;
+  background: #eef1ef;
+  outline: 0;
+}
+
+.analysis-highlight-dialog { width: min(440px, 100%); }
+.analysis-highlight-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(62vh, 520px);
+  margin: 12px 0;
+  overflow: auto;
+}
+.analysis-highlight-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: #f7faf8;
+  text-align: left;
+  cursor: pointer;
+}
+.analysis-highlight-list button:hover,
+.analysis-highlight-list button:focus-visible { border-color: var(--green); background: #edf7f1; }
+.analysis-highlight-list button strong { color: var(--green); font-size: 16px; }
+.analysis-highlight-list button span { color: #42564f; font-weight: 800; }
+.analysis-highlight-empty { margin: 8px 0; padding: 18px; color: var(--muted); text-align: center; }
 
 .analysis-player span,
 .analysis-player small,

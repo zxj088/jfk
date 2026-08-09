@@ -115,6 +115,7 @@
     'Special scores, flips and bombs are always determined by actual gross strokes.': '特殊成绩、翻转和炸弹始终按实际总杆判定。',
     'Game analysis': '比赛分析',
     'Highlights': '精彩成绩',
+    'No matching holes.': '没有相应的球洞。',
     'Birdies': '小鸟球',
     'Eagles': '老鹰球',
     'Holes in one': '一杆进洞',

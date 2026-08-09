@@ -71,11 +71,15 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.doesNotMatch(analysisRows, /Points balance: \{points\} = 0/);
 });
 
-test('hole-specific highlight cards open and scroll to the matching hole analysis', () => {
-  assert.match(app, /function analysisHighlightCard[\s\S]*data-analysis-hole/);
+test('highlight cards open detailed lists whose items jump to matching hole analysis', () => {
+  assert.match(html, /id="analysisHighlightModal"[\s\S]*id="analysisHighlightList"/);
+  assert.match(app, /function analysisHighlightCard[\s\S]*data-analysis-highlight/);
   assert.match(app, /id="analysis-hole-\$\{holeIndex \+ 1\}"/);
-  assert.match(app, /Biggest swing[\s\S]*biggest\?\.hole/);
-  assert.match(app, /analysisHighlightCard\(ruleImpact\.label, ruleImpact\.value, ruleImpact\.hole\)/);
-  assert.match(app, /resultsAnalysisPanel\?\.addEventListener\('click'[\s\S]*details\.open = true[\s\S]*scrollIntoView/);
+  assert.match(app, /const biggestItems = biggest \? holes\.filter\(item => item\.magnitude === biggest\.magnitude\)/);
+  assert.match(app, /analysisHighlightCard\('rule-impact', ruleImpact\.label, ruleImpact\.value, ruleImpact\.items\)/);
+  assert.match(app, /function openAnalysisHighlightModal[\s\S]*data-analysis-hole/);
+  assert.match(app, /function openAnalysisHole[\s\S]*details\.open = true[\s\S]*scrollIntoView/);
+  assert.match(app, /items\.length \? '' : ' disabled'/);
   assert.match(css, /\.analysis-highlight-link[\s\S]*cursor: pointer/);
+  assert.match(css, /\.analysis-highlight-link:disabled[\s\S]*cursor: default/);
 });
