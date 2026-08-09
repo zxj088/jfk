@@ -4,6 +4,27 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.4.0 - Group-game positioning, rematch, sharing and calculation explanations
+
+Date: 2026-08-09
+
+Tag: `v6.4.0`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=206`
+
+What is new in this version:
+
+- The first-use experience explains that JFK GOLF focuses on automatically settling Las Vegas and Wolf & Pack group-game points.
+- The latest completed game can prefill a clean rematch with the same course, players, handicaps and rules while generating a new game and edit credential.
+- Live and completed games can be shared with a read-only deep link containing only the round ID; app recommendations now describe the group-game value clearly.
+- Wolf & Pack hole results can expand to show Wolf and selected Pack totals, tie handling, multipliers and the zero-sum points check.
+- Las Vegas hole results can expand to show gross/net inputs, team pairs, flips and the final difference; page totals and shared scorecards use the same scoring helper.
+- PWA asset query version is `v206`.
+
+Verified with JavaScript syntax checking, 81 automated tests, the production build, and 366px/390px mobile checks without horizontal scrolling.
+
 ### v6.3.2 - Clearer game-rule setup
 
 Date: 2026-08-09

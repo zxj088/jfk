@@ -6141,7 +6141,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.2.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.4.0.')
     );
   });
 
@@ -6714,12 +6714,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=205', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=206', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v205';
+    const reloadKey = 'jfk.simpleGolfSwReload.v206';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
