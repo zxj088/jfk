@@ -4,6 +4,26 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.1 - Clearer and shorter English interface
+
+Date: 2026-08-09
+
+Tag: `v6.5.1`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=208`
+
+What is new in this version:
+
+- Bottom navigation now uses the clearer mobile labels Score and Results.
+- User-facing English consistently uses Wolf & Pack, Wolf and Pack while Chinese remains 斗地主、地主和农民.
+- High-frequency mobile labels are shorter across the home page, scoring setup, results, sharing and analysis.
+- Chinese and English remain fully separated, and the Chinese results tabs remain 成绩 and 分析.
+- PWA asset query version is `v208`.
+
+Verified with JavaScript syntax checking, 90 automated tests, the production build, and 390px mobile-width checks.
+
 ### v6.5.0 - Unified results and interactive match analysis
 
 Date: 2026-08-09
