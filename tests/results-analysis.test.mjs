@@ -42,6 +42,8 @@ test('analysis reuses scoring results and finishing opens the locked score page'
   assert.doesNotMatch(renderedAnalysis, /Points balance/);
   assert.doesNotMatch(app, /checkboxLabel: t\('Share game scoring card'\)/);
   assert.match(app, /render\(\);\s*resultsScoreMode = state\.scoreMode;\s*setResultsPanel\('scores'\);\s*switchView\('leaderboard'\);/);
+  assert.match(app, /const finished = gameStatus\(game\) !== 'playing';/);
+  assert.match(app, /els\.coursePar\.textContent = finished \? t\('Completed'\) : t\('Playing'\);/);
 });
 
 test('gross and net selector recalculates scores and analysis without changing the saved game', () => {

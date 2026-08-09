@@ -4818,6 +4818,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
   const course = currentCourse();
   const game = currentGame();
   const total = totals(displayMode);
+  const finished = gameStatus(game) !== 'playing';
   const parTotal = course.pars.reduce((a, b) => a + b, 0);
   if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live' : 'Share result');
   if (els.scoreStripCourse) els.scoreStripCourse.textContent = course.name;
@@ -4837,7 +4838,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
     applySignedClass(els.teamATotal, ranked[0]?.points || 0);
     applySignedClass(els.teamBTotal, 0);
     els.holesComplete.textContent = `${total.complete}/18`;
-    els.coursePar.textContent = total.complete >= 18 ? t('Completed') : t('Playing');
+    els.coursePar.textContent = finished ? t('Completed') : t('Playing');
     if (els.landlordScoreStripRanking) {
       const config = normalizeLandlordState(state.landlord, state.players.length);
       els.landlordScoreStripRanking.hidden = false;
@@ -4858,7 +4859,7 @@ function renderScoreStrip(displayMode = state.scoreMode) {
   applySignedClass(els.teamATotal, total.a);
   applySignedClass(els.teamBTotal, total.b);
   els.holesComplete.textContent = `${total.complete}/18`;
-  els.coursePar.textContent = total.complete >= 18 ? t('Completed') : t('Playing');
+  els.coursePar.textContent = finished ? t('Completed') : t('Playing');
   els.totalPar.textContent = parTotal;
   els.playerTotals.forEach((cell, index) => {
     cell.textContent = displayMode === 'net' ? total.playersNet[index] : total.playersGross[index];

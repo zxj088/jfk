@@ -6,8 +6,8 @@ const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const app = readFileSync(new URL('../app.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
 
-test('homepage prioritizes active games and keeps the new-game action explicit', () => {
-  assert.ok(html.indexOf('id="playingSection"') < html.indexOf('class="home-actions"'));
+test('homepage keeps its three main actions above every active game', () => {
+  assert.ok(html.indexOf('class="home-actions"') < html.indexOf('id="playingSection"'));
   assert.match(html, /id="newGame"[\s\S]*New game/);
   assert.match(html, /id="homePositioning"[\s\S]*Every hole settled automatically/);
   assert.match(app, /homePositioning\.hidden = playing\.length > 0 \|\| history\.length > 0/);
