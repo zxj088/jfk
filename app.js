@@ -3387,6 +3387,11 @@ function signedPoints(value) {
   return number > 0 ? `+${number}` : String(number);
 }
 
+function pointToneClass(value) {
+  const number = Number(value) || 0;
+  return number > 0 ? 'point-positive' : (number < 0 ? 'point-negative' : '');
+}
+
 function landlordSettingsSummary(source = state) {
   return landlordSettingsParts(source).join(' · ');
 }
@@ -3912,7 +3917,8 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     const originalDelta = result.bNumber.originalValue - result.aNumber.originalValue;
     summary.count += 1;
     summary.extra += Math.abs(result.delta) - Math.abs(originalDelta);
-    summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(Math.abs(result.delta) - Math.abs(originalDelta)) }) });
+    const extraPoints = Math.abs(result.delta) - Math.abs(originalDelta);
+    summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(extraPoints) }), points: extraPoints });
     return summary;
   }, { count: 0, extra: 0, items: [] });
   return { label: t('Flipped holes'), value: String(flipped.count), hole: 0, items: flipped.items };
@@ -3933,10 +3939,10 @@ function openAnalysisHighlightModal(group) {
   if (!data || !els.analysisHighlightModal) return;
   els.analysisHighlightEyebrow.textContent = t('Highlights');
   els.analysisHighlightTitle.textContent = data.label;
-  const stats = data.stats?.length ? `<div class="analysis-detail-stats">${data.stats.map(item => `<span><small>${escapeHtml(item.label)}</small><strong>${escapeHtml(item.value)}</strong></span>`).join('')}</div>` : '';
+  const stats = data.stats?.length ? `<div class="analysis-detail-stats">${data.stats.map(item => `<span><small>${escapeHtml(item.label)}</small><strong class="${pointToneClass(item.points)}">${escapeHtml(item.value)}</strong></span>`).join('')}</div>` : '';
   const listLabel = data.listLabel ? `<h3 class="analysis-detail-list-title">${escapeHtml(data.listLabel)}</h3>` : '';
   const items = data.items.length
-    ? data.items.map(item => `<button type="button" data-analysis-hole="${item.hole}"><strong>${escapeHtml(localizedHoleLabel(item.hole))}</strong><span>${escapeHtml(item.detail)}</span></button>`).join('')
+    ? data.items.map(item => `<button type="button" data-analysis-hole="${item.hole}"><strong>${escapeHtml(localizedHoleLabel(item.hole))}</strong><span class="${pointToneClass(item.points)}">${escapeHtml(item.detail)}</span></button>`).join('')
     : `<p class="analysis-highlight-empty">${escapeHtml(t('No matching holes.'))}</p>`;
   els.analysisHighlightList.innerHTML = `${stats}${listLabel}${items}`;
   els.analysisHighlightClose.textContent = t('Close');
@@ -3962,9 +3968,9 @@ function landlordPlayerAnalysisDetails(displayMode, playerCount) {
       const magnitude = Math.abs(points);
       if (magnitude > resultSummary.maxMagnitude) {
         resultSummary.maxMagnitude = magnitude;
-        resultSummary.items = [{ hole: holeIndex + 1, detail: signedPoints(points) }];
+        resultSummary.items = [{ hole: holeIndex + 1, detail: signedPoints(points), points }];
       } else if (magnitude === resultSummary.maxMagnitude) {
-        resultSummary.items.push({ hole: holeIndex + 1, detail: signedPoints(points) });
+        resultSummary.items.push({ hole: holeIndex + 1, detail: signedPoints(points), points });
       }
       return resultSummary;
     }, { landlordCount: 0, peasantCount: 0, landlordPoints: 0, peasantPoints: 0, maxMagnitude: -1, items: [] });
@@ -3973,8 +3979,8 @@ function landlordPlayerAnalysisDetails(displayMode, playerCount) {
       stats: [
         { label: t('Times as Wolf'), value: String(summary.landlordCount) },
         { label: t('Times as Pack'), value: String(summary.peasantCount) },
-        { label: t('Wolf total points'), value: signedPoints(summary.landlordPoints) },
-        { label: t('Pack total points'), value: signedPoints(summary.peasantPoints) }
+        { label: t('Wolf total points'), value: signedPoints(summary.landlordPoints), points: summary.landlordPoints },
+        { label: t('Pack total points'), value: signedPoints(summary.peasantPoints), points: summary.peasantPoints }
       ],
       listLabel: t('Biggest swing holes'),
       items: summary.items
@@ -4092,7 +4098,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const ruleImpact = analysisRuleImpact(course, displayMode);
   const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
-  const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude) })) : [];
+  const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude), points: item.magnitude })) : [];
   const biggestValue = String(biggestItems.length);
   analysisHighlightGroups = new Map();
   const settings = state.gameType === 'landlord'

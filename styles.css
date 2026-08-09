@@ -2747,6 +2747,8 @@ input:disabled {
 .analysis-highlight-list button:focus-visible { border-color: var(--green); background: #edf7f1; }
 .analysis-highlight-list button strong { color: var(--green); font-size: 16px; }
 .analysis-highlight-list button span { color: #42564f; font-weight: 800; }
+.analysis-highlight-list button span.point-positive { color: var(--green-strong); }
+.analysis-highlight-list button span.point-negative { color: var(--red); }
 .analysis-highlight-empty { margin: 8px 0; padding: 18px; color: var(--muted); text-align: center; }
 .analysis-detail-stats {
   display: grid;
@@ -2761,7 +2763,9 @@ input:disabled {
   text-align: center;
 }
 .analysis-detail-stats small { display: block; color: var(--muted); font-size: 12px; }
-.analysis-detail-stats strong { display: block; margin-top: 4px; color: var(--green); font-size: 20px; }
+.analysis-detail-stats strong { display: block; margin-top: 4px; color: var(--ink); font-size: 20px; }
+.analysis-detail-stats strong.point-positive { color: var(--green-strong); }
+.analysis-detail-stats strong.point-negative { color: var(--red); }
 .analysis-detail-list-title { margin: 8px 2px 0; font-size: 15px; }
 
 .analysis-player span,

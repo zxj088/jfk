@@ -104,4 +104,8 @@ test('landlord player totals open role and biggest-swing details', () => {
   assert.match(i18n, /'Wolf total points': '当地主总输赢'/);
   assert.match(i18n, /'Pack total points': '当农民总输赢'/);
   assert.match(css, /\.analysis-player-detail[\s\S]*cursor: pointer/);
+  assert.match(app, /function pointToneClass[\s\S]*point-positive[\s\S]*point-negative/);
+  assert.match(app, /Wolf total points[\s\S]*points: summary\.landlordPoints/);
+  assert.match(app, /data\.items\.map[\s\S]*pointToneClass\(item\.points\)/);
+  assert.match(css, /analysis-detail-stats strong\.point-positive[\s\S]*analysis-detail-stats strong\.point-negative/);
 });
