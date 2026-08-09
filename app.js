@@ -533,6 +533,7 @@ const els = {
   shareButton: document.querySelector('#shareButton'),
   aboutButton: document.querySelector('#aboutButton'),
   shareCurrentScorecard: document.querySelector('#shareCurrentScorecard'),
+  shareRoundLink: document.querySelector('#shareRoundLink'),
   courseSelect: document.querySelector('#courseSelect'),
   birdieFlip: document.querySelector('#birdieFlip'),
   scoreMode: document.querySelector('#scoreMode'),
@@ -1471,6 +1472,48 @@ async function loadGameOnDemand(gameId, editable = false, goToPlay = true, prefe
     }
   }
   loadGame(gameId, editable, goToPlay, preferredHoleIndex);
+  return true;
+}
+
+function sharedRoundUrl(roundId) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.searchParams.set('round', roundId);
+  return url.toString();
+}
+
+async function shareRound(round = currentGame()) {
+  if (!round?.id) return;
+  const finished = gameStatus(round) !== 'playing';
+  const shareData = {
+    title: `${round.courseName || round.name} · ${t(finished ? 'Share final result' : 'Share live game')}`,
+    text: t(finished ? 'View the final group-game result and hole-by-hole points.' : 'Follow the live group-game points—no account required.'),
+    url: sharedRoundUrl(round.id)
+  };
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+      await showMessage(t('Link copied'), t('The app link was copied to the clipboard.'));
+    } else await showMessage(shareData.title, shareData.url);
+  } catch {}
+}
+
+async function openSharedRoundFromUrl() {
+  const roundId = new URL(window.location.href).searchParams.get('round') || '';
+  if (!/^[A-Za-z0-9_-]{6,100}$/.test(roundId)) return false;
+  let round = savedRounds.find(item => item.id === roundId);
+  if (!round || round.summaryOnly) {
+    round = await fetchCloudRoundById(roundId);
+    if (round) replaceRound(round);
+  }
+  if (!round) {
+    await showMessage(t('Watch live'), t('The shared game is unavailable or has been deleted.'));
+    return false;
+  }
+  loadGame(roundId, false, false);
+  switchView('leaderboard');
+  if (els.welcomeScreen) els.welcomeScreen.hidden = true;
   return true;
 }
 
@@ -4386,6 +4429,7 @@ function renderScoreStrip() {
   const game = currentGame();
   const total = totals();
   const parTotal = course.pars.reduce((a, b) => a + b, 0);
+  if (els.shareRoundLink) els.shareRoundLink.textContent = t(gameStatus(game) === 'playing' ? 'Share live game' : 'Share final result');
   if (els.scoreStripCourse) els.scoreStripCourse.textContent = course.name;
   if (els.scoreStripMode) els.scoreStripMode.textContent = `${state.gameType === 'landlord' ? t('Fight the Landlord') : t('Las Vegas')} · ${state.scoreMode === 'net' ? t('Net') : t('Gross')}`;
   if (els.scoreStripDate) els.scoreStripDate.textContent = formatTeeTime(game?.totals?.teeTime, game?.savedAt);
@@ -6014,8 +6058,8 @@ function addListeners() {
 
   els.shareButton.addEventListener('click', async () => {
     const shareData = {
-      title: t('Simple Golf Scorecard'),
-      text: t('Simple Golf Scorecard'),
+      title: 'JFK GOLF',
+      text: t('JFK GOLF automatically calculates Las Vegas and Wolf/Pack group-game points, including net scoring, flips and multipliers. No account required.'),
       url: window.location.href.split('?')[0]
     };
     try {
@@ -6031,6 +6075,7 @@ function addListeners() {
     els.topActions?.classList.remove('open');
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
   });
+  els.shareRoundLink?.addEventListener('click', () => shareRound());
   els.shareCurrentScorecard?.addEventListener('click', () => {
     const round = currentGame();
     if (!window.SIMPLE_GOLF_ROUND_ACCESS.canShareScorecard(round, gameStatus(round))) return;
@@ -6579,6 +6624,7 @@ async function init() {
   try {
     await syncFromCloud(false);
     if (pendingSyncRound) await flushPendingRoundSync();
+    await openSharedRoundFromUrl();
   } finally {
     cloudRefreshEnabled = true;
     refreshCloudForCurrentView(true);

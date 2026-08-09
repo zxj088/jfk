@@ -437,6 +437,14 @@ body {
 .rematch-card small, .rematch-card span { color: var(--muted); }
 .rematch-card strong, .rematch-card span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.share-round-link {
+  width: calc(100% - 24px);
+  margin: 0 12px 12px;
+  border-color: rgba(255, 255, 255, 0.72);
+  color: #fff;
+  background: rgba(11, 77, 56, 0.86);
+}
+
 @media (max-width: 620px) {
   .rematch-card { grid-template-columns: 1fr; }
   .rematch-card button { width: 100%; }

@@ -32,6 +32,14 @@ test('the latest completed game can prefill a clean rematch through the existing
   assert.match(app, /els\.rematchCard\.hidden = playing\.length > 0 \|\| !latestCompleted/);
 });
 
+test('shared games use a read-only deep link without credentials', () => {
+  assert.match(html, /id="shareRoundLink"/);
+  assert.match(app, /url\.searchParams\.set\('round', roundId\)/);
+  assert.doesNotMatch(app, /searchParams\.set\(['"](?:code|editCode|credential)/);
+  assert.match(app, /loadGame\(roundId, false, false\)/);
+  assert.match(app, /await openSharedRoundFromUrl\(\)/);
+});
+
 test('history filters are collapsible and long history starts with three cards', () => {
   assert.match(html, /id="historyFilterToggle"[^>]*aria-expanded="false"/);
   assert.match(html, /id="historyFilters" hidden/);
