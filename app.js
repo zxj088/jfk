@@ -3915,7 +3915,7 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
     summary.items.push({ hole: holeIndex + 1, detail: t('Extra {points}', { points: signedPoints(Math.abs(result.delta) - Math.abs(originalDelta)) }) });
     return summary;
   }, { count: 0, extra: 0, items: [] });
-  return { label: t('Flipped holes'), value: flipped.count > 1 ? t('Multiple holes') : String(flipped.count), hole: 0, items: flipped.items };
+  return { label: t('Flipped holes'), value: String(flipped.count), hole: 0, items: flipped.items };
 }
 
 function analysisHighlightCard(group, label, value, items = []) {
@@ -4051,7 +4051,7 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
   const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude) })) : [];
-  const biggestValue = !biggest ? '--' : (biggestItems.length > 1 ? t('Multiple holes') : `${localizedHoleLabel(biggest.hole)} · ${biggest.magnitude}`);
+  const biggestValue = String(biggestItems.length);
   analysisHighlightGroups = new Map();
   const pointBalance = state.gameType === 'landlord'
     ? points.reduce((sum, value) => sum + value, 0)

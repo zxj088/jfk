@@ -77,9 +77,9 @@ test('highlight cards open detailed lists whose items jump to matching hole anal
   assert.match(app, /function analysisHighlightCard[\s\S]*data-analysis-highlight/);
   assert.match(app, /id="analysis-hole-\$\{holeIndex \+ 1\}"/);
   assert.match(app, /const biggestItems = biggest \? holes\.filter\(item => item\.magnitude === biggest\.magnitude\)/);
-  assert.match(app, /biggestItems\.length > 1 \? t\('Multiple holes'\)/);
+  assert.match(app, /const biggestValue = String\(biggestItems\.length\)/);
   assert.match(app, /multiplied\.count > 1 \? t\('Multiple holes'\)/);
-  assert.match(app, /Flipped holes'\), value: flipped\.count > 1 \? t\('Multiple holes'\) : String\(flipped\.count\)/);
+  assert.match(app, /Flipped holes'\), value: String\(flipped\.count\)/);
   assert.match(i18n, /'Multiple holes': '多个洞'/);
   assert.match(app, /analysisHighlightCard\('rule-impact', ruleImpact\.label, ruleImpact\.value, ruleImpact\.items\)/);
   assert.match(app, /function openAnalysisHighlightModal[\s\S]*data-analysis-hole/);
