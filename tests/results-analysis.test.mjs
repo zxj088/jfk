@@ -15,6 +15,8 @@ test('results page offers score and analysis tabs with a scoring-basis selector'
   assert.match(html, /id="resultsScorePanel"[\s\S]*id="resultsAnalysisPanel"/);
   assert.doesNotMatch(html, /id="shareCurrentScorecard"/);
   assert.match(css, /\.results-view-tabs button\.active[\s\S]*background: var\(--green\)/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) clamp\(132px, 25vw, 176px\)/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*\.results-controls[^}]*grid-template-columns: minmax\(0, 1fr\) 132px/);
   assert.match(css, /\.analysis-section-title[\s\S]*background: var\(--green\)/);
   assert.match(i18n, /'Net \(game setting\)': '净杆（比赛设定）'/);
   assert.match(i18n, /'Gross \(reference\)': '总杆（仅供参考）'/);

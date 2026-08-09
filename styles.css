@@ -2497,7 +2497,7 @@ input:disabled {
 /* Results analysis reuses the scorecard's calm panels, green headers and signed-point colors. */
 .results-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 34%);
+  grid-template-columns: minmax(0, 1fr) clamp(132px, 25vw, 176px);
   gap: 8px;
   margin: 0 0 10px;
 }
@@ -2846,7 +2846,7 @@ input:disabled {
 .analysis-empty { margin: 0; padding: 18px; color: #62706a; text-align: center; }
 
 @media (max-width: 600px) {
-  .results-controls { position: sticky; top: 86px; z-index: 9; grid-template-columns: minmax(0, 1fr) minmax(142px, 42%); }
+  .results-controls { position: sticky; top: 86px; z-index: 9; grid-template-columns: minmax(0, 1fr) 132px; }
   .analysis-player-grid,
   .analysis-highlight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .analysis-player-grid.player-count-3 .analysis-player:last-child { grid-column: span 2; }
