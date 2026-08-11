@@ -977,6 +977,67 @@ body {
   box-shadow: var(--shadow);
 }
 
+#courseForm {
+  gap: 12px;
+  border-color: rgba(17, 135, 71, 0.16);
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, #f7fbf8 0, #f2f6f4 100%);
+  box-shadow: 0 18px 48px rgba(18, 48, 38, 0.2);
+}
+
+#courseForm .modal-head {
+  border-bottom: 1px solid rgba(17, 135, 71, 0.14);
+  padding: 2px 2px 11px;
+}
+
+#courseForm .modal-head h2 {
+  margin-top: 2px;
+  color: var(--green-dark);
+}
+
+.course-form-intro {
+  margin: -3px 2px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.course-form-section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(17, 135, 71, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: 0 5px 16px rgba(25, 60, 47, 0.05);
+}
+
+.course-form-section > h3 {
+  margin: 0;
+  color: var(--green-dark);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+#courseForm input:focus,
+#courseForm select:focus {
+  border-color: var(--green);
+  outline: 3px solid rgba(17, 135, 71, 0.12);
+  outline-offset: 0;
+}
+
+#courseForm .course-form-actions {
+  position: sticky;
+  z-index: 4;
+  bottom: max(-1px, env(safe-area-inset-bottom));
+  margin: 0 -2px -2px;
+  border-top: 1px solid rgba(17, 135, 71, 0.12);
+  padding: 10px 2px 2px;
+  background: linear-gradient(180deg, rgba(244, 248, 246, 0), #f4f8f6 32%);
+}
+
 .play-entry-head,
 .scorecard,
 .course-row,
@@ -2908,6 +2969,49 @@ input:disabled {
   display: block;
 }
 
+.course-source-notice {
+  margin: 0;
+  border-left: 4px solid var(--gold);
+  border-radius: 7px;
+  padding: 9px 10px;
+  background: #fff7df;
+  color: #654b16;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.search-pagination {
+  display: grid;
+  grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.search-pagination[hidden] {
+  display: none;
+}
+
+.search-pagination span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 390px) {
+  .search-result {
+    grid-template-columns: minmax(0, 1fr) 68px;
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .search-pagination {
+    grid-template-columns: minmax(80px, 1fr) auto minmax(80px, 1fr);
+    gap: 5px;
+  }
+}
+
 .search-result span {
   margin-top: 3px;
   color: var(--muted);
@@ -3485,6 +3589,16 @@ button:disabled {
   .course-form {
     gap: 8px;
     padding: 10px;
+  }
+
+  #courseForm {
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .course-form-section {
+    gap: 8px;
+    padding: 9px;
   }
 
   .par-editor {

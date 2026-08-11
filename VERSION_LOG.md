@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.6 - Global Garmin course search
+
+Date: 2026-08-11
+
+Tag: `v6.5.6`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=213`
+
+What is new in this version:
+
+- Course search uses only the bundled global Garmin course-name catalog and does not make search-time network requests.
+- Country and region filters cover all catalog countries, localize Chinese labels, sort Chinese country names by pinyin, and highlight common golf destinations.
+- Search results are limited to complete 18-hole courses; custom courses remain available through the clearer Manual add action.
+- PWA asset query version is `v213`.
+
+Verified with JavaScript syntax checking, 94 automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.5 - Larger English home actions
 
 Date: 2026-08-11

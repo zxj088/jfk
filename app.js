@@ -46,6 +46,58 @@ function roleIconHtml(isLandlord, className = '') {
 }
 const DEFAULT_COURSE_COUNTRY = 'Sweden';
 const DEFAULT_COURSE_REGION = 'Stockholm County';
+const GARMIN_COURSE_CATALOG_URL = './assets/data/garmin-courses-catalog.json';
+const GARMIN_SEARCH_PAGE_SIZE = 20;
+const GARMIN_INVALID_REGIONS = new Set(['9 HOLES', '18 HOLES']);
+const GARMIN_REGION_OVERRIDES = new Map([
+  ['云南云岭国际乡村俱乐部 | Yunling Golf Club', 'Yunnan'],
+  ['吉泰恒岳高尔夫俱乐部 | Jitaihengyue Golf Club', 'Inner Mongolia Autonomous Region'],
+  ['海航东方牧歌高尔夫球会 | HNA Dongfang Muge Golf Club', 'Hainan'],
+  ['刘公岛高尔夫 | Liugongdao Golf Since 1902', 'Shandong'],
+  ['紫清湖高尔夫俱乐部 | Purple Clear Lake Golf Club', 'Jiangsu']
+]);
+const GARMIN_COUNTRY_CODE_ALIASES = {
+  'Bosnia-Herzegovina': 'BA',
+  'Cabo Verde': 'CV',
+  'Czech Republic': 'CZ',
+  'Democratic Republic of the Congo': 'CD',
+  'Hong Kong': 'HK',
+  'Ivory Coast': 'CI',
+  'Macau': 'MO',
+  'Myanmar': 'MM',
+  'Republic of the Congo': 'CG',
+  'Swaziland': 'SZ'
+};
+const GARMIN_COUNTRY_ZH_FALLBACKS = { Caribbean: '加勒比地区', Oceania: '大洋洲' };
+const GARMIN_CHINA_REGION_ZH = {
+  Anhui: '安徽', Beijing: '北京', Chongqing: '重庆', Fujian: '福建', Guangdong: '广东',
+  'Guangxi Zhuang Autonomous Region': '广西壮族自治区', Guizhou: '贵州', Hainan: '海南', Hebei: '河北',
+  Heilongjiang: '黑龙江', Henan: '河南', Hubei: '湖北', Hunan: '湖南',
+  'Inner Mongolia Autonomous Region': '内蒙古自治区', Jiangsu: '江苏', Jiangxi: '江西', Jilin: '吉林',
+  Liaoning: '辽宁', 'Ningxia Hui Autonomous Region': '宁夏回族自治区', Qinghai: '青海', Shaanxi: '陕西',
+  Shandong: '山东', Shanghai: '上海', Shanxi: '山西', Sichuan: '四川', Tianjin: '天津',
+  'Xinjiang Uyghur Autonomous Region': '新疆维吾尔自治区', Yunnan: '云南', Zhejiang: '浙江'
+};
+const GARMIN_FEATURED_COUNTRIES = [
+  'China', 'Sweden', 'Spain', 'Portugal', 'Thailand', 'Vietnam', 'Malaysia',
+  'Japan', 'South Korea', 'United States', 'Canada', 'Australia', 'New Zealand', 'United Kingdom'
+];
+const GARMIN_FEATURED_REGIONS = {
+  China: ['Beijing', 'Shanghai', 'Guangdong', 'Hainan', 'Yunnan', 'Jiangsu', 'Zhejiang', 'Shandong'],
+  Sweden: ['Stockholm', 'Skåne', 'Västra Götaland'],
+  Spain: ['Madrid', 'Barcelona', 'Alicante', 'Málaga', 'Illes Balears'],
+  Portugal: ['Lisboa', 'Faro', 'Porto'],
+  Thailand: ['Bangkok', 'Phuket', 'Chonburi', 'Chiang Mai'],
+  Vietnam: ['Hanoi', 'Ho Chi Minh', 'Da Nang', 'Quang Nam'],
+  Malaysia: ['Kuala Lumpur', 'Selangor', 'Johor', 'Penang'],
+  Japan: ['Tokyo', 'Chiba', 'Kanagawa', 'Okinawa', 'Hokkaido'],
+  'South Korea': ['Seoul', 'Gyeonggi', 'Incheon', 'Jeju', 'Busan'],
+  'United States': ['Florida', 'California', 'Arizona', 'Hawaii', 'Nevada', 'Texas', 'New York', 'South Carolina'],
+  Canada: ['Ontario', 'British Columbia', 'Alberta', 'Quebec'],
+  Australia: ['Queensland', 'New South Wales', 'Victoria', 'Western Australia'],
+  'New Zealand': ['Auckland', 'Waikato', 'Canterbury', 'Wellington', 'Otago'],
+  'United Kingdom': ['City Of Edinburgh', 'City Of Glasgow', 'Greater London', 'Surrey', 'Kent']
+};
 const OVERPASS_API_URLS = [
   'https://overpass-api.de/api/interpreter',
   'https://lz4.overpass-api.de/api/interpreter',
@@ -469,7 +521,13 @@ let activePlayHoleIndex = 0;
 let currentView = 'start';
 let playHoleTouchStartX = null;
 let installPromptEvent = null;
-let courseSearchMode = 'shared';
+let garminCourseCatalogPromise = null;
+let garminCourses = [];
+let garminCourseAreas = [];
+let garminSearchResults = [];
+let garminSearchPage = 1;
+let pendingCourseMetadata = null;
+let garminCountryCodeByName = null;
 let previousHistoryTimeFilter = 'last-7-days';
 let historyRange = { from: '', to: '' };
 let historyExpanded = false;
@@ -583,16 +641,20 @@ const els = {
   courseForm: document.querySelector('#courseForm'),
   courseSearchModal: document.querySelector('#courseSearchModal'),
   courseSearchForm: document.querySelector('#courseSearchForm'),
-  courseSearchModes: Array.from(document.querySelectorAll('[data-course-search-mode]')),
   courseSearchCountry: document.querySelector('#courseSearchCountry'),
   courseSearchRegion: document.querySelector('#courseSearchRegion'),
   courseSearchInput: document.querySelector('#courseSearchInput'),
   courseSearchSubmit: document.querySelector('#courseSearchSubmit'),
   courseSearchStatus: document.querySelector('#courseSearchStatus'),
   courseSearchResults: document.querySelector('#courseSearchResults'),
+  courseSearchPagination: document.querySelector('#courseSearchPagination'),
+  courseSearchPrevious: document.querySelector('#courseSearchPrevious'),
+  courseSearchNext: document.querySelector('#courseSearchNext'),
+  courseSearchPageStatus: document.querySelector('#courseSearchPageStatus'),
   cancelCourseSearch: document.querySelector('#cancelCourseSearch'),
   cancelCourseSearchBottom: document.querySelector('#cancelCourseSearchBottom'),
   newCourseName: document.querySelector('#newCourseName'),
+  courseSourceNotice: document.querySelector('#courseSourceNotice'),
   newCourseCountry: document.querySelector('#newCourseCountry'),
   newCourseRegion: document.querySelector('#newCourseRegion'),
   newCourseCode: document.querySelector('#newCourseCode'),
@@ -858,7 +920,9 @@ function normalizeCourse(course) {
     region: String(course?.region || metadata.region || ''),
     club: String(course?.club || metadata.club || ''),
     course: String(course?.course || metadata.course || ''),
-    source: String(course?.source || metadata.source || '')
+    source: String(course?.source || metadata.source || ''),
+    holes: Number(course?.holes) || 18,
+    address: String(course?.address || '')
   };
 }
 
@@ -1197,7 +1261,9 @@ function courseToCloudRow(course) {
       region: String(course.region || ''),
       club: String(course.club || ''),
       course: String(course.course || ''),
-      source: String(course.source || '')
+      source: String(course.source || ''),
+      holes: Number(course.holes) || 18,
+      address: String(course.address || '')
     }
   };
 }
@@ -1255,7 +1321,9 @@ function cloudRowToCourse(row) {
     region: Array.isArray(storedPars) ? '' : String(storedPars?.region || ''),
     club: Array.isArray(storedPars) ? '' : String(storedPars?.club || ''),
     course: Array.isArray(storedPars) ? '' : String(storedPars?.course || ''),
-    source: Array.isArray(storedPars) ? '' : String(storedPars?.source || '')
+    source: Array.isArray(storedPars) ? '' : String(storedPars?.source || ''),
+    holes: Array.isArray(storedPars) ? 18 : (Number(storedPars?.holes) || 18),
+    address: Array.isArray(storedPars) ? '' : String(storedPars?.address || '')
   };
 }
 
@@ -1875,23 +1943,122 @@ function areaForCourse(course) {
   };
 }
 
+function availableCourseAreas() {
+  const indexedAreas = Array.isArray(window.JFK_GARMIN_COURSE_AREAS) ? window.JFK_GARMIN_COURSE_AREAS : [];
+  const areas = garminCourseAreas.length ? garminCourseAreas : (indexedAreas.length ? indexedAreas : COURSE_SEARCH_AREAS);
+  return areas.map(area => ({
+    ...area,
+    regions: (area.regions || []).filter(region => !GARMIN_INVALID_REGIONS.has(region))
+  }));
+}
+
+function countryCodeByEnglishName() {
+  if (garminCountryCodeByName) return garminCountryCodeByName;
+  garminCountryCodeByName = new Map();
+  try {
+    const names = new Intl.DisplayNames(['en'], { type: 'region' });
+    for (let first = 65; first <= 90; first += 1) {
+      for (let second = 65; second <= 90; second += 1) {
+        const code = String.fromCharCode(first, second);
+        const name = names.of(code);
+        if (name && name !== code) garminCountryCodeByName.set(name.toLocaleLowerCase(), code);
+      }
+    }
+  } catch {
+    // English source labels remain usable if Intl.DisplayNames is unavailable.
+  }
+  Object.entries(GARMIN_COUNTRY_CODE_ALIASES).forEach(([name, code]) => {
+    garminCountryCodeByName.set(name.toLocaleLowerCase(), code);
+  });
+  return garminCountryCodeByName;
+}
+
+function localizedCountryName(country) {
+  if (window.VEGAS_I18N.language !== 'zh-CN') return country;
+  if (GARMIN_COUNTRY_ZH_FALLBACKS[country]) return GARMIN_COUNTRY_ZH_FALLBACKS[country];
+  const code = countryCodeByEnglishName().get(String(country).toLocaleLowerCase());
+  if (!code) return country;
+  try {
+    return new Intl.DisplayNames(['zh-CN'], { type: 'region' }).of(code) || country;
+  } catch {
+    return country;
+  }
+}
+
+function localizedRegionName(country, region) {
+  if (window.VEGAS_I18N.language === 'zh-CN' && country === 'China') {
+    return GARMIN_CHINA_REGION_ZH[region] || region;
+  }
+  return region;
+}
+
+function sortLocalizedValues(values, labelFor) {
+  const locale = window.VEGAS_I18N.language === 'zh-CN' ? 'zh-CN-u-co-pinyin' : 'en';
+  const collator = new Intl.Collator(locale, { sensitivity: 'base', numeric: true });
+  return values.slice().sort((a, b) => collator.compare(labelFor(a), labelFor(b)));
+}
+
+function appendOptionGroup(select, label, values, labelFor) {
+  if (!values.length) return;
+  const group = document.createElement('optgroup');
+  group.label = label;
+  values.forEach(value => group.append(new Option(labelFor(value), value)));
+  select.append(group);
+}
+
+function setGroupedSelectOptions(select, values, {
+  allLabel = '', labelFor = value => value, featuredValues = [], featuredLabel = '', remainingLabel = ''
+} = {}) {
+  select.innerHTML = '';
+  if (allLabel) select.add(new Option(allLabel, ''));
+  const available = new Set(values);
+  const featured = featuredValues.filter(value => available.has(value));
+  const featuredSet = new Set(featured);
+  const remaining = sortLocalizedValues(values.filter(value => !featuredSet.has(value)), labelFor);
+  appendOptionGroup(select, featuredLabel, featured, labelFor);
+  appendOptionGroup(select, remainingLabel, remaining, labelFor);
+}
+
 function renderAreaCountries(countrySelect, selected = DEFAULT_COURSE_COUNTRY, includeAll = false) {
-  countrySelect.innerHTML = (includeAll ? [`<option value="">${t('All countries')}</option>`] : []).concat(COURSE_SEARCH_AREAS
-    .map(area => `<option value="${area.country}">${area.country}</option>`)
-  ).join('');
-  countrySelect.value = COURSE_SEARCH_AREAS.some(area => area.country === selected)
+  const areas = availableCourseAreas();
+  setGroupedSelectOptions(
+    countrySelect,
+    areas.map(area => area.country),
+    {
+      allLabel: includeAll ? t('All countries') : '',
+      labelFor: localizedCountryName,
+      featuredValues: GARMIN_FEATURED_COUNTRIES,
+      featuredLabel: t('Popular countries'),
+      remainingLabel: t('All countries A-Z')
+    }
+  );
+  countrySelect.value = areas.some(area => area.country === selected)
     ? selected
     : (includeAll ? '' : DEFAULT_COURSE_COUNTRY);
 }
 
 function renderAreaRegions(countrySelect, regionSelect, selected = DEFAULT_COURSE_REGION, includeAll = false) {
-  const area = COURSE_SEARCH_AREAS.find(item => item.country === countrySelect.value) || COURSE_SEARCH_AREAS[0];
+  const areas = availableCourseAreas();
+  const area = areas.find(item => item.country === countrySelect.value) || areas[0];
   const regions = countrySelect.value ? (area?.regions || []) : [];
-  regionSelect.innerHTML = (includeAll ? [`<option value="">${t('All regions')}</option>`] : []).concat(regions
-    .map(region => `<option value="${region}">${region}</option>`)
-  ).join('');
-  regionSelect.value = regions.includes(selected)
-    ? selected
+  setGroupedSelectOptions(
+    regionSelect,
+    regions,
+    {
+      allLabel: includeAll ? t('All regions') : '',
+      labelFor: region => localizedRegionName(countrySelect.value, region),
+      featuredValues: GARMIN_FEATURED_REGIONS[countrySelect.value] || [],
+      featuredLabel: t('Popular regions'),
+      remainingLabel: t('All regions A-Z')
+    }
+  );
+  const legacyCompatibleSelection = countrySelect.value === 'Sweden'
+    && selected === DEFAULT_COURSE_REGION
+    && regions.includes('Stockholm')
+    ? 'Stockholm'
+    : selected;
+  regionSelect.value = regions.includes(legacyCompatibleSelection)
+    ? legacyCompatibleSelection
     : (regions.includes(DEFAULT_COURSE_REGION) ? DEFAULT_COURSE_REGION : (includeAll ? '' : regions[0] || ''));
 }
 
@@ -2078,36 +2245,89 @@ function renderRecentCourseChoices() {
 }
 
 function renderCourseSearchCountries() {
-  const countryOptions = [`<option value="">${t('All countries')}</option>`]
-    .concat(COURSE_SEARCH_AREAS.map(area => `<option value="${area.country}">${area.country}</option>`));
-  els.courseSearchCountry.innerHTML = countryOptions.join('');
-  els.courseSearchCountry.value = COURSE_SEARCH_AREAS.some(area => area.country === DEFAULT_COURSE_COUNTRY)
-    ? DEFAULT_COURSE_COUNTRY
-    : '';
+  renderAreaCountries(els.courseSearchCountry, DEFAULT_COURSE_COUNTRY, true);
   renderCourseSearchRegions();
   if (els.courseSearchCountry.value === DEFAULT_COURSE_COUNTRY) {
-    els.courseSearchRegion.value = DEFAULT_COURSE_REGION;
+    const stockholm = availableCourseAreas().find(area => area.country === DEFAULT_COURSE_COUNTRY)?.regions
+      .find(region => region === 'Stockholm' || region === DEFAULT_COURSE_REGION);
+    if (stockholm) els.courseSearchRegion.value = stockholm;
   }
 }
 
 function renderCourseSearchRegions() {
-  const area = COURSE_SEARCH_AREAS.find(item => item.country === els.courseSearchCountry.value);
-  const options = [`<option value="">${t('All regions')}</option>`]
-    .concat(area ? area.regions.map(region => `<option value="${region}">${region}</option>`) : []);
-  els.courseSearchRegion.innerHTML = options.join('');
+  renderAreaRegions(els.courseSearchCountry, els.courseSearchRegion, '', true);
+  clearGarminSearchResults(t('Filters changed. Search again.'));
 }
 
-function setCourseSearchMode(mode) {
-  courseSearchMode = mode;
-  els.courseSearchModes.forEach(button => {
-    button.classList.toggle('active', button.dataset.courseSearchMode === mode);
+function normalizeGarminSearchText(value) {
+  return String(value || '').toLocaleLowerCase().normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\b(county|province|autonomous region)\b/g, '')
+    .replace(/[\s_-]+/g, ' ')
+    .trim();
+}
+
+function buildGarminCourseAreas(courses) {
+  const countries = new Map();
+  courses.forEach(course => {
+    const country = String(course.country || '').trim();
+    const region = String(course.region || '').trim();
+    if (!country) return;
+    if (!countries.has(country)) countries.set(country, new Set());
+    if (region) countries.get(country).add(region);
   });
-  const isManual = mode === 'manual';
-  els.courseSearchSubmit.textContent = t(isManual ? 'Add manually' : 'Search');
-  els.courseSearchStatus.textContent = t(mode === 'api'
-    ? 'Search courses in North America, then add one to your courses.'
-    : (isManual ? 'Enter a course name to add it manually.' : 'Search OpenStreetMap / Overpass, then use a result to add a course.'));
-  els.courseSearchResults.innerHTML = '';
+  return Array.from(countries, ([country, regions]) => ({
+    country,
+    regions: Array.from(regions).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }))
+  })).sort((a, b) => a.country.localeCompare(b.country, 'en', { sensitivity: 'base' }));
+}
+
+async function loadGarminCourseCatalog() {
+  if (garminCourses.length) return garminCourses;
+  if (!garminCourseCatalogPromise) {
+    garminCourseCatalogPromise = fetch(GARMIN_COURSE_CATALOG_URL, { cache: 'force-cache' })
+      .then(response => {
+        if (!response.ok) throw new Error(`Garmin catalog ${response.status}`);
+        return response.json();
+      })
+      .then(catalog => {
+        if (!Array.isArray(catalog?.courses)) throw new Error('Invalid Garmin course catalog');
+        garminCourses = catalog.courses.map((course, index) => ({
+          id: `garmin-${index}`,
+          name: String(course.name || '').trim(),
+          country: String(course.country || '').trim(),
+          region: GARMIN_REGION_OVERRIDES.get(String(course.name || '').trim())
+            || (GARMIN_INVALID_REGIONS.has(String(course.region || '').trim()) ? '' : String(course.region || '').trim()),
+          address: String(course.address || '').trim(),
+          holes: Number(course.holes) || 0,
+          source: 'garmin'
+        })).filter(course => course.name && course.country && course.holes === 18);
+        garminCourseAreas = Array.isArray(window.JFK_GARMIN_COURSE_AREAS)
+          ? window.JFK_GARMIN_COURSE_AREAS
+          : buildGarminCourseAreas(garminCourses);
+        const selectedCountry = els.courseListCountry?.value || '';
+        const selectedRegion = els.courseListRegion?.value || '';
+        if (els.courseListCountry && els.courseListRegion) {
+          renderCourseListCountries(selectedCountry);
+          renderCourseListRegions(selectedRegion);
+          if (currentView === 'courses') renderCourses();
+        }
+        return garminCourses;
+      })
+      .catch(error => {
+        garminCourseCatalogPromise = null;
+        throw error;
+      });
+  }
+  return garminCourseCatalogPromise;
+}
+
+function clearGarminSearchResults(status = '') {
+  garminSearchResults = [];
+  garminSearchPage = 1;
+  if (els.courseSearchResults) els.courseSearchResults.innerHTML = '';
+  if (els.courseSearchPagination) els.courseSearchPagination.hidden = true;
+  if (status && els.courseSearchStatus) els.courseSearchStatus.textContent = status;
 }
 
 function openCourseModal(prefill = '') {
@@ -2115,6 +2335,17 @@ function openCourseModal(prefill = '') {
   const prefillName = String(options.name || '');
   els.courseForm.reset();
   editingCourseId = '';
+  pendingCourseMetadata = options.source === 'garmin' ? {
+    source: 'garmin', holes: Number(options.holes) || 18, address: String(options.address || '')
+  } : null;
+  if (els.courseSourceNotice) {
+    els.courseSourceNotice.hidden = !pendingCourseMetadata;
+    els.courseSourceNotice.textContent = pendingCourseMetadata
+      ? t(Number(pendingCourseMetadata.holes) === 9
+        ? 'Garmin identifies this as a 9-hole course. Confirm all 18 holes manually before saving.'
+        : 'Garmin supplies the course name and location only. Confirm PAR and difficulty for all 18 holes before saving.')
+      : '';
+  }
   setCourseFormArea(options.country || DEFAULT_COURSE_COUNTRY, options.region || DEFAULT_COURSE_REGION);
   renderCourseParInputs(
     Array.isArray(options.pars) && options.pars.length === 18 ? options.pars : Array.from({ length: 18 }, () => 4),
@@ -2129,20 +2360,27 @@ function openCourseModal(prefill = '') {
   (prefillName ? els.newCourseCode : els.newCourseName).focus();
 }
 
-function openCourseSearchModal() {
+async function openCourseSearchModal() {
   els.courseSearchForm.reset();
-  renderCourseSearchCountries();
-  setCourseSearchMode('shared');
-  els.courseSearchResults.innerHTML = '';
-  els.courseSearchSubmit.disabled = false;
+  clearGarminSearchResults();
+  els.courseSearchSubmit.disabled = true;
+  els.courseSearchStatus.textContent = t('Loading the Garmin course library...');
   els.courseSearchModal.hidden = false;
-  els.courseSearchInput.focus();
+  try {
+    await loadGarminCourseCatalog();
+    renderCourseSearchCountries();
+    els.courseSearchSubmit.disabled = false;
+    els.courseSearchStatus.textContent = t('Search the Garmin course library, then add a course.');
+    els.courseSearchInput.focus();
+  } catch (error) {
+    els.courseSearchStatus.textContent = t('Could not load the Garmin course library. Add the course manually.');
+  }
 }
 
 function closeCourseSearchModal() {
   els.courseSearchModal.hidden = true;
   els.courseSearchForm.reset();
-  els.courseSearchResults.innerHTML = '';
+  clearGarminSearchResults();
 }
 
 function courseSearchName(result) {
@@ -2542,38 +2780,34 @@ function useSharedCourse(course) {
   });
 }
 
-function renderCourseSearchResults(results, mode = courseSearchMode) {
+function renderCourseSearchResults() {
   els.courseSearchResults.innerHTML = '';
-  if (!results.length) {
+  if (!garminSearchResults.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
     empty.innerHTML = `
       <p></p>
       <button type="button"></button>
     `;
-    empty.querySelector('p').textContent = t(mode === 'shared'
-      ? 'No courses found in online database.'
-      : 'No courses found in GolfCourseAPI. You can add it manually.');
+    empty.querySelector('p').textContent = t('No courses found in the Garmin course library.');
     const addManual = empty.querySelector('button');
     addManual.textContent = t('Add manually');
     addManual.addEventListener('click', () => {
-      const name = els.courseSearchInput.value.trim();
+      const prefill = {
+        name: els.courseSearchInput.value.trim(),
+        country: els.courseSearchCountry.value || DEFAULT_COURSE_COUNTRY,
+        region: els.courseSearchRegion.value || ''
+      };
       closeCourseSearchModal();
-      openCourseModal(name);
+      openCourseModal(prefill);
     });
     els.courseSearchResults.append(empty);
     return;
   }
-  let currentClub = '';
-  results.forEach(result => {
-    const clubName = courseSearchClubName(result);
-    if (clubName !== currentClub) {
-      currentClub = clubName;
-      const heading = document.createElement('div');
-      heading.className = 'search-group-title';
-      heading.textContent = clubName;
-      els.courseSearchResults.append(heading);
-    }
+  const totalPages = Math.max(1, Math.ceil(garminSearchResults.length / GARMIN_SEARCH_PAGE_SIZE));
+  garminSearchPage = Math.min(Math.max(1, garminSearchPage), totalPages);
+  const start = (garminSearchPage - 1) * GARMIN_SEARCH_PAGE_SIZE;
+  garminSearchResults.slice(start, start + GARMIN_SEARCH_PAGE_SIZE).forEach(result => {
     const row = document.createElement('div');
     row.className = 'search-result';
     row.innerHTML = `
@@ -2583,32 +2817,42 @@ function renderCourseSearchResults(results, mode = courseSearchMode) {
       </div>
       <button type="button"></button>
     `;
-    const name = courseSearchName(result);
-    const courseName = courseSearchCourseName(result);
-    const address = courseSearchAddress(result);
-    row.querySelector('strong').textContent = courseName;
-    row.querySelector('span').textContent = address ? `${clubName} | ${address}` : clubName;
+    row.querySelector('strong').textContent = result.name;
+    row.querySelector('span').textContent = [
+      [result.country, result.region].filter(Boolean).join(' · '),
+      t('{count} holes', { count: result.holes }),
+      result.address,
+      t('Garmin course library')
+    ].filter(Boolean).join(' | ');
     const button = row.querySelector('button');
-    button.textContent = t(mode === 'shared' || isAppCourseResult(result) ? 'Use' : 'Add');
-    button.addEventListener('click', async () => {
-      if (mode === 'shared' || isAppCourseResult(result)) {
-        useSharedCourse(normalizeCourse(result));
-        return;
-      }
-      button.disabled = true;
-      els.courseSearchStatus.textContent = t('Loading course scorecard...');
-      const detail = await fetchGolfCourseDetail(result);
-      const scorecard = scorecardFromApiCourse(detail);
-      if (!scorecard) {
-        button.disabled = false;
-        els.courseSearchStatus.textContent = t('Could not read PAR and INDEX from this course.');
-        return;
-      }
+    button.textContent = t('Add');
+    button.addEventListener('click', () => {
       closeCourseSearchModal();
-      openCourseModalFromApi(name, scorecard.pars, scorecard.indexes, detail || result);
+      openCourseModal(result);
     });
     els.courseSearchResults.append(row);
   });
+  els.courseSearchPagination.hidden = totalPages <= 1;
+  els.courseSearchPrevious.disabled = garminSearchPage <= 1;
+  els.courseSearchNext.disabled = garminSearchPage >= totalPages;
+  els.courseSearchPageStatus.textContent = t('Page {current} of {total}', { current: garminSearchPage, total: totalPages });
+}
+
+function searchGarminCourses() {
+  const country = els.courseSearchCountry.value;
+  const region = els.courseSearchRegion.value;
+  const needle = normalizeGarminSearchText(els.courseSearchInput.value);
+  garminSearchResults = garminCourses.filter(course => (
+    (!country || course.country === country)
+    && (!region || course.region === region)
+    && (!needle || normalizeGarminSearchText(`${course.name} ${course.address}`).includes(needle))
+    && course.holes === 18
+  )).sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  garminSearchPage = 1;
+  els.courseSearchStatus.textContent = garminSearchResults.length
+    ? t('Found {count} Garmin courses.', { count: garminSearchResults.length })
+    : t('No courses found. Change the filters or add one manually.');
+  renderCourseSearchResults();
 }
 
 function openCourseModalFromApi(name, pars, indexes, result = {}) {
@@ -2625,6 +2869,8 @@ function openCourseModalFromApi(name, pars, indexes, result = {}) {
 function openEditCourseModal(course) {
   const normalized = normalizeCourse(course);
   editingCourseId = normalized.id;
+  pendingCourseMetadata = null;
+  if (els.courseSourceNotice) els.courseSourceNotice.hidden = true;
   els.courseForm.reset();
   els.newCourseName.value = normalized.name;
   const area = areaForCourse(normalized);
@@ -2643,6 +2889,7 @@ function closeCourseModal() {
   els.courseModal.hidden = true;
   els.courseForm.reset();
   editingCourseId = '';
+  pendingCourseMetadata = null;
   els.newCourseCode.disabled = false;
   els.newCourseCountry.disabled = false;
   els.newCourseRegion.disabled = false;
@@ -5089,10 +5336,13 @@ function renderCourses() {
     row.querySelector('strong').textContent = course.name;
     row.querySelector('.course-meta').textContent = [
       course.club && course.course ? `${course.club} - ${course.course}` : (course.club || course.course),
-      [courseCountry(course), courseRegion(course)].filter(Boolean).join(', ')
+      [courseCountry(course), courseRegion(course)].filter(Boolean).join(', '),
+      t('{count} holes', { count: Number(course.holes) || 18 })
     ].filter(Boolean).join(' | ');
     row.querySelector('.course-par-badge').textContent = t('Par {value}', { value: course.pars.reduce((a, b) => a + b, 0) });
-    row.querySelector('.course-type-badge').textContent = t(isCustom ? 'Custom' : 'Preset Course');
+    row.querySelector('.course-type-badge').textContent = t(course.source === 'garmin'
+      ? 'Garmin course library'
+      : (isCustom ? 'Custom' : 'Preset Course'));
 
     if (isCustom) {
       const editButton = document.createElement('button');
@@ -6500,7 +6750,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.5.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.6.')
     );
   });
 
@@ -6627,12 +6877,26 @@ function addListeners() {
     renderCourses();
   });
   els.courseListRegion.addEventListener('change', renderCourses);
-  els.addCourse.addEventListener('click', () => openCourseModal());
-  els.searchCourse.addEventListener('click', openCourseSearchModal);
-  els.courseSearchModes.forEach(button => {
-    button.addEventListener('click', () => setCourseSearchMode(button.dataset.courseSearchMode));
+  els.addCourse.addEventListener('click', async () => {
+    try {
+      await loadGarminCourseCatalog();
+    } catch {
+      // Manual entry remains available when the optional local catalog cannot load.
+    }
+    openCourseModal();
   });
+  els.searchCourse.addEventListener('click', openCourseSearchModal);
   els.courseSearchCountry.addEventListener('change', renderCourseSearchRegions);
+  els.courseSearchRegion.addEventListener('change', () => clearGarminSearchResults(t('Filters changed. Search again.')));
+  els.courseSearchInput.addEventListener('input', () => clearGarminSearchResults(t('Filters changed. Search again.')));
+  els.courseSearchPrevious.addEventListener('click', () => {
+    garminSearchPage -= 1;
+    renderCourseSearchResults();
+  });
+  els.courseSearchNext.addEventListener('click', () => {
+    garminSearchPage += 1;
+    renderCourseSearchResults();
+  });
   els.cancelCourseSearch.addEventListener('click', closeCourseSearchModal);
   els.cancelCourseSearchBottom.addEventListener('click', closeCourseSearchModal);
   els.courseSearchModal.addEventListener('click', event => {
@@ -6640,51 +6904,13 @@ function addListeners() {
   });
   els.courseSearchForm.addEventListener('submit', async event => {
     event.preventDefault();
-    const courseName = els.courseSearchInput.value.trim();
-    const country = els.courseSearchCountry.value;
-    const region = els.courseSearchRegion.value;
-    if (courseSearchMode === 'manual') {
-      closeCourseSearchModal();
-      openCourseModal(courseName);
-      return;
-    }
-    if (courseSearchMode === 'shared') {
-      els.courseSearchSubmit.disabled = true;
-      els.courseSearchStatus.textContent = t('Searching OpenStreetMap...');
-      els.courseSearchResults.innerHTML = '';
-      try {
-        const searchResult = await searchOnlineCourses({ courseName, country, region });
-        if (searchResult.needsFilter) {
-          els.courseSearchStatus.textContent = t('Enter a course name or select a country to search OpenStreetMap.');
-          renderCourseSearchResults([], 'shared');
-          return;
-        }
-        els.courseSearchStatus.textContent = searchResult.results.length ? t('Choose a course to add.') : t('No courses found in online database.');
-        renderCourseSearchResults(searchResult.results, 'shared');
-      } catch (error) {
-        els.courseSearchStatus.textContent = t('OpenStreetMap search failed. Try again.');
-      } finally {
-        els.courseSearchSubmit.disabled = false;
-      }
-      return;
-    }
-    if (!courseName && (country || region)) {
-      els.courseSearchStatus.textContent = t('Enter a course name or city to search within the selected country or region.');
-      els.courseSearchResults.innerHTML = '';
-      return;
-    }
     els.courseSearchSubmit.disabled = true;
-    els.courseSearchStatus.textContent = t('Searching courses...');
-    els.courseSearchResults.innerHTML = '';
+    els.courseSearchStatus.textContent = t('Searching the Garmin course library...');
     try {
-      const searchResult = await searchGolfCourses({ courseName, country, region });
-      const results = searchResult.results;
-      els.courseSearchStatus.textContent = results.length ? t('Choose a course to add.') : t('No courses found.');
-      renderCourseSearchResults(results, 'api');
+      await loadGarminCourseCatalog();
+      searchGarminCourses();
     } catch (error) {
-      els.courseSearchStatus.textContent = hasGolfCourseApiConfig()
-        ? t('Course search failed. Try again.')
-        : t('Add your GolfCourseAPI key to supabase-config.js before searching.');
+      els.courseSearchStatus.textContent = t('Could not load the Garmin course library. Add the course manually.');
     } finally {
       els.courseSearchSubmit.disabled = false;
     }
@@ -6742,7 +6968,12 @@ function addListeners() {
       id = `${baseId}-${count}`;
       count += 1;
     }
-    const course = { id, name, country, region, pars, indexes, editCode };
+    const course = {
+      id, name, country, region, pars, indexes, editCode,
+      source: pendingCourseMetadata?.source || 'custom',
+      holes: Number(pendingCourseMetadata?.holes) || 18,
+      address: String(pendingCourseMetadata?.address || '')
+    };
     customCourses.push(course);
     queuePendingCourse(course);
     saveCoursesLocal();
@@ -7073,12 +7304,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=212', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=213', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v212';
+    const reloadKey = 'jfk.simpleGolfSwReload.v213';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();
