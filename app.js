@@ -4265,7 +4265,7 @@ function openAnalysisHighlightModal(group) {
   const intro = data.intro ? `<p class="analysis-highlight-intro">${escapeHtml(data.intro)}</p>` : '';
   const listLabel = data.listLabel ? `<h3 class="analysis-detail-list-title">${escapeHtml(data.listLabel)}</h3>` : '';
   const heroGroups = data.heroGroups?.length
-    ? `<div class="analysis-hero-board">${data.heroGroups.map(group => `<section><header><strong>🏆 ${escapeHtml(group.player)}</strong><span>${escapeHtml(t('{count} times', { count: group.holes.length }))}</span></header><div>${group.holes.map(item => `<button type="button" data-analysis-hole="${item.hole}">${escapeHtml(localizedHoleLabel(item.hole))}</button>`).join('')}</div></section>`).join('')}</div>`
+    ? `<div class="analysis-hero-board">${data.heroGroups.map(group => `<section><header><strong>🏆 ${escapeHtml(group.player)}</strong><span class="analysis-hero-counts"><span>${escapeHtml(t('Hero honors {total}', { total: group.holes.length }))}</span><span class="solo-contribution-count">${escapeHtml(t('Solo contributions {solo}', { solo: group.soloCount }))}</span></span></header><div>${group.holes.map(item => `<button type="button" class="${item.solo ? 'solo-contribution' : ''}" data-analysis-hole="${item.hole}">${escapeHtml(localizedHoleLabel(item.hole))}</button>`).join('')}</div></section>`).join('')}</div>`
     : '';
   const outcomeGroups = data.outcomeGroups?.length
     ? `<div class="analysis-outcome-board">${data.outcomeGroups.map(group => `<section class="${escapeHtml(group.tone)}"><header><strong>${escapeHtml(group.icon)} ${escapeHtml(group.label)}</strong><span>${escapeHtml(t('{count} holes', { count: group.holes.length }))}</span></header><div>${group.holes.map(item => `<button type="button" data-analysis-hole="${item.hole}">${escapeHtml(localizedHoleLabel(item.hole))}</button>`).join('')}</div></section>`).join('')}</div>`
@@ -4293,12 +4293,14 @@ function analysisPackHeroBoard(displayMode, playerCount) {
     const landlordIndex = config.landlords[holeIndex];
     if (Number(result.points[landlordIndex] || 0) >= 0) return;
     const lowestScore = Math.min(...result.peasantIndexes.map(index => result.scoringValues[index]));
-    result.peasantIndexes
-      .filter(index => result.scoringValues[index] === lowestScore)
-      .forEach(index => heroes[index].holes.push({ hole: holeIndex + 1, score: lowestScore }));
+    const lowestIndexes = result.peasantIndexes
+      .filter(index => result.scoringValues[index] === lowestScore);
+    const solo = lowestIndexes.length === 1;
+    lowestIndexes.forEach(index => heroes[index].holes.push({ hole: holeIndex + 1, score: lowestScore, solo }));
   });
   const groups = heroes
     .filter(hero => hero.holes.length)
+    .map(hero => ({ ...hero, soloCount: hero.holes.filter(item => item.solo).length }))
     .sort((a, b) => b.holes.length - a.holes.length || a.playerIndex - b.playerIndex);
   return { groups, items: groups.flatMap(group => group.holes) };
 }
@@ -4537,11 +4539,11 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
         ${analysisHighlightCard('rule-impact', ruleImpact.label, ruleImpact.value, ruleImpact.items)}
         ${state.gameType === 'landlord' ? analysisHighlightCard('outcome-holes', t('Win/loss holes'), outcomeBoard.value, outcomeBoard.items, { outcomeGroups: outcomeBoard.groups }) : ''}
         ${state.gameType === 'landlord' ? analysisHighlightCard('pack-heroes', t('Pack hero leaderboard'), String(packHeroBoard.groups.length), packHeroBoard.items, {
-          intro: t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero; tied lowest scores each count once.'),
+          intro: t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero. A sole lowest score counts as a solo contribution; tied lowest scores share the hero honor.'),
           heroGroups: packHeroBoard.groups
         }) : ''}
       </div>
-      ${state.gameType === 'landlord' ? `<p class="analysis-highlight-note">${escapeHtml(t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero; tied lowest scores each count once.'))}</p>` : ''}
+      ${state.gameType === 'landlord' ? `<p class="analysis-highlight-note">${escapeHtml(t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero. A sole lowest score counts as a solo contribution; tied lowest scores share the hero honor.'))}</p>` : ''}
     </section>
     <section class="analysis-section analysis-hole-section">
       <div class="analysis-section-title"><h3>${escapeHtml(t('Hole details'))}</h3><span>${holes.length}/18</span></div>
@@ -6924,7 +6926,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.8.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.9.')
     );
   });
 
@@ -7479,12 +7481,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=215', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=216', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v215';
+    const reloadKey = 'jfk.simpleGolfSwReload.v216';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

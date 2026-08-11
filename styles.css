@@ -2874,6 +2874,8 @@ input:disabled {
   color: #087847;
 }
 .analysis-hero-board header span { font-size: 13px; font-weight: 900; }
+.analysis-hero-counts { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 3px 7px; }
+.analysis-hero-counts .solo-contribution-count { color: #704607; }
 .analysis-outcome-board header span { font-size: 13px; font-weight: 900; }
 .analysis-hero-board section > div,
 .analysis-outcome-board section > div { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -2886,6 +2888,12 @@ input:disabled {
   color: #087847;
   background: #fff;
   font-weight: 900;
+}
+.analysis-highlight-list .analysis-hero-board button.solo-contribution {
+  border-color: #d29a24;
+  color: #704607;
+  background: #fff0c7;
+  box-shadow: inset 0 0 0 1px rgba(210, 154, 36, 0.18);
 }
 .analysis-detail-stats {
   display: grid;

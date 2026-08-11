@@ -75,7 +75,8 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.match(app, /Multiplier holes'\),[\s\S]*value: String\(multiplied\.count\)/);
   assert.match(app, /function analysisPackHeroBoard\(displayMode, playerCount\)/);
   assert.match(app, /Number\(result\.points\[landlordIndex\] \|\| 0\) >= 0/);
-  assert.match(app, /result\.peasantIndexes[\s\S]*lowestScore[\s\S]*heroes\[index\]\.holes\.push/);
+  assert.match(app, /lowestIndexes[\s\S]*const solo = lowestIndexes\.length === 1[\s\S]*heroes\[index\]\.holes\.push/);
+  assert.match(app, /soloCount: hero\.holes\.filter\(item => item\.solo\)\.length/);
   assert.match(app, /sort\(\(a, b\) => b\.holes\.length - a\.holes\.length \|\| a\.playerIndex - b\.playerIndex\)/);
   assert.match(app, /analysisHighlightCard\('pack-heroes', t\('Pack hero leaderboard'\)/);
   assert.match(app, /function analysisOutcomeBoard\(displayMode\)/);
@@ -88,7 +89,13 @@ test('analysis localizes hole labels and explains multipliers or flip extras wit
   assert.match(i18n, /'\{wolf\} \| \{pack\}': '\{wolf\}｜\{pack\}'/);
   assert.match(app, /heroGroups[\s\S]*data-analysis-hole/);
   assert.match(i18n, /'Pack hero leaderboard': '农民英雄榜'/);
-  assert.match(i18n, /'On holes lost by the Wolf[\s\S]*并列最低杆者均记一次。'/);
+  assert.match(i18n, /'On holes lost by the Wolf[\s\S]*独自贡献[\s\S]*共同获评英雄。'/);
+  assert.match(i18n, /'Hero honors \{total\}': '英雄共\{total\}次'/);
+  assert.match(i18n, /'Solo contributions \{solo\}': '独自贡献\{solo\}次'/);
+  assert.match(app, /class="solo-contribution-count"/);
+  assert.match(css, /\.solo-contribution-count \{ color: #704607; \}/);
+  assert.match(app, /class="\$\{item\.solo \? 'solo-contribution' : ''\}"/);
+  assert.match(css, /button\.solo-contribution[\s\S]*background: #fff0c7/);
   assert.match(css, /\.analysis-hero-board[\s\S]*\.analysis-highlight-list \.analysis-hero-board button/);
   assert.match(app, /t\('Highlights'\)[\s\S]*analysisHighlightCard\('rule-impact'[\s\S]*analysisHighlightCard\('outcome-holes'[\s\S]*analysisHighlightCard\('pack-heroes'/);
   assert.doesNotMatch(app, /analysis-player-grid player-count-\$\{playerCount\}[^\n]*outcome-holes/);

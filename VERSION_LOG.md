@@ -4,6 +4,26 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.9 - Pack hero solo contributions
+
+Date: 2026-08-12
+
+Tag: `v6.5.9`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=216`
+
+What is new in this version:
+
+- The Pack hero leaderboard now separates each player's total hero honors from holes won through a solo lowest score.
+- Solo-contribution holes use a distinct gold treatment, and the matching solo-contribution count uses the same color.
+- Shared lowest-score hero honors remain visible with the existing green treatment.
+- Chinese and English explanations now clarify the difference between solo contributions and shared hero honors.
+- PWA asset query version is `v216`.
+
+Verified with JavaScript syntax checking, automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.8 - Global courses and richer Wolf & Pack statistics
 
 Date: 2026-08-11
