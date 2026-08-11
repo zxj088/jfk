@@ -11,6 +11,8 @@ const [html, app, css, i18n] = await Promise.all([
 
 test('results page offers score and analysis tabs with a scoring-basis selector', () => {
   assert.match(html, /id="resultsScoreTab"[\s\S]*id="resultsAnalysisTab"/);
+  assert.match(html, /id="resultsAnalysisTab"[^>]*>Statistics<\/button>/);
+  assert.match(i18n, /'Statistics': '统计分析'/);
   assert.match(html, /id="resultsScoreModeSelect"/);
   assert.match(html, /id="resultsScorePanel"[\s\S]*id="resultsAnalysisPanel"/);
   assert.doesNotMatch(html, /id="shareCurrentScorecard"/);
@@ -64,18 +66,61 @@ test('gross and net selector recalculates scores and analysis without changing t
 
 test('analysis localizes hole labels and explains multipliers or flip extras without point-balance rows', () => {
   assert.match(app, /function localizedHoleLabel/);
-  assert.match(app, /Manual x\{manual\} × special x\{special\} = x\{total\}/);
+  assert.match(app, /\{winner\} and the points are multiplied by \{total\}x \(manual \{manual\}x × bomb \{special\}x\)/);
   assert.match(app, /Before flip \{before\}; after flip \{after\}; extra \{extra\}/);
   assert.match(app, /wasFlipped \? `<p><strong>[\s\S]*Before flip[\s\S]*: ''/);
   assert.match(app, /function analysisSpecialPointBadges/);
   assert.match(app, /gameType === 'vegas' && !result\.aNumber\.flipped && !result\.bNumber\.flipped/);
   assert.match(app, /gameType === 'landlord' && result\.specialMultiplier <= 1/);
   assert.match(app, /Multiplier holes'\),[\s\S]*value: String\(multiplied\.count\)/);
-  assert.match(app, /analysis-badge bomb[\s\S]*flipBombIconHtml/);
+  assert.match(app, /function analysisPackHeroBoard\(displayMode, playerCount\)/);
+  assert.match(app, /Number\(result\.points\[landlordIndex\] \|\| 0\) >= 0/);
+  assert.match(app, /result\.peasantIndexes[\s\S]*lowestScore[\s\S]*heroes\[index\]\.holes\.push/);
+  assert.match(app, /sort\(\(a, b\) => b\.holes\.length - a\.holes\.length \|\| a\.playerIndex - b\.playerIndex\)/);
+  assert.match(app, /analysisHighlightCard\('pack-heroes', t\('Pack hero leaderboard'\)/);
+  assert.match(app, /function analysisOutcomeBoard\(displayMode\)/);
+  assert.match(app, /result\.tied[\s\S]*result\.landlordWon[\s\S]*groups\[1\]\.holes\.push/);
+  assert.match(app, /analysisHighlightCard\('outcome-holes', t\('Win\/loss holes'\)/);
+  assert.match(app, /outcomeGroups[\s\S]*data-analysis-hole/);
+  assert.match(i18n, /'Win\/loss holes': '输赢洞'/);
+  assert.match(i18n, /'Wolf \{wolf\} · Pack \{pack\}': '地主 \{wolf\}洞｜农民 \{pack\}洞'/);
+  assert.match(app, /value: t\('\{wolf\} \| \{pack\}'/);
+  assert.match(i18n, /'\{wolf\} \| \{pack\}': '\{wolf\}｜\{pack\}'/);
+  assert.match(app, /heroGroups[\s\S]*data-analysis-hole/);
+  assert.match(i18n, /'Pack hero leaderboard': '农民英雄榜'/);
+  assert.match(i18n, /'On holes lost by the Wolf[\s\S]*并列最低杆者均记一次。'/);
+  assert.match(css, /\.analysis-hero-board[\s\S]*\.analysis-highlight-list \.analysis-hero-board button/);
+  assert.match(app, /t\('Highlights'\)[\s\S]*analysisHighlightCard\('rule-impact'[\s\S]*analysisHighlightCard\('outcome-holes'[\s\S]*analysisHighlightCard\('pack-heroes'/);
+  assert.doesNotMatch(app, /analysis-player-grid player-count-\$\{playerCount\}[^\n]*outcome-holes/);
+  assert.match(css, /\.analysis-outcome-board[\s\S]*\.analysis-highlight-list \.analysis-outcome-board button/);
+  assert.match(i18n, /points ×\{total\} \(manual ×\{manual\}, bomb ×\{special\}\)/);
+  assert.match(app, /analysis-badge multiplier[\s\S]*Multiplier \{value\}/);
   assert.match(app, /analysis-badge flip[\s\S]*Extra \{points\}/);
   assert.match(css, /\.analysis-badge\.good[\s\S]*\.analysis-badge\.bad[\s\S]*\.analysis-badge\.bomb/);
   const analysisRows = app.slice(app.indexOf('function analysisHoleRows'), app.indexOf('function renderGameAnalysis'));
   assert.doesNotMatch(analysisRows, /Points balance: \{points\} = 0/);
+  assert.match(analysisRows, /Pack strokes \(best \{count\} scores\)/);
+  assert.match(analysisRows, /The average of \(\{scores\}\) is \{average\} strokes/);
+  assert.match(analysisRows, /landlordOutcomeExplanation\(result\)/);
+  assert.doesNotMatch(analysisRows, /<strong>\$\{escapeHtml\(t\('Multiplier'\)\)/);
+  assert.match(analysisRows, /course\.indexes\?\.\[holeIndex\]/);
+  assert.match(analysisRows, /Index \{value\}/);
+  assert.match(analysisRows, /Wolf \{points\} pts/);
+  assert.match(analysisRows, /result\.multiplier > 1/);
+  assert.match(analysisRows, /Multiplier \{value\}/);
+  assert.match(analysisRows, /result\.peasantIndexes[\s\S]*lowestPackScore[\s\S]*packHeroNames/);
+  assert.match(analysisRows, /landlordPoints < 0[\s\S]*Pack hero: \{players\} \{score\} strokes/);
+  assert.match(analysisRows, /class="analysis-hole-meta"/);
+  assert.match(analysisRows, /landlord-point-positive[\s\S]*landlord-point-negative[\s\S]*landlord-point-neutral/);
+  assert.match(analysisRows, /landlord-calculation-steps[\s\S]*analysis-calculation-card[\s\S]*analysis-outcome-card/);
+  assert.match(analysisRows, /landlordOutcomeRoleIcon\(result\)[\s\S]*class="landlord-outcome-label"/);
+  assert.doesNotMatch(analysisRows, /Bomb x\{value\}[\s\S]*result\.manualMultiplier > 1/);
+  assert.match(css, /\.landlord-analysis-hole\.landlord-point-positive[\s\S]*\.landlord-analysis-hole\.landlord-point-negative[\s\S]*\.landlord-analysis-hole\.landlord-point-neutral/);
+  assert.match(css, /\.analysis-outcome-card\.multiplied/);
+  assert.match(css, /\.analysis-badge\.pack-hero[\s\S]*white-space: normal/);
+  assert.match(css, /\.analysis-badge\.pack-hero[\s\S]*background: #e2f6ea[\s\S]*border: 1px solid #8bc9a6/);
+  assert.match(css, /\.landlord-analysis-hole \.analysis-hole-meta[\s\S]*font-size: 11px/);
+  assert.match(i18n, /'Pack hero: \{players\} \{score\} strokes': '农民英雄：\{players\} \{score\}杆'/);
 });
 
 test('highlight cards open detailed lists whose items jump to matching hole analysis', () => {

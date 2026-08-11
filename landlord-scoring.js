@@ -30,9 +30,10 @@
       .slice()
       .sort((a, b) => values[a] - values[b] || a - b)
       .slice(0, selectedCount);
-    const landlordTotal = values[landlordIndex] * selectedCount;
     const peasantsTotal = selectedPeasantIndexes.reduce((sum, index) => sum + values[index], 0);
-    const diff = peasantsTotal - landlordTotal;
+    const landlordComparison = values[landlordIndex];
+    const peasantsAverage = peasantsTotal / selectedCount;
+    const diff = peasantsAverage - landlordComparison;
     const landlordWon = diff > 0 || (diff === 0 && tieWinner === 'landlord');
     const tied = diff === 0 && tieWinner === 'none';
     const stake = Math.max(1, Math.round(Number(multiplier) || 1));
@@ -47,8 +48,9 @@
       peasantIndexes,
       selectedPeasantIndexes,
       selectedCount,
-      landlordTotal,
+      landlordComparison,
       peasantsTotal,
+      peasantsAverage,
       diff,
       landlordWon,
       tied,

@@ -32,7 +32,7 @@
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.1.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.3.1。',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.3.2.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.3.2。',
     'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.4.0.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.4.0。',
-    'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.7.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.5.7。',
+    'No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.8.': '无需注册或登录，打开链接即可使用。支持拉斯和斗地主记分、实时观看比赛、查看历史记分卡，以及多设备云端同步。版本 6.5.8。',
     'Add to phone desktop': '添加到手机桌面',
     'App installed': '应用已安装',
     'This app is already installed on this phone.': '此应用已经安装在这台手机上。',
@@ -150,6 +150,7 @@
     'Scores': '成绩',
     'Scorecard': '成绩',
     'Analysis': '分析',
+    'Statistics': '统计分析',
     'Scoring basis': '计分口径',
     'Score by': '计分口径',
     'Net (game setting)': '净杆（比赛设定）',
@@ -188,10 +189,22 @@
     'Multiplied holes': '翻倍洞',
     'Flipped holes': '翻转洞',
     'Multiplier holes': '翻倍洞',
+    'Multiplier {value}': '翻倍倍数{value}',
+    'Wolf {points} pts': '地主 {points}分',
+    'Pack hero: {players} {score} strokes': '农民英雄：{players} {score}杆',
+    'Pack hero leaderboard': '农民英雄榜',
+    'Win/loss holes': '输赢洞',
+    'Wolf {wolf} · Pack {pack}': '地主 {wolf}洞｜农民 {pack}洞',
+    '{wolf} | {pack}': '{wolf}｜{pack}',
+    'Please fill in this required field.': '请填写此必填项。',
+    'Please correct this highlighted field.': '请检查并修改此项。',
+    '{count} holes': '{count}洞',
+    '{count} times': '{count}次',
+    'On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero; tied lowest scores each count once.': '地主失利的洞中，杆数最低的农民获评“农民英雄”；并列最低杆者均记一次。',
     'Flip holes': '翻转洞',
     'Extra {points}': '多出 {points} 分',
     'Before flip {before}; after flip {after}; extra {extra}': '翻转前 {before} 分；翻转后 {after} 分；多出 {extra} 分',
-    'Manual x{manual} × special x{special} = x{total}': '手动 x{manual} × 特殊成绩 x{special} = x{total}',
+    'Manual x{manual} × special x{special} = x{total}': '手动{manual}倍 × 特殊成绩{special}倍＝{total}倍',
     'Tie': '平局',
     'Team {team}': '{team} 队',
     'Recommend to golfers': '推荐给球友',
@@ -202,11 +215,21 @@
     'View calculation': '查看计算',
     'Wolf calculation': '地主计算',
     'Best {count} Pack calculation': '最佳{count}名农民计算',
+    'Wolf strokes': '地主杆数',
+    'Pack strokes (best {count} scores)': '农民的杆数（取{count}个最好成绩）',
+    '{player}: {score} strokes': '{player}：{score}杆',
+    '{player} {score} strokes': '{player}{score}杆',
+    'The average of ({scores}) is {average} strokes': '（{scores}）的平均杆数为{average}杆',
+    'Wolf wins': '地主获胜',
+    'Pack wins': '农民获胜',
+    'This hole is tied': '本洞平局',
+    '(manual {manual}x × bomb {special}x) {total}x': '（手动{manual}倍 × 炸弹{special}倍）{total}倍',
+    '{winner} and the points are multiplied by {total}x (manual {manual}x × bomb {special}x)': '{winner}且分数翻{total}倍（手动{manual}倍 × 炸弹{special}倍）',
     '{player}: {score} × {count} = {total}': '{player}：{score} × {count}＝{total}',
     '{players}: {scores} = {total}': '{players}：{scores}＝{total}',
     '{side} wins: {winnerTotal} is lower than {loserTotal}.': '{side}获胜：{winnerTotal}小于{loserTotal}。',
     'Tied at {total}; rule: {rule}.': '双方均为{total}；平局规则：{rule}。',
-    'Multiplier: manual x{manual} × special x{special} = x{total}': '倍率：手动×{manual} × 特殊×{special}＝×{total}',
+    'Multiplier: manual x{manual} × special x{special} = x{total}': '倍率：手动{manual}倍 × 特殊{special}倍＝{total}倍',
     'Points balance: {points} = 0': '积分校验：{points}＝0',
     'The Wolf': '地主',
     'The Pack': '农民',
@@ -301,8 +324,9 @@
     'Tie rule': '平局如何计算',
     'Pack scores used': '农民成绩取几人？',
     '{count} Pack player scores': '取{count}人',
-    'Wolf: 5 strokes × {count} players = {total}': '地主：5杆 × {count}人 = {total}杆',
-    'Pack: add the best {count} player scores': '农民：取最好的{count}人，杆数相加',
+    'Wolf: 5 strokes': '地主：5杆',
+    'Pack: add the best {count} scores, then divide by {count}': '农民：最佳{count}人杆数相加，再除以{count}',
+    '{players}: {scores} = {total}; {total} ÷ {count} = {average}': '{players}：{scores} = {total}；{total} ÷ {count} = {average}',
     'The side with fewer strokes wins': '两边比较，杆数少的一方获胜',
     'Example: Wolf {wolf} strokes counts as {total}; compare with the best {count} Pack scores.': '例如：地主{wolf}杆按{total}杆计算，对比最佳{count}位农民的杆数总和。',
     '3. Select players': '3. 选择球员',
@@ -528,14 +552,16 @@
     ,'Wolf': '地主'
     ,'Pack': '农民'
     ,'Multiplier': '倍数'
-    ,'Double x2': '加倍 x2'
-    ,'Bomb x4': '炸弹 x4'
+    ,'Double x2': '加倍2倍'
+    ,'Bomb x4': '炸弹4倍'
     ,'Bomb': '炸弹'
-    ,'Manual x2': '手动 x2'
-    ,'Manual x4': '手动 x4'
+    ,'Manual x2': '手动2倍'
+    ,'Manual x4': '手动4倍'
+    ,'Manual ×2': '手动2倍'
+    ,'Manual ×4': '手动4倍'
     ,'Bomb --': '炸弹 --'
-    ,'Bomb x{value}': '炸弹 x{value}'
-    ,'Hole result: Manual multiplier {manual} x Bomb multiplier {bomb}': '本洞战果：手动倍数 {manual} × 炸弹倍数 {bomb}'
+    ,'Bomb x{value}': '炸弹{value}倍'
+    ,'Hole result: Manual multiplier {manual} x Bomb multiplier {bomb}': '本洞战果：手动{manual}倍 × 炸弹{bomb}倍'
     ,'{count} players · Cap {cap} · Tie advantage {status}': '{count}人 · 单洞封顶{cap}分 · 高差点地主平局获胜：{status}'
     ,'On': '开'
     ,'Off': '关'
@@ -543,7 +569,7 @@
     ,'Landlord vs': '地主PK'
     ,'best Pack scores': '个农民最佳成绩'
     ,'Best Pack scores': '农民最佳成绩数量'
-    ,'Compares the sum of the selected number of lowest Pack scores with the Wolf score multiplied by that number.': '将所选数量的农民最低杆数相加，与地主杆数乘以该数量进行比较。'
+    ,'Compares the average of the selected lowest Pack scores directly with the Wolf score.': '将所选最低杆农民的平均杆数直接与地主杆数比较。'
     ,'When tied': '平局时'
     ,'No win or loss': '不输不赢'
     ,'Higher-handicap landlord wins': '高差点地主获胜'
@@ -581,18 +607,18 @@
     ,'Show golf game rules': '查看高尔夫玩法规则'
     ,'Players: 3 or 4 players. Each hole has one landlord 👲; the other players are peasants 👨‍🌾.': '3人或4人参加。每洞一名地主👲，其余球员为农民👨‍🌾。'
     ,'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. The landlord’s score is multiplied by the number of peasants and compared with the peasants’ total score.': '总杆按实际杆数计算；净杆采用差点分洞让杆。地主杆数乘以农民人数后，与所有农民的合计杆数比较。'
-    ,'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to add together; compare that sum with the Wolf score multiplied by the same number.': '总杆按实际杆数计算；净杆采用差点分洞让杆。选择若干个农民最低杆数相加，再与地主杆数乘以相同人数进行比较。'
+    ,'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to average; compare that average directly with the Wolf score.': '总杆按实际杆数计算；净杆采用差点分洞让杆。选择若干个最低杆农民计算平均杆数，再直接与地主杆数比较。'
     ,'Recorded strokes have no maximum limit.': '球员实际杆数不设最高上限。'
     ,'Wolf selection: Rotating Wolf follows the result of each hole. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.': '地主方式：轮换地主根据每洞结果自动决定下一洞地主；固定地主在18洞内保持不变，比赛中不可更换。'
     ,'Wolf selection: Result-Based Rotation follows the result of each hole. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.': '地主方式：输赢轮换根据每洞结果自动决定下一洞地主；固定地主在18洞内保持不变，比赛中不可更换。'
     ,'The player with the lowest Gross or Net score becomes landlord on the next hole. If the best score is tied, the current landlord continues.': '总杆或净杆最低的球员成为下一洞地主；最好成绩并列时，本洞地主连庄。'
     ,'If the landlord wins, the landlord continues on the next hole. If the peasants win, the peasant with the lowest Gross or Net score becomes the next landlord. If multiple winning peasants tie, choose the player with fewer previous turns as landlord; if still tied, rotate forward from the current landlord through the player order. The landlord can still be changed manually on the next hole.': '地主获胜时，下一洞继续当地主。农民获胜时，农民中上一洞总杆或净杆最低者成为下一洞地主。多名获胜农民最低杆并列时，优先选择本场地主次数较少者；次数仍相同时，从当前地主的下一位开始，按球员顺序循环选择。进入下一洞后仍可手动点击其他球员更换地主。'
-    ,'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. If both sides have special scores, they cancel and the hole is x1. A special score by only the losing side is also x1.': '炸弹规则：只有胜方的特殊好成绩获得倍数。胜方小鸟为x2，胜方老鹰或一杆进洞为x4。双方都有特殊好成绩时相互抵消，按x1；只有负方出现特殊好成绩时也按x1。'
-    ,'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is x1.': '炸弹规则：只有胜方的特殊好成绩获得倍数。胜方小鸟为x2，胜方老鹰或一杆进洞为x4。只有双方特殊杆等级相同时才互相抵消；等级不同时，按胜方自己的特殊杆倍数计算。只有负方出现特殊好成绩时按x1。'
-    ,'Special-score multipliers use gross strokes and multiply together with the manually selected x1, x2, or x4.': '特殊杆倍数按总杆判断，并与手动选择的x1、x2或x4串接相乘。'
-    ,'Tap a player to change the landlord, or tap x1, x2, or x4 to change the multiplier.': '点击球员可更换地主；点击x1、x2或x4可更改倍数。'
-    ,'Tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': '点击球员可更换地主。手动可选x2或x4；再次点击已选倍数可回到x1。炸弹x2或x4根据胜方的总杆特殊成绩自动判断。'
-    ,'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': '轮换地主模式下，点击球员可更换地主。手动可选x2或x4；再次点击已选倍数可回到x1。炸弹x2或x4根据胜方的总杆特殊成绩自动判断。'
+    ,'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. If both sides have special scores, they cancel and the hole is x1. A special score by only the losing side is also x1.': '炸弹规则：只有胜方的特殊好成绩获得倍数。胜方小鸟为2倍，胜方老鹰或一杆进洞为4倍。双方都有特殊好成绩时相互抵消，按1倍；只有负方出现特殊好成绩时也按1倍。'
+    ,'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is x1.': '炸弹规则：只有胜方的特殊好成绩获得倍数。胜方小鸟为2倍，胜方老鹰或一杆进洞为4倍。只有双方特殊杆等级相同时才互相抵消；等级不同时，按胜方自己的特殊杆倍数计算。只有负方出现特殊好成绩时按1倍。'
+    ,'Special-score multipliers use gross strokes and multiply together with the manually selected x1, x2, or x4.': '特殊杆倍数按总杆判断，并与手动选择的1倍、2倍或4倍串接相乘。'
+    ,'Tap a player to change the landlord, or tap x1, x2, or x4 to change the multiplier.': '点击球员可更换地主；点击1倍、2倍或4倍可更改倍数。'
+    ,'Tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': '点击球员可更换地主。手动可选2倍或4倍；再次点击已选倍数可回到1倍。炸弹2倍或4倍根据胜方的总杆特殊成绩自动判断。'
+    ,'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': '轮换地主模式下，点击球员可更换地主。手动可选2倍或4倍；再次点击已选倍数可回到1倍。炸弹2倍或4倍根据胜方的总杆特殊成绩自动判断。'
     ,'Per-hole cap: Each peasant cannot win or lose more than the selected cap on one hole. The landlord’s limit is the cap multiplied by the number of peasants.': '单洞封顶：每位农民单洞输赢不超过所设上限；地主上限为封顶分数乘以农民人数。'
     ,'Tied hole: Normally everyone scores zero. If the higher-handicap-landlord option is enabled, an eligible landlord wins the tie at the current multiplier.': '平局：通常所有人得0分。启用高差点地主平局获胜后，符合条件的地主按当前倍数获胜。'
     ,'Tied hole: Choose whether nobody wins, an eligible higher-handicap landlord wins, the peasants win, or the landlord wins.': '平局：可设置为不输不赢、高差点地主获胜、农民获胜或地主获胜。'
@@ -600,6 +626,11 @@
 
   const en = {
     'Fight the Landlord': 'Wolf & Pack Scoring',
+    'Bomb x{value}': 'Bomb ×{value}',
+    'Hole result: Manual multiplier {manual} x Bomb multiplier {bomb}': 'Hole result: manual ×{manual}, bomb ×{bomb}',
+    '{winner} and the points are multiplied by {total}x (manual {manual}x × bomb {special}x)': '{winner} — points ×{total} (manual ×{manual}, bomb ×{special})',
+    'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is x2; a winning-side eagle or hole-in-one is x4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is x1.': 'Bomb rule: Only a special score by the winning side earns a multiplier. A winning-side birdie is ×2; a winning-side eagle or hole-in-one is ×4. Special scores cancel only when both sides have the same level. If their levels differ, the winning side uses its own special-score multiplier. A special score by only the losing side is ×1.',
+    'Special-score multipliers use gross strokes and multiply together with the manually selected x1, x2, or x4.': 'Special-score multipliers use gross strokes and multiply together with the manually selected ×1, ×2, or ×4.',
     'Fight the Landlord rules': 'Wolf & Pack rules',
     'Rotating Wolf': 'Result Rotation',
     'Landlord': 'The Wolf',
@@ -625,13 +656,13 @@
     'Normally, a tied hole scores zero. When enabled, if the landlord has a higher handicap than the group\'s lowest-handicap player, the tie is awarded to the landlord at the current multiplier.': 'Normally, a tied hole scores zero. When enabled, an eligible higher-handicap Wolf wins the tie at the current multiplier.',
     'Players: 3 or 4 players. Each hole has one landlord 👲; the other players are peasants 👨‍🌾.': 'Players: 3 or 4 players. Each hole has one Wolf 👲; the other players form The Pack 👨‍🌾.',
     'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. The landlord’s score is multiplied by the number of peasants and compared with the peasants’ total score.': 'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. The Wolf’s score is multiplied by the number of Pack players and compared with The Pack’s total score.',
-    'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to add together; compare that sum with the Wolf score multiplied by the same number.': 'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to add together; compare that sum with The Wolf score multiplied by the same number.',
+    'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to average; compare that average directly with the Wolf score.': 'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Average the selected lowest Pack scores and compare that average directly with The Wolf score.',
     'Wolf selection: Rotating Wolf follows the result of each hole. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.': 'Wolf selection: Rotating Wolf follows each hole result. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.',
     'The player with the lowest Gross or Net score becomes landlord on the next hole. If the best score is tied, the current landlord continues.': 'The player with the lowest Gross or Net score becomes The Wolf on the next hole. If the best score is tied, the current Wolf continues.',
     'If the landlord wins, the landlord continues on the next hole. If the peasants win, the peasant with the lowest Gross or Net score becomes the next landlord. If multiple winning peasants tie, choose the player with fewer previous turns as landlord; if still tied, rotate forward from the current landlord through the player order. The landlord can still be changed manually on the next hole.': 'If The Wolf wins, The Wolf continues on the next hole. If The Pack wins, the Pack player with the lowest Gross or Net score becomes the next Wolf. If multiple Pack players tie, choose the player with fewer previous turns as The Wolf; if still tied, rotate forward from the current Wolf through the player order. The Wolf can still be changed manually on the next hole.',
-    'Tap a player to change the landlord, or tap x1, x2, or x4 to change the multiplier.': 'Tap a player to change The Wolf, or tap x1, x2, or x4 to change the multiplier.',
-    'Tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': 'Tap a player to change The Wolf. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.',
-    'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': 'In Rotating Wolf mode, tap a player to change The Wolf. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.',
+    'Tap a player to change the landlord, or tap x1, x2, or x4 to change the multiplier.': 'Tap a player to change The Wolf, or tap ×1, ×2, or ×4 to change the multiplier.',
+    'Tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': 'Tap a player to change The Wolf. Manual ×2 and ×4 can be selected; tap the selected multiplier again to return to ×1. Bomb ×2 or ×4 is determined automatically from the winning side’s gross scores.',
+    'In Rotating Wolf mode, tap a player to change the landlord. Manual x2 and x4 can be selected; tap the selected multiplier again to return to x1. Bomb x2 or x4 is determined automatically from the winning side’s gross scores.': 'In Rotating Wolf mode, tap a player to change The Wolf. Manual ×2 and ×4 can be selected; tap the selected multiplier again to return to ×1. Bomb ×2 or ×4 is determined automatically from the winning side’s gross scores.',
     'Per-hole cap: Each peasant cannot win or lose more than the selected cap on one hole. The landlord’s limit is the cap multiplied by the number of peasants.': 'Per-hole cap: Each Pack player cannot win or lose more than the selected cap. The Wolf’s limit is the cap multiplied by the number of Pack players.',
     'Tied hole: Normally everyone scores zero. If the higher-handicap-landlord option is enabled, an eligible landlord wins the tie at the current multiplier.': 'Tied hole: Normally everyone scores zero. If the higher-handicap-Wolf option is enabled, an eligible Wolf wins the tie at the current multiplier.'
     ,'Tied hole: Choose whether nobody wins, an eligible higher-handicap landlord wins, the peasants win, or the landlord wins.': 'Tied hole: Choose whether nobody wins, an eligible higher-handicap Wolf wins, The Pack wins, or The Wolf wins.'

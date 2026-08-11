@@ -1028,6 +1028,23 @@ body {
   outline-offset: 0;
 }
 
+.course-form input.field-invalid,
+.course-form select.field-invalid,
+.course-form textarea.field-invalid {
+  border-color: #c8463f !important;
+  background: #fff0ee !important;
+  box-shadow: 0 0 0 3px rgba(200, 70, 63, 0.14) !important;
+}
+.field-validation-message {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  color: #b43a35;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 #courseForm .course-form-actions {
   position: sticky;
   z-index: 4;
@@ -2822,6 +2839,54 @@ input:disabled {
 .analysis-highlight-list button span.point-positive { color: var(--green-strong); }
 .analysis-highlight-list button span.point-negative { color: var(--red); }
 .analysis-highlight-empty { margin: 8px 0; padding: 18px; color: var(--muted); text-align: center; }
+.analysis-highlight-intro,
+.analysis-highlight-note {
+  margin: 0;
+  color: #52655e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.analysis-highlight-note { padding: 0 12px 12px; }
+.analysis-hero-board { display: grid; gap: 10px; }
+.analysis-outcome-board { display: grid; gap: 10px; }
+.analysis-outcome-board section {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7faf8;
+}
+.analysis-outcome-board section.wolf { border-color: #b7ddc7; background: #edf8f2; }
+.analysis-outcome-board section.pack { border-color: #efb7b2; background: #fff1f0; }
+.analysis-outcome-board section.tie { background: #f2f5f4; }
+.analysis-hero-board section {
+  padding: 10px;
+  border: 1px solid #b7ddc7;
+  border-radius: 10px;
+  background: #edf8f2;
+}
+.analysis-hero-board header,
+.analysis-outcome-board header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #087847;
+}
+.analysis-hero-board header span { font-size: 13px; font-weight: 900; }
+.analysis-outcome-board header span { font-size: 13px; font-weight: 900; }
+.analysis-hero-board section > div,
+.analysis-outcome-board section > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.analysis-highlight-list .analysis-hero-board button,
+.analysis-highlight-list .analysis-outcome-board button {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-color: #8bc9a6;
+  color: #087847;
+  background: #fff;
+  font-weight: 900;
+}
 .analysis-detail-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2912,9 +2977,70 @@ input:disabled {
 .analysis-badge.bomb,
 .analysis-badge.flip { color: #fff; background: #b3453f; }
 .analysis-badge.multiplier { color: #7a4b0d; background: #fff0cc; }
+.analysis-badge.pack-hero {
+  justify-content: flex-end;
+  color: #087847;
+  background: #e2f6ea;
+  border: 1px solid #8bc9a6;
+  text-align: right;
+  white-space: normal;
+}
 .analysis-badge .flip-bomb-icon { width: 17px; height: 17px; color: currentColor; }
 .analysis-badge .flip-bomb-icon svg { width: 17px; height: 17px; }
 .analysis-hole .calculation-steps { margin: 0 12px 12px; }
+.landlord-analysis-hole summary { background: #eef7f2; }
+.landlord-analysis-hole .analysis-hole-meta {
+  flex: 0 1 auto;
+  color: #52655e;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.analysis-hole-result strong.landlord-point-positive { color: #087847; }
+.analysis-hole-result strong.landlord-point-negative { color: #b43a35; }
+.analysis-hole-result strong.landlord-point-neutral { color: #64706b; }
+.landlord-analysis-hole .landlord-calculation-steps {
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.landlord-analysis-hole.landlord-point-positive .landlord-calculation-steps { background: #edf9f2; }
+.landlord-analysis-hole.landlord-point-negative .landlord-calculation-steps { background: #fff1f0; }
+.landlord-analysis-hole.landlord-point-neutral .landlord-calculation-steps { background: #f2f5f4; }
+.landlord-analysis-hole .analysis-calculation-card,
+.landlord-analysis-hole .analysis-outcome-card {
+  padding: 9px 10px;
+  border: 1px solid rgba(31, 65, 52, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+}
+.landlord-analysis-hole.landlord-point-positive .analysis-outcome-card {
+  color: #087847;
+  background: #dff4e8;
+}
+.landlord-analysis-hole.landlord-point-negative .analysis-outcome-card {
+  color: #b43a35;
+  background: #ffe3e0;
+}
+.landlord-analysis-hole.landlord-point-neutral .analysis-outcome-card {
+  color: #64706b;
+  background: #e8edeb;
+}
+.landlord-analysis-hole .analysis-outcome-card.multiplied {
+  border-color: #e2c27e;
+  box-shadow: inset 4px 0 #c9892a;
+}
+.landlord-analysis-hole .analysis-outcome-card strong { color: inherit; }
+.landlord-outcome-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.landlord-outcome-label .outcome-role-icon {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+  vertical-align: middle;
+}
 .analysis-empty { margin: 0; padding: 18px; color: #62706a; text-align: center; }
 
 @media (max-width: 600px) {
@@ -2924,6 +3050,8 @@ input:disabled {
   .analysis-player-grid.player-count-3 .analysis-player:last-child { grid-column: span 2; }
   .analysis-hole summary { align-items: flex-start; }
   .analysis-hole-result { max-width: 64%; }
+  .landlord-analysis-hole .analysis-hole-result { max-width: 70%; }
+  .landlord-analysis-hole .analysis-badge.pack-hero { max-width: 100%; }
 }
 
 .share-card-status {

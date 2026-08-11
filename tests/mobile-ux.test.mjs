@@ -17,7 +17,7 @@ test('mobile score display stays complete without a separate detail toolbar', ()
   assert.doesNotMatch(html, /class="score-display-toolbar"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=214/);
+  assert.match(html, /mobile-ux\.css\?v=215/);
 });
 
 test('course management explains the available-course list clearly', () => {
@@ -41,6 +41,25 @@ test('new game setup exposes recent courses and protects dirty forms from Escape
   assert.match(app, /\.slice\(0, 3\)/);
   assert.match(app, /activeOverlay === els\.gameModal && els\.gameForm\.dataset\.dirty === 'true'/);
   assert.match(app, /activeOverlay === els\.gameModal \? els\.newGame : overlayReturnFocus/);
+});
+
+test('editing game settings restores the saved course and its area metadata', () => {
+  assert.match(app, /courseCountrySnapshot[\s\S]*baseTotals\.courseCountry/);
+  assert.match(app, /courseRegionSnapshot[\s\S]*baseTotals\.courseRegion/);
+  assert.match(app, /function openEditGameInfoModal\(round\)[\s\S]*ensureCourseFromRound\(normalized\)/);
+  assert.match(app, /function ensureCourseFromRound\(round\)[\s\S]*round\.courseName[\s\S]*toLocaleLowerCase/);
+  assert.match(app, /country: round\.courseCountry \|\| courseCountry\(nameMatch\)/);
+  assert.match(app, /courseCountry: courseCountry\(course\)[\s\S]*courseRegion: courseRegion\(course\)/);
+});
+
+test('required fields highlight only after validation and clear on user correction', () => {
+  assert.match(app, /function markInvalidField\(input\)[\s\S]*field-invalid[\s\S]*aria-invalid/);
+  assert.match(app, /function setupFormValidation\(form\)[\s\S]*addEventListener\('invalid'[\s\S]*addEventListener\('input'[\s\S]*clearInvalidField/);
+  assert.match(app, /const invalid = required\.filter\(input => !input\.checkValidity\(\)\)/);
+  assert.match(app, /invalid\[0\]\.scrollIntoView[\s\S]*invalid\[0\]\.focus[\s\S]*invalid\[0\]\.reportValidity/);
+  assert.match(app, /\[els\.courseForm, els\.gameForm, els\.historyRangeForm, els\.dialogForm\]\.forEach\(setupFormValidation\)/);
+  assert.match(css, /\.course-form input\.field-invalid[\s\S]*\.field-validation-message/);
+  assert.match(i18n, /'Please fill in this required field\.': '请填写此必填项。'/);
 });
 
 test('mobile setup uses a three-course row and compact help popovers', () => {
@@ -83,8 +102,8 @@ test('game-rule setup explains Wolf comparison and keeps Las Vegas at four playe
   assert.match(html, /id="landlordComparisonExample"/);
   assert.match(html, /Tie rule/);
   assert.match(app, /els\.newLandlordPlayerCount\.value = '4'/);
-  assert.match(app, /Wolf: 5 strokes × \{count\} players = \{total\}/);
-  assert.match(app, /Pack: add the best \{count\} player scores/);
+  assert.match(app, /Wolf: 5 strokes/);
+  assert.match(app, /Pack: add the best \{count\} scores, then divide by \{count\}/);
   assert.match(app, /The side with fewer strokes wins/);
   assert.match(app, /\[t\('Course'\), t\('Game rules'\), t\('Players and handicaps'\), t\('Review'\)\]/);
 });

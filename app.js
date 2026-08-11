@@ -114,7 +114,7 @@ const LAS_VEGAS_RULES_TEXT = [
 ].join('\n\n');
 const LANDLORD_RULES_SECTIONS = [
   'Players: 3 or 4 players. Each hole has one landlord 👲; the other players are peasants 👨‍🌾.',
-  'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to add together; compare that sum with the Wolf score multiplied by the same number.',
+  'Gross mode uses actual strokes. Net mode allocates handicap strokes by hole. Choose how many of the lowest Pack scores to average; compare that average directly with the Wolf score.',
   'Recorded strokes have no maximum limit.',
   'Wolf selection: Result-Based Rotation follows the result of each hole. Fixed Wolf stays the same for all 18 holes and cannot be changed during the round.',
   'If the landlord wins, the landlord continues on the next hole. If the peasants win, the peasant with the lowest Gross or Net score becomes the next landlord. If multiple winning peasants tie, choose the player with fewer previous turns as landlord; if still tied, rotate forward from the current landlord through the player order. The landlord can still be changed manually on the next hole.',
@@ -1096,6 +1096,8 @@ function normalizeRound(round) {
   const courseId = round.courseId || defaultCourses[0].id;
   const course = allCourses().find(item => item.id === courseId) || defaultCourses[0];
   const courseName = round.courseName || course.name || 'Unknown Course';
+  const courseCountrySnapshot = String(round.courseCountry || baseTotals.courseCountry || course.country || '');
+  const courseRegionSnapshot = String(round.courseRegion || baseTotals.courseRegion || course.region || '');
   const name = round.name || roundDisplayName({ name: courseName }, players);
   const scoreMode = round.scoreMode === 'net' || baseTotals.scoreMode === 'net' ? 'net' : 'gross';
   const underParFlip = 'underParFlip' in round ? Boolean(round.underParFlip) : Boolean(round.birdieFlip);
@@ -1107,6 +1109,8 @@ function normalizeRound(round) {
     fileName: round.fileName || `${safeFilePart(name)}.json`,
     courseId,
     courseName,
+    courseCountry: courseCountrySnapshot,
+    courseRegion: courseRegionSnapshot,
     pars: Array.isArray(round.pars) && round.pars.length === 18 ? round.pars : course.pars,
     indexes: normalizeCourseIndexes(round.indexes || course.indexes),
     players,
@@ -2964,8 +2968,8 @@ function renderBestPeasantCountOptions(playerCount) {
   }).join('');
   const example = document.querySelector('#landlordComparisonExample');
   if (example) example.innerHTML = `
-    <span>${escapeHtml(t('Wolf: 5 strokes × {count} players = {total}', { count: selected, total: 5 * selected }))}</span>
-    <span>${escapeHtml(t('Pack: add the best {count} player scores', { count: selected }))}</span>
+    <span>${escapeHtml(t('Wolf: 5 strokes'))}</span>
+    <span>${escapeHtml(t('Pack: add the best {count} scores, then divide by {count}', { count: selected }))}</span>
     <strong>${escapeHtml(t('The side with fewer strokes wins'))}</strong>
   `;
   syncSegmentedControls(countSegments || document);
@@ -3024,14 +3028,63 @@ function showGameWizardStep(step) {
   if (gameWizardStep === 4) renderGameReview();
 }
 
+function validationMessageFor(input) {
+  return input.validity?.valueMissing
+    ? t('Please fill in this required field.')
+    : t('Please correct this highlighted field.');
+}
+
+function markInvalidField(input) {
+  if (!input) return;
+  input.classList.add('field-invalid');
+  input.setAttribute('aria-invalid', 'true');
+  const container = input.closest('.field-control, label') || input.parentElement;
+  if (!container) return;
+  let message = input._validationMessageElement;
+  if (!message?.isConnected) {
+    message = document.createElement('small');
+    message.className = 'field-validation-message';
+    container.append(message);
+    input._validationMessageElement = message;
+  }
+  message.textContent = validationMessageFor(input);
+}
+
+function clearInvalidField(input) {
+  if (!input) return;
+  input.classList.remove('field-invalid');
+  input.removeAttribute('aria-invalid');
+  input._validationMessageElement?.remove();
+  input._validationMessageElement = null;
+}
+
+function clearFormValidation(form) {
+  form?.querySelectorAll('.field-invalid').forEach(clearInvalidField);
+}
+
+function setupFormValidation(form) {
+  if (!form || form.dataset.validationReady === 'true') return;
+  form.dataset.validationReady = 'true';
+  form.addEventListener('invalid', event => markInvalidField(event.target), true);
+  form.addEventListener('input', event => {
+    if (event.target.matches('input, select, textarea')) clearInvalidField(event.target);
+  });
+  form.addEventListener('change', event => {
+    if (event.target.matches('input, select, textarea')) clearInvalidField(event.target);
+  });
+  form.addEventListener('reset', () => window.setTimeout(() => clearFormValidation(form), 0));
+}
+
 function validateGameWizardStep() {
   if (gameWizardStep === 3 && !validateUniqueNewGamePlayers()) return false;
   const section = document.querySelector(`[data-game-step="${gameWizardStep}"]`);
   const required = Array.from(section?.querySelectorAll('input[required], select[required]') || [])
     .filter(input => !input.closest('[hidden]'));
-  const invalid = required.find(input => !input.checkValidity());
-  if (invalid) {
-    invalid.reportValidity();
+  const invalid = required.filter(input => !input.checkValidity());
+  if (invalid.length) {
+    invalid[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    invalid[0].focus({ preventScroll: true });
+    invalid[0].reportValidity();
     return false;
   }
   return true;
@@ -3169,6 +3222,7 @@ function openGameModal() {
 
 function openEditGameInfoModal(round) {
   const normalized = normalizeRound(round);
+  ensureCourseFromRound(normalized);
   editingGameInfoId = normalized.id;
   els.gameForm.reset();
   const course = allCourses().find(item => item.id === normalized.courseId) || currentCourse();
@@ -3694,20 +3748,41 @@ function landlordCalculationExplanation(result, landlordIndex, config) {
   const landlordName = state.players[landlordIndex];
   const packNames = result.selectedPeasantIndexes.map(index => state.players[index]);
   const packScores = result.selectedPeasantIndexes.map(index => result.scoringValues[index]);
-  const winner = result.tied ? '' : t(result.landlordWon ? 'The Wolf' : 'The Pack');
-  const winnerTotal = result.landlordWon ? result.landlordTotal : result.peasantsTotal;
-  const loserTotal = result.landlordWon ? result.peasantsTotal : result.landlordTotal;
-  const comparison = result.diff === 0
-    ? t('Tied at {total}; rule: {rule}.', { total: result.landlordTotal, rule: t(tieOutcomeLabel(config.tieOutcome)) })
-    : t('{side} wins: {winnerTotal} is lower than {loserTotal}.', { side: winner, winnerTotal, loserTotal });
-  const pointBalance = result.points.map(signedPoints).join(' + ');
+  const landlordComparison = formatLandlordComparisonValue(result.landlordComparison);
+  const peasantsAverage = formatLandlordComparisonValue(result.peasantsAverage);
+  const packScoreTerms = packNames.map((player, index) => t('{player} {score} strokes', {
+    player,
+    score: formatLandlordComparisonValue(packScores[index])
+  })).join(' + ');
+  const outcomeLabel = landlordOutcomeExplanation(result);
+  const outcomeIcon = landlordOutcomeRoleIcon(result);
   return `<details class="calculation-explanation"><summary>${escapeHtml(t('View calculation'))}</summary><div class="calculation-steps">
-    <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: landlordName, score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
-    <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(t('{players}: {scores} = {total}', { players: packNames.join(' + '), scores: packScores.join(' + '), total: result.peasantsTotal }))}</p>
-    <p>${escapeHtml(comparison)}</p>
-    <p>${escapeHtml(t('Multiplier: manual x{manual} × special x{special} = x{total}', { manual: result.manualMultiplier, special: result.specialMultiplier, total: result.multiplier }))}</p>
-    <p>${escapeHtml(t('Points balance: {points} = 0', { points: pointBalance }))}</p>
+    <p><strong>${escapeHtml(t('Wolf strokes'))}</strong><br>${escapeHtml(t('{player}: {score} strokes', { player: landlordName, score: landlordComparison }))}</p>
+    <p><strong>${escapeHtml(t('Pack strokes (best {count} scores)', { count: result.selectedCount }))}</strong><br>${escapeHtml(t('The average of ({scores}) is {average} strokes', { scores: packScoreTerms, average: peasantsAverage }))}</p>
+    <p><strong class="landlord-outcome-label">${outcomeIcon}${escapeHtml(outcomeLabel)}</strong></p>
   </div></details>`;
+}
+
+function landlordOutcomeRoleIcon(result) {
+  return result.tied ? '' : roleIconHtml(result.landlordWon, 'outcome-role-icon');
+}
+
+function landlordOutcomeExplanation(result) {
+  if (result.tied) return t('This hole is tied');
+  const winner = t(result.landlordWon ? 'Wolf wins' : 'Pack wins');
+  if (result.multiplier <= 1) return winner;
+  return t('{winner} and the points are multiplied by {total}x (manual {manual}x × bomb {special}x)', {
+    winner,
+    total: result.multiplier,
+    manual: result.manualMultiplier,
+    special: result.specialMultiplier
+  });
+}
+
+function formatLandlordComparisonValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return '--';
+  return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 }
 
 function renderLandlordActions() {
@@ -4140,8 +4215,8 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
       const result = landlordHoleResult(displayState, holeIndex);
       if (result?.multiplier > 1) {
         summary.count += 1;
-        const multiplierParts = [`x${result.multiplier}`];
-        if (result.manualMultiplier > 1) multiplierParts.push(`${t('Manual')} x${result.manualMultiplier}`);
+        const multiplierParts = [`×${result.multiplier}`];
+        if (result.manualMultiplier > 1) multiplierParts.push(`${t('Manual')} ×${result.manualMultiplier}`);
         if (result.specialMultiplier > 1) multiplierParts.push(t('Bomb x{value}', { value: result.specialMultiplier }));
         summary.items.push({ hole: holeIndex + 1, detail: multiplierParts.join(' · ') });
         if (result.multiplier > summary.max) {
@@ -4171,8 +4246,8 @@ function analysisRuleImpact(course, displayMode = state.scoreMode) {
   return { label: t('Flip holes'), value: String(flipped.count), hole: 0, items: flipped.items };
 }
 
-function analysisHighlightCard(group, label, value, items = []) {
-  analysisHighlightGroups.set(group, { label, items });
+function analysisHighlightCard(group, label, value, items = [], extra = {}) {
+  analysisHighlightGroups.set(group, { label, items, ...extra });
   const content = `<small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong>`;
   return `<button type="button" class="analysis-highlight-link" data-analysis-highlight="${escapeHtml(group)}" aria-label="${escapeHtml(`${label}: ${value}`)}"${items.length ? '' : ' disabled'}>${content}</button>`;
 }
@@ -4187,13 +4262,71 @@ function openAnalysisHighlightModal(group) {
   els.analysisHighlightEyebrow.textContent = t('Highlights');
   els.analysisHighlightTitle.textContent = data.label;
   const stats = data.stats?.length ? `<div class="analysis-detail-stats">${data.stats.map(item => `<span><small>${escapeHtml(item.label)}</small><strong class="${pointToneClass(item.points)}">${escapeHtml(item.value)}</strong></span>`).join('')}</div>` : '';
+  const intro = data.intro ? `<p class="analysis-highlight-intro">${escapeHtml(data.intro)}</p>` : '';
   const listLabel = data.listLabel ? `<h3 class="analysis-detail-list-title">${escapeHtml(data.listLabel)}</h3>` : '';
-  const items = data.items.length
+  const heroGroups = data.heroGroups?.length
+    ? `<div class="analysis-hero-board">${data.heroGroups.map(group => `<section><header><strong>🏆 ${escapeHtml(group.player)}</strong><span>${escapeHtml(t('{count} times', { count: group.holes.length }))}</span></header><div>${group.holes.map(item => `<button type="button" data-analysis-hole="${item.hole}">${escapeHtml(localizedHoleLabel(item.hole))}</button>`).join('')}</div></section>`).join('')}</div>`
+    : '';
+  const outcomeGroups = data.outcomeGroups?.length
+    ? `<div class="analysis-outcome-board">${data.outcomeGroups.map(group => `<section class="${escapeHtml(group.tone)}"><header><strong>${escapeHtml(group.icon)} ${escapeHtml(group.label)}</strong><span>${escapeHtml(t('{count} holes', { count: group.holes.length }))}</span></header><div>${group.holes.map(item => `<button type="button" data-analysis-hole="${item.hole}">${escapeHtml(localizedHoleLabel(item.hole))}</button>`).join('')}</div></section>`).join('')}</div>`
+    : '';
+  const items = heroGroups || outcomeGroups || (data.items.length
     ? data.items.map(item => `<button type="button" data-analysis-hole="${item.hole}"><strong>${escapeHtml(localizedHoleLabel(item.hole))}</strong><span class="${pointToneClass(item.points)}">${escapeHtml(item.detail)}</span></button>`).join('')
-    : `<p class="analysis-highlight-empty">${escapeHtml(t('No matching holes.'))}</p>`;
-  els.analysisHighlightList.innerHTML = `${stats}${listLabel}${items}`;
+    : `<p class="analysis-highlight-empty">${escapeHtml(t('No matching holes.'))}</p>`);
+  els.analysisHighlightList.innerHTML = `${intro}${stats}${listLabel}${items}`;
   els.analysisHighlightClose.textContent = t('Close');
   els.analysisHighlightModal.hidden = false;
+}
+
+function analysisPackHeroBoard(displayMode, playerCount) {
+  if (state.gameType !== 'landlord') return { groups: [], items: [] };
+  const displayState = { ...state, scoreMode: displayMode };
+  const config = normalizeLandlordState(state.landlord, state.players.length);
+  const heroes = Array.from({ length: playerCount }, (_, playerIndex) => ({
+    playerIndex,
+    player: state.players[playerIndex],
+    holes: []
+  }));
+  state.scores.forEach((scores, holeIndex) => {
+    const result = landlordHoleResult(displayState, holeIndex);
+    if (!result) return;
+    const landlordIndex = config.landlords[holeIndex];
+    if (Number(result.points[landlordIndex] || 0) >= 0) return;
+    const lowestScore = Math.min(...result.peasantIndexes.map(index => result.scoringValues[index]));
+    result.peasantIndexes
+      .filter(index => result.scoringValues[index] === lowestScore)
+      .forEach(index => heroes[index].holes.push({ hole: holeIndex + 1, score: lowestScore }));
+  });
+  const groups = heroes
+    .filter(hero => hero.holes.length)
+    .sort((a, b) => b.holes.length - a.holes.length || a.playerIndex - b.playerIndex);
+  return { groups, items: groups.flatMap(group => group.holes) };
+}
+
+function analysisOutcomeBoard(displayMode) {
+  if (state.gameType !== 'landlord') return { groups: [], items: [], value: '' };
+  const displayState = { ...state, scoreMode: displayMode };
+  const config = normalizeLandlordState(state.landlord, state.players.length);
+  const groups = [
+    { label: t('Wolf wins'), icon: '👲', tone: 'wolf', holes: [] },
+    { label: t('Pack wins'), icon: '👨‍🌾', tone: 'pack', holes: [] },
+    { label: t('This hole is tied'), icon: '➖', tone: 'tie', holes: [] }
+  ];
+  state.scores.forEach((scores, holeIndex) => {
+    const result = landlordHoleResult(displayState, holeIndex);
+    if (!result) return;
+    const landlordIndex = config.landlords[holeIndex];
+    const item = { hole: holeIndex + 1, points: Number(result.points[landlordIndex] || 0) };
+    if (result.tied) groups[2].holes.push(item);
+    else if (result.landlordWon) groups[0].holes.push(item);
+    else groups[1].holes.push(item);
+  });
+  const visibleGroups = groups.filter(group => group.holes.length);
+  return {
+    groups: visibleGroups,
+    items: visibleGroups.flatMap(group => group.holes),
+    value: t('{wolf} | {pack}', { wolf: groups[0].holes.length, pack: groups[1].holes.length })
+  };
 }
 
 function landlordPlayerAnalysisDetails(displayMode, playerCount) {
@@ -4284,25 +4417,44 @@ function analysisHoleRows(course, playerCount, displayMode = state.scoreMode) {
   const displayState = { ...state, scoreMode: displayMode };
   return state.scores.flatMap((scores, holeIndex) => {
     const par = Number(course.pars[holeIndex] || 4);
+    const difficulty = Number(course.indexes?.[holeIndex] || holeIndex + 1);
     if (state.gameType === 'landlord') {
       const result = landlordHoleResult(displayState, holeIndex);
       if (!result) return [];
       const config = normalizeLandlordState(state.landlord, state.players.length);
       const landlordIndex = config.landlords[holeIndex];
-      const packNames = result.selectedPeasantIndexes.map(index => state.players[index]).join(' + ');
-      const winner = result.diff === 0 ? t(tieOutcomeLabel(config.tieOutcome)) : t(result.landlordWon ? 'The Wolf' : 'The Pack');
-      const multiplierBadges = [
-        ...(result.specialMultiplier > 1 ? [`<span class="analysis-badge bomb">${flipBombIconHtml()} ${escapeHtml(t('Bomb x{value}', { value: result.specialMultiplier }))}</span>`] : []),
-        ...(result.manualMultiplier > 1 ? [`<span class="analysis-badge multiplier">×${result.manualMultiplier} ${escapeHtml(t('Manual'))}</span>`] : [])
-      ];
+      const packScoreTerms = result.selectedPeasantIndexes.map(index => t('{player} {score} strokes', {
+        player: state.players[index],
+        score: formatLandlordComparisonValue(result.scoringValues[index])
+      })).join(' + ');
+      const outcomeLabel = landlordOutcomeExplanation(result);
+      const outcomeIcon = landlordOutcomeRoleIcon(result);
+      const landlordPoints = Number(result.points[landlordIndex] || 0);
+      const landlordPointTone = landlordPoints > 0
+        ? 'landlord-point-positive'
+        : (landlordPoints < 0 ? 'landlord-point-negative' : 'landlord-point-neutral');
+      const lowestPackScore = Math.min(...result.peasantIndexes.map(index => result.scoringValues[index]));
+      const packHeroNames = result.peasantIndexes
+        .filter(index => result.scoringValues[index] === lowestPackScore)
+        .map(index => state.players[index]);
+      const packHeroSeparator = window.VEGAS_I18N.language === 'zh-CN' ? '、' : ', ';
+      const packHeroBadge = landlordPoints < 0
+        ? `<span class="analysis-badge pack-hero">🏆 ${escapeHtml(t('Pack hero: {players} {score} strokes', {
+          players: packHeroNames.join(packHeroSeparator),
+          score: formatLandlordComparisonValue(lowestPackScore)
+        }))}</span>`
+        : '';
+      const multiplierBadges = result.multiplier > 1
+        ? [`<span class="analysis-badge multiplier">${escapeHtml(t('Multiplier {value}', { value: result.multiplier }))}</span>`]
+        : [];
       const badges = [...analysisSpecialPointBadges(scores, par, playerCount, result, 'landlord'), ...multiplierBadges];
       return [{
         hole: holeIndex + 1,
         magnitude: Math.max(...result.points.slice(0, playerCount).map(value => Math.abs(value))),
-        html: `<details id="analysis-hole-${holeIndex + 1}" class="analysis-hole ${badges.length ? 'special-hole' : ''}"><summary><span>${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))}</span><span class="analysis-hole-result"><strong>${escapeHtml(winner)} · x${result.multiplier}</strong>${badges.join('')}</span></summary><div class="calculation-steps">
-          <p><strong>${escapeHtml(t('Wolf calculation'))}</strong><br>${escapeHtml(t('{player}: {score} × {count} = {total}', { player: state.players[landlordIndex], score: result.scoringValues[landlordIndex], count: result.selectedCount, total: result.landlordTotal }))}</p>
-          <p><strong>${escapeHtml(t('Best {count} Pack calculation', { count: result.selectedCount }))}</strong><br>${escapeHtml(`${packNames}: ${result.selectedPeasantIndexes.map(index => result.scoringValues[index]).join(' + ')} = ${result.peasantsTotal}`)}</p>
-          <p><strong>${escapeHtml(t('Multiplier'))}</strong><br>${escapeHtml(t('Manual x{manual} × special x{special} = x{total}', { manual: result.manualMultiplier, special: result.specialMultiplier, total: result.multiplier }))}</p>
+        html: `<details id="analysis-hole-${holeIndex + 1}" class="analysis-hole landlord-analysis-hole ${landlordPointTone} ${badges.length ? 'special-hole' : ''}"><summary><span class="analysis-hole-meta">${escapeHtml(localizedHoleLabel(holeIndex + 1))} · ${escapeHtml(t('Par {value}', { value: par }))} · ${escapeHtml(t('Index {value}', { value: difficulty }))}</span><span class="analysis-hole-result"><strong class="${landlordPointTone}">${escapeHtml(t('Wolf {points} pts', { points: signedPoints(landlordPoints) }))}</strong>${badges.join('')}${packHeroBadge}</span></summary><div class="calculation-steps landlord-calculation-steps">
+          <p class="analysis-calculation-card"><strong>${escapeHtml(t('Wolf strokes'))}</strong><br>${escapeHtml(t('{player}: {score} strokes', { player: state.players[landlordIndex], score: formatLandlordComparisonValue(result.landlordComparison) }))}</p>
+          <p class="analysis-calculation-card"><strong>${escapeHtml(t('Pack strokes (best {count} scores)', { count: result.selectedCount }))}</strong><br>${escapeHtml(t('The average of ({scores}) is {average} strokes', { scores: packScoreTerms, average: formatLandlordComparisonValue(result.peasantsAverage) }))}</p>
+          <p class="analysis-outcome-card${result.multiplier > 1 ? ' multiplied' : ''}"><strong class="landlord-outcome-label">${outcomeIcon}${escapeHtml(outcomeLabel)}</strong></p>
         </div></details>`
       }];
     }
@@ -4343,6 +4495,8 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
   const points = state.gameType === 'landlord' ? total.landlordPoints.slice(0, playerCount) : [total.a, total.a, total.b, total.b];
   const special = analysisSpecialScores(course, playerCount);
   const ruleImpact = analysisRuleImpact(course, displayMode);
+  const packHeroBoard = analysisPackHeroBoard(displayMode, playerCount);
+  const outcomeBoard = analysisOutcomeBoard(displayMode);
   const holes = analysisHoleRows(course, playerCount, displayMode);
   const biggest = holes.reduce((best, item) => !best || item.magnitude > best.magnitude ? item : best, null);
   const biggestItems = biggest ? holes.filter(item => item.magnitude === biggest.magnitude).map(item => ({ hole: item.hole, detail: signedPoints(item.magnitude), points: item.magnitude })) : [];
@@ -4381,7 +4535,13 @@ function renderGameAnalysis(displayMode = state.scoreMode) {
         ${analysisHighlightCard('holes-in-one', t('Holes in one'), String(special.holesInOne.length), special.holesInOne)}
         ${analysisHighlightCard('biggest-swing', t('Biggest swing'), biggestValue, biggestItems)}
         ${analysisHighlightCard('rule-impact', ruleImpact.label, ruleImpact.value, ruleImpact.items)}
+        ${state.gameType === 'landlord' ? analysisHighlightCard('outcome-holes', t('Win/loss holes'), outcomeBoard.value, outcomeBoard.items, { outcomeGroups: outcomeBoard.groups }) : ''}
+        ${state.gameType === 'landlord' ? analysisHighlightCard('pack-heroes', t('Pack hero leaderboard'), String(packHeroBoard.groups.length), packHeroBoard.items, {
+          intro: t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero; tied lowest scores each count once.'),
+          heroGroups: packHeroBoard.groups
+        }) : ''}
       </div>
+      ${state.gameType === 'landlord' ? `<p class="analysis-highlight-note">${escapeHtml(t('On holes lost by the Wolf, the Pack player with the lowest score is named a Pack hero; tied lowest scores each count once.'))}</p>` : ''}
     </section>
     <section class="analysis-section analysis-hole-section">
       <div class="analysis-section-title"><h3>${escapeHtml(t('Hole details'))}</h3><span>${holes.length}/18</span></div>
@@ -4407,6 +4567,8 @@ function roundFromState(existing = {}, statusOverride = null) {
     fileName: roundFileName(course),
     courseId: course.id,
     courseName: course.name,
+    courseCountry: courseCountry(course),
+    courseRegion: courseRegion(course),
     pars: course.pars,
     indexes: course.indexes,
     players: [...state.players],
@@ -4426,6 +4588,8 @@ function roundFromState(existing = {}, statusOverride = null) {
       playerMeta: normalizePlayerMeta(state.playerMeta, state.players.length),
       scoreMode: state.scoreMode === 'net' ? 'net' : 'gross',
       gameType: state.gameType === 'landlord' ? 'landlord' : 'vegas',
+      courseCountry: courseCountry(course),
+      courseRegion: courseRegion(course),
       landlord: normalizeLandlordState(state.landlord, state.players.length),
       editLock: lock,
       cloudVersion: Math.max(0, Number(previousTotals.cloudVersion || 0))
@@ -4507,14 +4671,24 @@ async function ensureEditLockStillMine() {
 }
 
 function ensureCourseFromRound(round) {
-  if (allCourses().some(course => course.id === round.courseId)) return;
+  const existing = allCourses().find(course => course.id === round.courseId);
+  if (existing && courseCountry(existing) && courseRegion(existing)) return;
   if (!Array.isArray(round.pars) || round.pars.length !== 18) return;
-  customCourses.push({
+  const nameMatch = allCourses().find(course => course.id !== round.courseId
+    && String(course.name || '').trim().toLocaleLowerCase() === String(round.courseName || '').trim().toLocaleLowerCase()
+    && courseCountry(course));
+  const recoveredCourse = {
+    ...(nameMatch || existing || {}),
     id: round.courseId,
     name: round.courseName,
     pars: round.pars,
-    indexes: round.indexes
-  });
+    indexes: round.indexes,
+    country: round.courseCountry || courseCountry(nameMatch) || courseCountry(existing),
+    region: round.courseRegion || courseRegion(nameMatch) || courseRegion(existing)
+  };
+  const existingIndex = customCourses.findIndex(course => course.id === round.courseId);
+  if (existingIndex >= 0) customCourses[existingIndex] = recoveredCourse;
+  else customCourses.push(recoveredCourse);
   saveCoursesLocal();
 }
 
@@ -5180,7 +5354,7 @@ function renderLandlordLeaderboard(displayMode = state.scoreMode) {
       <td>${holeIndex + 1}</td>
       <td>${course.pars[holeIndex]}</td>
       <td>${course.indexes[holeIndex]}</td>
-      <td>${isComplete ? `${escapeHtml(state.players[landlordIndex] || '')}<small>x${result.multiplier}</small>` : '--'}</td>
+      <td>${isComplete ? `${escapeHtml(state.players[landlordIndex] || '')}<small>×${result.multiplier}</small>` : '--'}</td>
       ${scoreCells}
     </tr>`;
     if (holeIndex !== 8) return row;
@@ -5950,7 +6124,7 @@ async function createLandlordScorecardAsset(round) {
       holeIndex + 1,
       normalized.pars[holeIndex],
       normalized.indexes[holeIndex],
-      `${normalized.players[landlordIndex]} x${result?.multiplier || 1}`,
+      `${normalized.players[landlordIndex]} ×${result?.multiplier || 1}`,
       ...normalized.players.slice(0, playerCount).map((_, index) => normalized.scores[holeIndex][index] || '--')
     ];
     x = margin;
@@ -6750,7 +6924,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.7.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.8.')
     );
   });
 
@@ -7205,6 +7379,7 @@ function addListeners() {
 }
 
 async function init() {
+  [els.courseForm, els.gameForm, els.historyRangeForm, els.dialogForm].forEach(setupFormValidation);
   const cloudReady = hasSupabaseConfig();
   const hasSeenWelcome = localStorage.getItem(WELCOME_SEEN_KEY) === '1';
   if (hasSeenWelcome && els.welcomeScreen) {
@@ -7304,12 +7479,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=214', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=215', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v214';
+    const reloadKey = 'jfk.simpleGolfSwReload.v215';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

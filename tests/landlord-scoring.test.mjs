@@ -5,15 +5,16 @@ await import('../landlord-scoring.js');
 
 const { compareLandlordWithBestPeasants, resolveTieWinner } = globalThis.SIMPLE_GOLF_LANDLORD_SCORING;
 
-test('landlord compares against the selected number of lowest Pack scores', () => {
+test('landlord score compares directly with the selected lowest Pack average', () => {
   const result = compareLandlordWithBestPeasants({
     scoringValues: [5, 4, 6, 7],
     landlordIndex: 0,
     bestPeasantCount: 2
   });
   assert.deepEqual(result.selectedPeasantIndexes, [1, 2]);
-  assert.equal(result.landlordTotal, 10);
+  assert.equal(result.landlordComparison, 5);
   assert.equal(result.peasantsTotal, 10);
+  assert.equal(result.peasantsAverage, 5);
   assert.equal(result.tied, true);
 });
 
@@ -90,8 +91,9 @@ test('three-player gross scoring awards a Wolf win from the selected two Pack sc
     landlordIndex: 0,
     bestPeasantCount: 2
   });
-  assert.equal(result.landlordTotal, 8);
+  assert.equal(result.landlordComparison, 4);
   assert.equal(result.peasantsTotal, 11);
+  assert.equal(result.peasantsAverage, 5.5);
   assert.equal(result.landlordWon, true);
   assert.deepEqual(result.points, [2, -1, -1]);
 });
@@ -102,8 +104,9 @@ test('four-player gross scoring awards every Pack player when the best three tot
     landlordIndex: 0,
     bestPeasantCount: 3
   });
-  assert.equal(result.landlordTotal, 18);
+  assert.equal(result.landlordComparison, 6);
   assert.equal(result.peasantsTotal, 16);
+  assert.equal(result.peasantsAverage, 16 / 3);
   assert.equal(result.landlordWon, false);
   assert.deepEqual(result.points, [-3, 1, 1, 1]);
 });
@@ -118,8 +121,9 @@ test('net scoring values produce the expected winner after handicap strokes are 
     landlordIndex: 0,
     bestPeasantCount: 2
   });
-  assert.equal(result.landlordTotal, 8);
+  assert.equal(result.landlordComparison, 4);
   assert.equal(result.peasantsTotal, 10);
+  assert.equal(result.peasantsAverage, 5);
   assert.equal(result.landlordWon, true);
   assert.deepEqual(result.points, [2, -1, -1]);
 });

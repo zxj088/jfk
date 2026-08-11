@@ -51,7 +51,7 @@ test('course search UI uses local 18-hole Garmin records only', async () => {
   assert.doesNotMatch(html, /id="courseSearchInclude9"|id="courseSearchInclude18"/);
   assert.match(html, /id="addCourse" type="button">Manual Add</);
   assert.match(html, /id="courseSearchPagination"/);
-  assert.match(html, /assets\/data\/garmin-course-areas\.js\?v=214/);
+  assert.match(html, /assets\/data\/garmin-course-areas\.js\?v=215/);
 });
 
 test('lightweight area index is complete and excludes bogus hole-count regions', async () => {

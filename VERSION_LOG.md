@@ -4,6 +4,27 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.8 - Global courses and richer Wolf & Pack statistics
+
+Date: 2026-08-11
+
+Tag: `v6.5.8`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=215`
+
+What is new in this version:
+
+- Course search now uses the local worldwide Garmin name catalog, with localized country and China-region filters, 9-hole guidance, and clearer manual-course management.
+- Wolf & Pack compares The Wolf directly with the exact average of the selected best Pack scores, with matching bilingual explanations on scoring and results pages.
+- Statistics adds per-hole difficulty, outcome and multiplier treatments, Pack heroes and leaderboard details, plus Wolf/Pack win-hole summaries with direct hole navigation.
+- Editing a game restores its course reliably, required fields are highlighted only after a failed submit, and corrected fields clear immediately.
+- Chinese multiplier wording consistently uses “倍”, while English consistently uses the multiplication symbol.
+- PWA asset query version is `v215`.
+
+Verified with JavaScript syntax checking, automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.7 - Clearer available-course labels
 
 Date: 2026-08-11
