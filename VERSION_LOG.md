@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.5 - Larger English home actions
+
+Date: 2026-08-11
+
+Tag: `v6.5.5`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=212`
+
+What is new in this version:
+
+- New game, Watch live and Past scorecards use 19-pixel titles on the English home page.
+- Chinese labels and other buttons remain unchanged.
+- PWA asset query version is `v212`.
+
+Verified with JavaScript syntax checking, 91 automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.4 - Larger home action labels
 
 Date: 2026-08-10
