@@ -17,7 +17,15 @@ test('mobile score display stays complete without a separate detail toolbar', ()
   assert.doesNotMatch(html, /class="score-display-toolbar"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=213/);
+  assert.match(html, /mobile-ux\.css\?v=214/);
+});
+
+test('course management explains the available-course list clearly', () => {
+  assert.match(html, /<h2>Courses<\/h2>\s*<p>Add courses to your available course list<\/p>/);
+  assert.match(html, /Available course\s*<select id="newGameCourse">/);
+  assert.match(i18n, /'Add courses to your available course list': '添加球场到可选球场列表'/);
+  assert.match(i18n, /'Available course': '可选球场'/);
+  assert.match(css, /\.section-heading-copy p\s*\{[\s\S]*font-size:\s*12px/);
 });
 
 test('the play-page action uses explicit takeover and finish states', () => {

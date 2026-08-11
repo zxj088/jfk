@@ -2020,6 +2020,17 @@ textarea {
   font-size: 20px;
 }
 
+.section-heading-copy {
+  min-width: 0;
+}
+
+.section-heading-copy p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .game-section h3 {
   letter-spacing: 0;
 }

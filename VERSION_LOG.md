@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.7 - Clearer available-course labels
+
+Date: 2026-08-11
+
+Tag: `v6.5.7`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=214`
+
+What is new in this version:
+
+- The course-management page explains that searched or manually added courses become available for game setup.
+- New-game setup labels the filtered selection as Available course / 可选球场.
+- Mobile release checks now use a version-verified local HTTP preview directly instead of attempting `file://` browser automation.
+- PWA asset query version is `v214`.
+
+Verified with JavaScript syntax checking, 95 automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.6 - Global Garmin course search
 
 Date: 2026-08-11
