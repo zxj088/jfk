@@ -51,7 +51,7 @@ test('course search UI uses local 18-hole Garmin records only', async () => {
   assert.doesNotMatch(html, /id="courseSearchInclude9"|id="courseSearchInclude18"/);
   assert.match(html, /id="addCourse" type="button">Manual Add</);
   assert.match(html, /id="courseSearchPagination"/);
-  assert.match(html, /assets\/data\/garmin-course-areas\.js\?v=216/);
+  assert.match(html, /assets\/data\/garmin-course-areas\.js\?v=217/);
 });
 
 test('lightweight area index is complete and excludes bogus hole-count regions', async () => {
@@ -65,4 +65,18 @@ test('lightweight area index is complete and excludes bogus hole-count regions',
   assert.ok(china.regions.includes('Shandong'));
   assert.ok(china.regions.includes('Yunnan'));
   assert.ok(areas.every(area => !area.regions.includes('9 HOLES') && !area.regions.includes('18 HOLES')));
+});
+
+test('new-game area filtering treats Stockholm and Stockholm County as the same region', async () => {
+  const [app, seed] = await Promise.all([
+    readFile(new URL('app.js', root), 'utf8'),
+    readFile(new URL('data/shared-courses.seed.json', root), 'utf8').then(JSON.parse)
+  ]);
+  const stockholmCourses = seed.filter(course => (
+    course.country === 'Sweden' && course.region === 'Stockholm County'
+  ));
+
+  assert.ok(stockholmCourses.length > 0);
+  assert.match(app, /function normalizedCourseAreaValue\(value\)/);
+  assert.match(app, /normalizedCourseAreaValue\(courseRegion\(course\)\) === normalizedCourseAreaValue\(region\)/);
 });

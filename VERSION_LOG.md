@@ -4,6 +4,24 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.10 - Stockholm course filter compatibility
+
+Date: 2026-08-14
+
+Tag: `v6.5.10`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=217`
+
+What is new in this version:
+
+- New-game course filtering now treats Garmin's `Stockholm` region and existing `Stockholm County` course data as the same area.
+- Existing course records remain unchanged while Stockholm courses are available normally after selecting Sweden and Stockholm.
+- PWA asset query version is `v217`.
+
+Verified with JavaScript syntax checking, automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.9 - Pack hero solo contributions
 
 Date: 2026-08-12

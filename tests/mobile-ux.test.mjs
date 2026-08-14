@@ -17,7 +17,7 @@ test('mobile score display stays complete without a separate detail toolbar', ()
   assert.doesNotMatch(html, /class="score-display-toolbar"/);
   assert.match(css, /\.scorecard\.compact-score-detail th:nth-child\(6\)/);
   assert.match(mobileCss, /\.scorecard button\.score small,[\s\S]*font-size: 11\.5px/);
-  assert.match(html, /mobile-ux\.css\?v=216/);
+  assert.match(html, /mobile-ux\.css\?v=217/);
 });
 
 test('course management explains the available-course list clearly', () => {
