@@ -4952,13 +4952,14 @@ async function confirmFinishWithCode(round) {
 async function finishCurrentGame() {
   const round = currentGame();
   if (!round || !isEditing) return false;
-  const finishAnswer = await confirmFinishWithCode(round);
-  if (!finishAnswer) return false;
-  window.clearTimeout(autoSyncTimer);
-  if (pendingSyncPromise) await pendingSyncPromise;
-  pendingSyncRound = null;
-  setSyncState({ ready: true, busy: true, title: t('Finishing game...') });
+  const actionButton = els.takeOverScoring;
+  if (actionButton) actionButton.disabled = true;
   try {
+    const finishAnswer = await confirmFinishWithCode(round);
+    if (!finishAnswer) return false;
+    window.clearTimeout(autoSyncTimer);
+    if (pendingSyncPromise) await pendingSyncPromise;
+    setSyncState({ ready: true, busy: true, title: t('Finishing game...') });
     let latest = await fetchCloudRoundById(round.id).catch(() => null) || round;
     let finished;
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -4975,6 +4976,8 @@ async function finishCurrentGame() {
         if (owner && owner !== clientId) throw error;
       }
     }
+    pendingSyncRound = null;
+    savePendingRoundLocal(null);
     replaceRound(finished);
     saveHistoryLocal();
     isEditing = false;
@@ -4993,9 +4996,16 @@ async function finishCurrentGame() {
     switchView('leaderboard');
     return true;
   } catch (error) {
-    setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error.message });
-    await showMessage(t('Could not finish game'), t('The game was not finished. Check the connection and try again.'));
+    setSyncState({ ready: true, busy: false, ok: false, label: t('Cloud sync Not ok'), title: error?.message || '' });
+    await showMessage(
+      t('Could not finish game'),
+      t('The game was not finished: {reason}', {
+        reason: error?.message || t('Check the connection and try again.')
+      })
+    );
     return false;
+  } finally {
+    if (actionButton) actionButton.disabled = false;
   }
 }
 
@@ -6935,7 +6945,7 @@ function addListeners() {
     els.topMenuButton?.setAttribute('aria-expanded', 'false');
     await showMessage(
       t('About Simple Golf Scorecard'),
-      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.10.')
+      t('No account or sign-in required. Simple Golf Scorecard supports Las Vegas and Wolf & Pack scoring, live match viewing, historical scorecards, and cloud synchronization across devices. Version 6.5.11.')
     );
   });
 
@@ -7490,12 +7500,12 @@ async function init() {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js?v=217', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('./sw.js?v=218', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(() => {});
   });
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const reloadKey = 'jfk.simpleGolfSwReload.v217';
+    const reloadKey = 'jfk.simpleGolfSwReload.v218';
     if (sessionStorage.getItem(reloadKey)) return;
     sessionStorage.setItem(reloadKey, '1');
     window.location.reload();

@@ -59,3 +59,13 @@ test('finishing a game verifies and remembers the string returned by the code di
   assert.match(finishFlow, /rememberEditCode\('round', round\.id, answer\)/);
   assert.doesNotMatch(finishFlow, /answer\.value/);
 });
+
+test('finishing remains retryable when verification or the cloud write fails', () => {
+  const finishFlow = app.slice(app.indexOf('async function finishCurrentGame'), app.indexOf('async function confirmDeleteWithCode'));
+  assert.match(finishFlow, /actionButton\.disabled = true/);
+  assert.ok(finishFlow.indexOf('try {') < finishFlow.indexOf('await confirmFinishWithCode(round)'));
+  assert.ok(finishFlow.indexOf('await upsertCloudRound(finished)') < finishFlow.indexOf('pendingSyncRound = null'));
+  assert.match(finishFlow, /savePendingRoundLocal\(null\)/);
+  assert.match(finishFlow, /The game was not finished: \{reason\}/);
+  assert.match(finishFlow, /finally \{[\s\S]*actionButton\.disabled = false/);
+});

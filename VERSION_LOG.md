@@ -4,6 +4,25 @@ This file records the good baseline versions of the app and how to switch back t
 
 ## Good Baselines
 
+### v6.5.11 - Retryable game finishing
+
+Date: 2026-08-27
+
+Tag: `v6.5.11`
+
+Live URL:
+
+`https://zxj088.github.io/jfk/?v=218`
+
+What is new in this version:
+
+- Game finishing now catches edit-code verification and cloud-write failures in one flow and shows the actual failure reason.
+- The finish action is protected against repeat taps, remains retryable after failure, and clears pending score data only after the cloud confirms completion.
+- Chinese and English finish-failure messages remain synchronized.
+- PWA asset query version is `v218`.
+
+Verified with JavaScript syntax checking, automated tests, the production build, and a 390-pixel mobile browser check.
+
 ### v6.5.10 - Stockholm course filter compatibility
 
 Date: 2026-08-14

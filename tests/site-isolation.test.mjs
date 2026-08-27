@@ -22,7 +22,7 @@ test('jfk uses an independent browser storage namespace', () => {
     'jfk.vegasGolfEditCredentials.v1',
     'jfk.simpleGolfWelcomeSeen.v1',
     'jfk.simpleGolfScoreDetail.v1',
-    'jfk.simpleGolfSwReload.v217'
+    'jfk.simpleGolfSwReload.v218'
   ];
   requiredKeys.forEach(key => assert.match(app, new RegExp(key.replaceAll('.', '\\.'))));
   assert.match(i18n, /jfk\.vegasGolfLanguage\.v1/);
@@ -36,5 +36,5 @@ test('jfk shares cloud game data while keeping an independent PWA identity', () 
 test('jfk uses dedicated app icons', () => {
   const parsed = JSON.parse(manifest);
   assert.ok(parsed.icons.every(icon => icon.src.includes('jfk-icon')));
-  assert.match(app, /jfk\.simpleGolfSwReload\.v217/);
+  assert.match(app, /jfk\.simpleGolfSwReload\.v218/);
 });
